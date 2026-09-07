@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugar Bliss | About Us</title>
+    <link rel="stylesheet" href="/assets/css/home.css">
+</head>
+<body>
+    <header class="site-header">
+        <a class="brand" href="/home" aria-label="Sugar Bliss home">
+            <img src="/assets/icons/logo.png" alt="Sugar Bliss logo">
+            <span>Sugar Bliss</span>
+        </a>
+
+        <nav class="main-nav" aria-label="Main navigation">
+            <a class="active" href="/home">About Us</a>
+            <a href="/products">Products</a>
+            <a href="/special-orders">Special Orders</a>
+            <a href="/contact">Contact</a>
+            <a class="profile-link" href="/login" aria-label="Account"></a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero-section" id="about">
+            <div class="hero-image-wrap">
+                <img src="/assets/images/cake2.png" alt="Pink birthday cake with Sugar Bliss box">
+            </div>
+
+            <div class="hero-content">
+                <h1>Deliver You A Blissful Dessert in Every Bite</h1>
+                <p>
+                    Freshly baked cakes, pastries, and custom treats made with soft colors,
+                    gentle sweetness, and a little joy in every detail.
+                </p>
+                <a class="primary-button" href="#about">About Us</a>
+            </div>
+        </section>
+
+        <section class="products-section" id="products">
+            <div class="scallop" aria-hidden="true"></div>
+
+            <h2>Check Out Our <span>Best Sellers</span></h2>
+
+            <div class="product-grid">
+                <article class="product-item">
+                    <img src="/assets/images/cake3.png" alt="Strawberry croissants">
+                    <h3>Berry Croissants</h3>
+                </article>
+
+                <article class="product-item">
+                    <img src="/assets/images/cake2.png" alt="Pink birthday cake">
+                    <h3>Birthday Cakes</h3>
+                </article>
+
+                <article class="product-item">
+                    <img src="/assets/images/cake4.png" alt="Cream day cake">
+                    <h3>Sweet Macarons</h3>
+                </article>
+
+                <article class="product-item">
+                    <img src="/assets/images/cake2.png" alt="Sugar Bliss dessert set">
+                    <h3>Party Desserts</h3>
+                </article>
+            </div>
+
+            <a class="primary-button more-button" href="/products">See More</a>
+        </section>
+
+        <section class="orders-section" id="orders">
+            <div class="orders-content">
+                <h2>Special Orders</h2>
+                <p>
+                    Planning a birthday, anniversary, or cozy celebration? Tell us your theme,
+                    flavors, and favorite colors, and we will craft a dessert made just for you.
+                </p>
+                <a class="primary-button" href="/special-orders">Place An Order</a>
+            </div>
+
+            <div class="orders-collage" aria-label="Special order cake photos">
+                <img class="collage-main" src="/assets/images/cake4.png" alt="Custom cream day cake">
+                <img class="collage-small collage-left" src="/assets/images/cake2.png" alt="Pink custom birthday cake">
+                <img class="collage-small collage-right" src="/assets/images/cake4.png" alt="Custom cake packaging">
+            </div>
+        </section>
+
+        <section class="feedback-section">
+            <h2>Our Customers' Feedback</h2>
+            <button class="feedback-arrow previous" type="button" aria-label="Previous feedback" data-feedback-prev></button>
+            <blockquote data-feedback-quote>
+                The cake was beautiful, fluffy, and perfectly sweet. It made our birthday table feel extra special.
+            </blockquote>
+            <p class="customer-name" data-feedback-name>Georgia Grimes</p>
+            <div class="feedback-dots" aria-label="Feedback pages">
+                <button class="active" type="button" aria-label="Show feedback 1" data-feedback-dot="0"></button>
+                <button type="button" aria-label="Show feedback 2" data-feedback-dot="1"></button>
+                <button type="button" aria-label="Show feedback 3" data-feedback-dot="2"></button>
+            </div>
+            <button class="feedback-arrow next" type="button" aria-label="Next feedback" data-feedback-next></button>
+        </section>
+    </main>
+
+    <footer class="visit-section" id="contact">
+        <h2>Visit Us</h2>
+        <p>123 HaNoi, Viet NAM</p>
+        <p>12345566712</p>
+    </footer>
+    <script src="/assets/js/home.js"></script>
+</body>
+</html>

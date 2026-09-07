@@ -1,0 +1,262 @@
+* {
+    box-sizing: border-box;
+}
+
+html,
+body {
+    min-height: 100%;
+    margin: 0;
+}
+
+body {
+    font-family: Arial, Helvetica, sans-serif;
+    color: #6f686d;
+    background: #fff;
+}
+
+.login-page {
+    display: grid;
+    grid-template-columns: 1.03fr 1fr;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+.cake-panel {
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    min-height: 100vh;
+    background: #fff;
+    padding: 60px 32px 82px;
+}
+
+.cake-image {
+    width: clamp(430px, 48vw, 650px);
+    max-height: 72vh;
+    object-fit: contain;
+    filter: drop-shadow(0 12px 14px rgba(126, 75, 52, 0.12));
+}
+
+.form-panel {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    background: #fff0f3;
+    padding: 56px 54px;
+}
+
+.login-card {
+    width: clamp(380px, 32vw, 520px);
+    margin-top: 24px;
+}
+
+.brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 58px;
+}
+
+.brand-logo {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+}
+
+.brand-name {
+    color: #ef91a2;
+    font-size: 32px;
+    font-weight: 700;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.login-form {
+    display: flex;
+    flex-direction: column;
+}
+
+.field {
+    display: block;
+    width: 100%;
+    margin: 0 0 24px;
+}
+
+.field input {
+    display: block;
+    width: 100%;
+    height: 58px;
+    border: 1px solid #77757c;
+    border-radius: 14px;
+    background: #fff;
+    color: #534d52;
+    font-size: 14px;
+    line-height: 1.2;
+    outline: none;
+    padding: 0 22px;
+}
+
+.field input::placeholder {
+    color: #767078;
+    opacity: 1;
+}
+
+.field input:focus {
+    border-color: #ef91a2;
+    box-shadow: 0 0 0 4px rgba(239, 145, 162, 0.16);
+}
+
+.forgot-link {
+    align-self: flex-end;
+    color: #6f686d;
+    font-size: 12px;
+    line-height: 1;
+    margin-top: -11px;
+    margin-bottom: 18px;
+    text-decoration: none;
+}
+
+.forgot-link:hover,
+.register-text a:hover {
+    text-decoration: underline;
+}
+
+.submit-button {
+    width: 100%;
+    height: 58px;
+    border: 0;
+    border-radius: 999px;
+    background: #bfe7c8;
+    color: #fff;
+    cursor: pointer;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1;
+    transition: background 160ms ease, transform 160ms ease;
+}
+
+.submit-button:hover {
+    background: #aadcbc;
+    transform: translateY(-1px);
+}
+
+.register-text {
+    margin: 44px 0 0;
+    color: #5f575d;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.register-text a {
+    color: #f28aa0;
+    text-decoration: none;
+}
+
+.form-message {
+    min-height: 18px;
+    margin: 16px 0 0;
+    color: #5f575d;
+    font-size: 13px;
+    font-weight: 700;
+    text-align: center;
+}
+
+.form-message.is-success {
+    color: #57a56c;
+}
+
+.form-message.is-error {
+    color: #e76881;
+}
+
+.register-card .brand {
+    margin-bottom: 56px;
+}
+
+.register-card .field {
+    margin-bottom: 26px;
+}
+
+.register-card .register-text {
+    margin-top: 24px;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+@media (max-width: 900px) {
+    .cake-image {
+        width: clamp(340px, 43vw, 460px);
+    }
+
+    .login-card {
+        width: min(100%, 380px);
+    }
+
+    .brand-name {
+        font-size: 28px;
+    }
+}
+
+@media (max-width: 640px) {
+    .login-page {
+        grid-template-columns: 1fr;
+        min-height: 100vh;
+        overflow: visible;
+    }
+
+    .cake-panel {
+        min-height: 34vh;
+        padding: 24px 20px 10px;
+    }
+
+    .cake-image {
+        width: min(76vw, 330px);
+        max-height: 31vh;
+    }
+
+    .form-panel {
+        min-height: 66vh;
+        padding: 34px 20px 44px;
+    }
+
+    .login-card {
+        margin-top: 0;
+    }
+
+    .brand {
+        margin-bottom: 36px;
+    }
+
+    .register-card .brand {
+        margin-bottom: 34px;
+    }
+
+    .brand-name {
+        font-size: 27px;
+    }
+
+    .field input {
+        height: 44px;
+        border-radius: 14px;
+        font-size: 13px;
+    }
+
+    .submit-button {
+        height: 46px;
+        font-size: 14px;
+    }
+}

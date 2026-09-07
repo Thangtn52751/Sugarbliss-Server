@@ -111,7 +111,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
 
     if (!product) {
         res.status(404);
-        throw new Error('Khong tim thay san pham');
+        throw new Error('Product not found.');
     }
 
     res.json(product);
@@ -127,7 +127,7 @@ router.put('/:id', protect, admin, upload.single('image'), asyncHandler(async (r
 
     if (!product) {
         res.status(404);
-        throw new Error('Khong tim thay san pham');
+        throw new Error('Product not found.');
     }
 
     Object.assign(product, getProductPayload(req.body, req.file));
@@ -141,11 +141,11 @@ router.delete('/:id', protect, admin, asyncHandler(async (req, res) => {
 
     if (!product) {
         res.status(404);
-        throw new Error('Khong tim thay san pham');
+        throw new Error('Product not found.');
     }
 
     await product.deleteOne();
-    res.json({ message: 'Da xoa san pham' });
+    res.json({ message: 'Product deleted successfully.' });
 }));
 
 module.exports = router;

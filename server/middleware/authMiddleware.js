@@ -11,7 +11,7 @@ const protect = asyncHandler(async (req, res, next) => {
 
     if (!token) {
         res.status(401);
-        throw new Error('Vui long dang nhap');
+        throw new Error('Please log in.');
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
@@ -19,7 +19,7 @@ const protect = asyncHandler(async (req, res, next) => {
 
     if (!req.user || !req.user.isActive) {
         res.status(401);
-        throw new Error('Tai khoan khong hop le');
+        throw new Error('Invalid account.');
     }
 
     next();
@@ -31,7 +31,7 @@ const admin = (req, res, next) => {
     }
 
     res.status(403);
-    throw new Error('Can quyen admin');
+    throw new Error('Admin permission required.');
 };
 
 module.exports = { protect, admin };

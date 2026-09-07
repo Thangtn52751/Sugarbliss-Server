@@ -1,0 +1,584 @@
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    color: #2c2528;
+    background: #fffafb;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.site-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: min(100%, 1260px);
+    margin: 0 auto;
+    padding: 38px 92px 34px;
+}
+
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: #d94960;
+    font-size: 28px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.brand img {
+    width: 46px;
+    height: 46px;
+    object-fit: contain;
+}
+
+.main-nav {
+    display: flex;
+    align-items: center;
+    gap: 50px;
+}
+
+.main-nav a {
+    color: #272124;
+    font-size: 16px;
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.main-nav a:hover {
+    color: #d94960;
+}
+
+.main-nav a.active {
+    color: #d94960;
+    font-weight: 800;
+}
+
+.profile-link {
+    position: relative;
+    width: 52px;
+    height: 52px;
+    flex: 0 0 52px;
+    border-radius: 50%;
+    background: #a9aaad;
+}
+
+.profile-link::before,
+.profile-link::after {
+    position: absolute;
+    left: 50%;
+    content: "";
+    transform: translateX(-50%);
+    background: #fff;
+}
+
+.profile-link::before {
+    top: 9px;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+}
+
+.profile-link::after {
+    bottom: 8px;
+    width: 34px;
+    height: 22px;
+    border-radius: 20px 20px 8px 8px;
+}
+
+.hero-section {
+    display: grid;
+    grid-template-columns: 1.02fr 0.98fr;
+    gap: 92px;
+    align-items: center;
+    width: min(100%, 1260px);
+    margin: 26px auto 70px;
+    padding: 0 92px;
+}
+
+.hero-image-wrap img {
+    display: block;
+    width: 100%;
+    aspect-ratio: 1.02 / 1;
+    border-radius: 36px;
+    object-fit: cover;
+}
+
+.hero-content {
+    max-width: 500px;
+}
+
+.hero-content h1 {
+    margin: 0 0 12px;
+    color: #d94960;
+    font-size: 40px;
+    font-weight: 800;
+    line-height: 1.12;
+}
+
+.hero-content p {
+    margin: 0 0 28px;
+    font-size: 17px;
+    line-height: 1.15;
+}
+
+.primary-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 196px;
+    height: 70px;
+    border-radius: 999px;
+    background: #9bd3a6;
+    color: #fff;
+    font-size: 22px;
+    font-weight: 800;
+    text-decoration: none;
+}
+
+.primary-button:hover {
+    background: #86c994;
+}
+
+.products-section {
+    position: relative;
+    background: #ffe7eb;
+    padding: 122px 92px 72px;
+    overflow: hidden;
+}
+
+.scallop {
+    position: absolute;
+    top: -1px;
+    left: 0;
+    width: 100%;
+    height: 112px;
+    background:
+        radial-gradient(circle at 70px 0, #fffafb 0 70px, transparent 71px),
+        radial-gradient(circle at 210px 0, #fffafb 0 70px, transparent 71px),
+        radial-gradient(circle at 350px 0, #fffafb 0 70px, transparent 71px),
+        radial-gradient(circle at 490px 0, #fffafb 0 70px, transparent 71px),
+        radial-gradient(circle at 630px 0, #fffafb 0 70px, transparent 71px),
+        radial-gradient(circle at 770px 0, #fffafb 0 70px, transparent 71px),
+        radial-gradient(circle at 910px 0, #fffafb 0 70px, transparent 71px),
+        radial-gradient(circle at 1050px 0, #fffafb 0 70px, transparent 71px),
+        radial-gradient(circle at 1190px 0, #fffafb 0 70px, transparent 71px);
+    background-size: 1260px 112px;
+}
+
+.products-section h2,
+.feedback-section h2 {
+    position: relative;
+    margin: 0 0 38px;
+    color: #060506;
+    font-size: 34px;
+    font-weight: 800;
+    text-align: center;
+}
+
+.products-section h2 span,
+.feedback-section h2,
+.orders-content h2 {
+    color: #d94960;
+}
+
+.product-grid {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 88px;
+    width: min(100%, 1160px);
+    margin: 0 auto;
+}
+
+.product-item {
+    min-width: 0;
+    text-align: center;
+}
+
+.product-item img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: 36px;
+    object-fit: cover;
+}
+
+.product-item h3 {
+    margin: 30px 0 0;
+    color: #d94960;
+    font-size: 22px;
+    font-weight: 800;
+}
+
+.more-button {
+    position: relative;
+    display: flex;
+    width: 176px;
+    min-width: 176px;
+    height: 64px;
+    margin: 48px auto 0;
+    font-size: 22px;
+}
+
+.orders-section {
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    gap: 74px;
+    align-items: center;
+    background: #ffe7eb;
+    padding: 50px 96px 88px;
+}
+
+.orders-content {
+    max-width: 520px;
+}
+
+.orders-content h2 {
+    margin: 0 0 38px;
+    font-size: 35px;
+    font-weight: 800;
+}
+
+.orders-content p {
+    margin: 0 0 38px;
+    font-size: 24px;
+    line-height: 1.15;
+}
+
+.orders-collage {
+    position: relative;
+    min-height: 480px;
+}
+
+.orders-collage img {
+    position: absolute;
+    object-fit: cover;
+}
+
+.collage-main {
+    left: 50%;
+    top: 34px;
+    width: min(58vw, 430px);
+    height: min(58vw, 430px);
+    border-radius: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+}
+
+.collage-small {
+    width: 250px;
+    height: 250px;
+    border-radius: 50%;
+}
+
+.collage-left {
+    left: 36px;
+    bottom: 22px;
+}
+
+.collage-right {
+    right: 18px;
+    top: 0;
+}
+
+.feedback-section {
+    position: relative;
+    background: #ffe7eb;
+    padding: 18px 92px 58px;
+    text-align: center;
+}
+
+.feedback-section blockquote {
+    width: min(820px, 78vw);
+    margin: 0 auto 34px;
+    font-size: 24px;
+    line-height: 1.2;
+}
+
+.customer-name {
+    margin: 0 0 24px;
+    font-size: 23px;
+}
+
+.feedback-dots {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+}
+
+.feedback-dots button {
+    width: 14px;
+    height: 14px;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.42);
+    cursor: pointer;
+}
+
+.feedback-dots .active {
+    background: #fff;
+}
+
+.feedback-arrow {
+    position: absolute;
+    top: 58%;
+    width: 28px;
+    height: 28px;
+    border: 0;
+    border-top: 4px solid #fff;
+    border-left: 4px solid #fff;
+    background: transparent;
+    cursor: pointer;
+}
+
+.feedback-arrow.previous {
+    left: 66px;
+    transform: rotate(-45deg);
+}
+
+.feedback-arrow.next {
+    right: 66px;
+    transform: rotate(135deg);
+}
+
+.visit-section {
+    width: min(100%, 1260px);
+    margin: 0 auto;
+    padding: 42px 92px 70px;
+    background: #fffafb;
+}
+
+.visit-section h2 {
+    margin: 0 0 22px;
+    color: #060506;
+    font-size: 34px;
+    font-weight: 800;
+}
+
+.visit-section p {
+    margin: 0 0 16px;
+    color: #464044;
+    font-size: 16px;
+}
+
+.page-shell {
+    width: min(100%, 1260px);
+    margin: 0 auto;
+    padding: 44px 92px 96px;
+}
+
+.page-heading {
+    max-width: 760px;
+    margin: 0 auto 54px;
+    text-align: center;
+}
+
+.page-heading.align-left {
+    margin: 0;
+    text-align: left;
+}
+
+.page-heading h1 {
+    margin: 0 0 18px;
+    color: #d94960;
+    font-size: 44px;
+    font-weight: 800;
+    line-height: 1.08;
+}
+
+.page-heading p {
+    margin: 0;
+    color: #3a3135;
+    font-size: 20px;
+    line-height: 1.35;
+}
+
+.page-heading .primary-button {
+    margin-top: 34px;
+}
+
+.page-product-grid {
+    gap: 54px;
+}
+
+.split-page-section,
+.contact-page-section {
+    display: grid;
+    grid-template-columns: 0.9fr 1.1fr;
+    gap: 76px;
+    align-items: center;
+}
+
+.page-collage {
+    min-height: 430px;
+}
+
+.contact-details {
+    display: grid;
+    gap: 18px;
+    padding: 42px;
+    border-radius: 32px;
+    background: #ffe7eb;
+}
+
+.contact-details p {
+    margin: 0;
+    color: #30282c;
+    font-size: 18px;
+    line-height: 1.35;
+}
+
+.contact-details strong {
+    display: block;
+    margin-bottom: 6px;
+    color: #d94960;
+    font-size: 20px;
+}
+
+@media (max-width: 980px) {
+    .site-header {
+        flex-direction: column;
+        gap: 28px;
+        padding: 28px 28px;
+    }
+
+    .main-nav {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 22px;
+    }
+
+    .hero-section,
+    .orders-section {
+        grid-template-columns: 1fr;
+        gap: 44px;
+        padding-left: 28px;
+        padding-right: 28px;
+    }
+
+    .hero-content,
+    .orders-content {
+        max-width: none;
+    }
+
+    .product-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 44px;
+    }
+
+    .orders-collage {
+        min-height: 420px;
+    }
+
+    .page-shell {
+        padding: 36px 28px 72px;
+    }
+
+    .split-page-section,
+    .contact-page-section {
+        grid-template-columns: 1fr;
+        gap: 44px;
+    }
+
+    .page-heading.align-left {
+        text-align: center;
+    }
+}
+
+@media (max-width: 620px) {
+    .brand {
+        font-size: 24px;
+    }
+
+    .main-nav a:not(.profile-link) {
+        font-size: 14px;
+    }
+
+    .hero-section {
+        margin-top: 12px;
+    }
+
+    .hero-content h1 {
+        font-size: 32px;
+    }
+
+    .hero-content p,
+    .orders-content p,
+    .feedback-section blockquote {
+        font-size: 17px;
+    }
+
+    .primary-button {
+        min-width: 172px;
+        height: 58px;
+        font-size: 18px;
+    }
+
+    .products-section,
+    .orders-section,
+    .feedback-section,
+    .visit-section {
+        padding-left: 24px;
+        padding-right: 24px;
+    }
+
+    .product-grid {
+        gap: 28px;
+    }
+
+    .product-item img {
+        border-radius: 24px;
+    }
+
+    .product-item h3 {
+        font-size: 18px;
+        margin-top: 18px;
+    }
+
+    .orders-collage {
+        min-height: 320px;
+    }
+
+    .collage-main {
+        width: 260px;
+        height: 260px;
+    }
+
+    .collage-small {
+        width: 150px;
+        height: 150px;
+    }
+
+    .collage-left {
+        left: 0;
+    }
+
+    .collage-right {
+        right: 0;
+    }
+
+    .feedback-arrow {
+        display: none;
+    }
+
+    .page-heading h1 {
+        font-size: 34px;
+    }
+
+    .page-heading p,
+    .contact-details p {
+        font-size: 16px;
+    }
+
+    .contact-details {
+        padding: 28px;
+        border-radius: 24px;
+    }
+}

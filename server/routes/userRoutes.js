@@ -23,14 +23,14 @@ router.post('/register', upload.single('avatar'), asyncHandler(async (req, res) 
 
     if (!name || !email || !password) {
         res.status(400);
-        throw new Error('Vui long nhap ten, email va mat khau');
+        throw new Error('Please enter your name, email, and password.');
     }
 
     const existedUser = await User.findOne({ email });
 
     if (existedUser) {
         res.status(400);
-        throw new Error('Email da duoc su dung');
+        throw new Error('This email is already in use.');
     }
 
     const isFirstUser = await User.countDocuments() === 0;
@@ -53,19 +53,19 @@ router.post('/login', asyncHandler(async (req, res) => {
 
     if (!email || !password) {
         res.status(400);
-        throw new Error('Vui long nhap email va mat khau');
+        throw new Error('Please enter your email and password.');
     }
 
     const user = await User.findOne({ email }).select('+password');
 
     if (!user || !(await user.matchPassword(password))) {
         res.status(401);
-        throw new Error('Email hoac mat khau khong dung');
+        throw new Error('Invalid email or password.');
     }
 
     if (!user.isActive) {
         res.status(403);
-        throw new Error('Tai khoan da bi khoa');
+        throw new Error('This account has been disabled.');
     }
 
     res.json(userResponse(user));
@@ -98,7 +98,7 @@ router.put('/me', protect, asyncHandler(async (req, res) => {
 router.patch('/me/avatar', protect, upload.single('avatar'), asyncHandler(async (req, res) => {
     if (!req.file) {
         res.status(400);
-        throw new Error('Vui long upload avatar');
+        throw new Error('Please upload an avatar.');
     }
 
     const user = await User.findById(req.user._id);

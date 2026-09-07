@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugar Bliss | Login</title>
+    <link rel="stylesheet" href="/assets/css/login.css">
+</head>
+<body>
+    <main class="login-page">
+        <section class="cake-panel" aria-label="Sugar Bliss cake preview">
+            <img class="cake-image" src="/assets/images/cake1.png" alt="Sugar Bliss cake">
+        </section>
+
+        <section class="form-panel" aria-label="Login form">
+            <div class="login-card">
+                <div class="brand">
+                    <img class="brand-logo" src="/assets/icons/logo.png" alt="Sugar Bliss logo">
+                    <span class="brand-name">Sugar Bliss</span>
+                </div>
+
+                <form class="login-form" action="http://localhost:3000/api/users/login" method="post" data-auth-form="login">
+                    <label class="field">
+                        <span class="sr-only">Email</span>
+                        <input type="email" name="email" placeholder="Your Email" autocomplete="email" required>
+                    </label>
+
+                    <label class="field">
+                        <span class="sr-only">Password</span>
+                        <input type="password" name="password" placeholder="Your Password" autocomplete="current-password" required>
+                    </label>
+
+                    <a class="forgot-link" href="#">Forgot Your Password?</a>
+
+                    <button class="submit-button" type="submit">Submit</button>
+                </form>
+
+                <p class="form-message" data-form-message></p>
+
+                <p class="register-text">
+                    New here? <a href="/register">Register Now</a>
+                </p>
+            </div>
+        </section>
+    </main>
+    <script src="/assets/js/auth.js"></script>
+</body>
+</html>

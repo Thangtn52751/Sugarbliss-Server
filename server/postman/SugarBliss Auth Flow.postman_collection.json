@@ -1,0 +1,190 @@
+{
+    "info": {
+        "_postman_id": "c281f1fb-81eb-4185-9486-cf0a56c3d001",
+        "name": "SugarBliss Auth Flow",
+        "description": "Register, login, save JWT token, and verify protected product APIs.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "1. Register User",
+            "event": [
+                {
+                    "listen": "prerequest",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "const email = `postman.${Date.now()}@sugarbliss.local`;",
+                            "pm.environment.set('registeredEmail', email);"
+                        ]
+                    }
+                },
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test('Register returns 201 Created', function () {",
+                            "    pm.response.to.have.status(201);",
+                            "});",
+                            "",
+                            "const data = pm.response.json();",
+                            "pm.test('Register response has user and token', function () {",
+                            "    pm.expect(data.email).to.eql(pm.environment.get('registeredEmail'));",
+                            "    pm.expect(data.token).to.be.a('string').and.not.empty;",
+                            "});",
+                            "",
+                            "pm.environment.set('authToken', data.token);"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"name\": \"Postman Test User\",\n    \"email\": \"{{registeredEmail}}\",\n    \"password\": \"{{password}}\"\n}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/users/register",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "users",
+                        "register"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "2. Login User",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test('Login returns 200 OK', function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "const data = pm.response.json();",
+                            "pm.test('Login response has JWT token', function () {",
+                            "    pm.expect(data.token).to.be.a('string').and.not.empty;",
+                            "});",
+                            "",
+                            "pm.environment.set('authToken', data.token);"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"email\": \"{{registeredEmail}}\",\n    \"password\": \"{{password}}\"\n}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/users/login",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "users",
+                        "login"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "3. Products Without Token Should Fail",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test('Products without token returns 401 Unauthorized', function () {",
+                            "    pm.response.to.have.status(401);",
+                            "});"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/api/products",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "products"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "4. Products With Token Should Pass",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test('Products with token returns 200 OK', function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "const data = pm.response.json();",
+                            "pm.test('Products response has products array', function () {",
+                            "    pm.expect(data.products).to.be.an('array');",
+                            "});"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "auth": {
+                    "type": "bearer",
+                    "bearer": [
+                        {
+                            "key": "token",
+                            "value": "{{authToken}}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/api/products",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "products"
+                    ]
+                }
+            }
+        }
+    ]
+}

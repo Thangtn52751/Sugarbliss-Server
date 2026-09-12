@@ -14,7 +14,15 @@ const protect = asyncHandler(async (req, res, next) => {
         throw new Error('Please log in.');
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    let decoded;
+
+    try {
+        decoded = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+        res.status(401);
+        throw new Error('Invalid or expired token.');
+    }
+
     req.user = await User.findById(decoded.id).select('-password');
 
     if (!req.user || !req.user.isActive) {

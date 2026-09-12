@@ -6,6 +6,8 @@ const { protect, admin } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
+router.use(protect);
+
 const normalizeList = (value) => {
     if (!value) {
         return [];
@@ -117,12 +119,12 @@ router.get('/:id', asyncHandler(async (req, res) => {
     res.json(product);
 }));
 
-router.post('/', protect, admin, upload.single('image'), asyncHandler(async (req, res) => {
+router.post('/', admin, upload.single('image'), asyncHandler(async (req, res) => {
     const product = await Product.create(getProductPayload(req.body, req.file));
     res.status(201).json(product);
 }));
 
-router.put('/:id', protect, admin, upload.single('image'), asyncHandler(async (req, res) => {
+router.put('/:id', admin, upload.single('image'), asyncHandler(async (req, res) => {
     const product = await Product.findById(req.params.id);
 
     if (!product) {
@@ -136,7 +138,7 @@ router.put('/:id', protect, admin, upload.single('image'), asyncHandler(async (r
     res.json(updatedProduct);
 }));
 
-router.delete('/:id', protect, admin, asyncHandler(async (req, res) => {
+router.delete('/:id', admin, asyncHandler(async (req, res) => {
     const product = await Product.findById(req.params.id);
 
     if (!product) {

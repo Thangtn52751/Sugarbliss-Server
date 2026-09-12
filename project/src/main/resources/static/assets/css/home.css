@@ -17,9 +17,9 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    width: min(100%, 1260px);
+    width: 100%;
     margin: 0 auto;
-    padding: 38px 92px 34px;
+    padding: 38px 54px 34px;
 }
 
 .brand {
@@ -349,8 +349,8 @@ body {
 }
 
 .visit-section {
-    width: min(100%, 1260px);
-    margin: 0 auto;
+    width: 100%;
+    margin: 0;
     padding: 42px 92px 70px;
     background: #fffafb;
 }

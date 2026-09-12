@@ -1,0 +1,314 @@
+{
+    "info": {
+        "_postman_id": "4bb2af9b-fc33-49cc-b9ab-873f490a9001",
+        "name": "SugarBliss Product CRUD",
+        "description": "Login as admin, then create, list, read, update, and delete a product.",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "1. Login Admin",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test('Login returns 200 OK', function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "",
+                            "const data = pm.response.json();",
+                            "pm.test('Admin login response has token', function () {",
+                            "    pm.expect(data.token).to.be.a('string').and.not.empty;",
+                            "});",
+                            "pm.environment.set('authToken', data.token);"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"email\": \"{{adminEmail}}\",\n    \"password\": \"{{password}}\"\n}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/users/login",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "users",
+                        "login"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "2. Create Product",
+            "event": [
+                {
+                    "listen": "prerequest",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.environment.set('productName', `Strawberry Cloud Cake ${Date.now()}`);"
+                        ]
+                    }
+                },
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test('Create product returns 201 Created', function () {",
+                            "    pm.response.to.have.status(201);",
+                            "});",
+                            "",
+                            "const data = pm.response.json();",
+                            "pm.test('Created product has an id', function () {",
+                            "    pm.expect(data._id).to.be.a('string').and.not.empty;",
+                            "});",
+                            "pm.environment.set('productId', data._id);"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "auth": {
+                    "type": "bearer",
+                    "bearer": [
+                        {
+                            "key": "token",
+                            "value": "{{authToken}}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "method": "POST",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"name\": \"{{productName}}\",\n    \"description\": \"A soft vanilla sponge cake layered with strawberry cream, fresh berry filling, and pastel Sugar Bliss decoration.\",\n    \"price\": 320000,\n    \"image\": \"http://localhost:8080/assets/images/cake4.png\",\n    \"category\": \"Cake\",\n    \"stock\": 10,\n    \"ingredients\": [\n        \"vanilla sponge\",\n        \"strawberry cream\",\n        \"fresh strawberries\",\n        \"butter\",\n        \"sugar\",\n        \"milk\",\n        \"eggs\"\n    ],\n    \"allergens\": [\n        \"milk\",\n        \"eggs\",\n        \"gluten\"\n    ],\n    \"weightGram\": 1200,\n    \"shelfLifeDays\": 3,\n    \"featured\": true,\n    \"status\": \"active\"\n}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/products",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "products"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "3. List Products",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test('List products returns 200 OK', function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "pm.test('Response has products array', function () {",
+                            "    pm.expect(pm.response.json().products).to.be.an('array');",
+                            "});"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "auth": {
+                    "type": "bearer",
+                    "bearer": [
+                        {
+                            "key": "token",
+                            "value": "{{authToken}}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/api/products?status=all&limit=20",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "products"
+                    ],
+                    "query": [
+                        {
+                            "key": "status",
+                            "value": "all"
+                        },
+                        {
+                            "key": "limit",
+                            "value": "20"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "name": "4. Get Product By Id",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test('Get product returns 200 OK', function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "pm.test('Returned product id matches environment productId', function () {",
+                            "    pm.expect(pm.response.json()._id).to.eql(pm.environment.get('productId'));",
+                            "});"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "auth": {
+                    "type": "bearer",
+                    "bearer": [
+                        {
+                            "key": "token",
+                            "value": "{{authToken}}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "method": "GET",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/api/products/{{productId}}",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "products",
+                        "{{productId}}"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "5. Update Product",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test('Update product returns 200 OK', function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "pm.test('Stock is updated', function () {",
+                            "    pm.expect(pm.response.json().stock).to.eql(18);",
+                            "});"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "auth": {
+                    "type": "bearer",
+                    "bearer": [
+                        {
+                            "key": "token",
+                            "value": "{{authToken}}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "method": "PUT",
+                "header": [
+                    {
+                        "key": "Content-Type",
+                        "value": "application/json"
+                    }
+                ],
+                "body": {
+                    "mode": "raw",
+                    "raw": "{\n    \"name\": \"{{productName}} Updated\",\n    \"description\": \"Updated strawberry cloud cake with extra cream and fresh berry topping.\",\n    \"price\": 350000,\n    \"image\": \"http://localhost:8080/assets/images/cake4.png\",\n    \"category\": \"Cake\",\n    \"stock\": 18,\n    \"ingredients\": [\"vanilla sponge\", \"strawberry cream\", \"fresh strawberries\", \"milk\", \"eggs\"],\n    \"allergens\": [\"milk\", \"eggs\", \"gluten\"],\n    \"weightGram\": 1250,\n    \"shelfLifeDays\": 3,\n    \"featured\": true,\n    \"status\": \"active\"\n}"
+                },
+                "url": {
+                    "raw": "{{baseUrl}}/api/products/{{productId}}",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "products",
+                        "{{productId}}"
+                    ]
+                }
+            }
+        },
+        {
+            "name": "6. Delete Product",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test('Delete product returns 200 OK', function () {",
+                            "    pm.response.to.have.status(200);",
+                            "});",
+                            "pm.test('Delete message is returned', function () {",
+                            "    pm.expect(pm.response.json().message).to.eql('Product deleted successfully.');",
+                            "});"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "auth": {
+                    "type": "bearer",
+                    "bearer": [
+                        {
+                            "key": "token",
+                            "value": "{{authToken}}",
+                            "type": "string"
+                        }
+                    ]
+                },
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                    "raw": "{{baseUrl}}/api/products/{{productId}}",
+                    "host": [
+                        "{{baseUrl}}"
+                    ],
+                    "path": [
+                        "api",
+                        "products",
+                        "{{productId}}"
+                    ]
+                }
+            }
+        }
+    ]
+}

@@ -583,3 +583,132 @@ body {
     }
 }
 
+/* Product */
+.products-banner {
+    position: relative;
+    width: 100%;
+    max-width: 1440px; /* Chuẩn kích thước 1440 trong ảnh */
+    margin: 0 auto;
+    height: 229px; /* Chiều cao đúng 229px */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.products-banner img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    z-index: 0;
+}
+
+.products-banner h1 {
+    position: relative;
+    z-index: 1;
+    color: #d94960;
+    font-size: 32px;
+    font-weight: 800;
+    margin: 0;
+    /* Xóa nền trắng và border-radius để chữ in trực tiếp lên ảnh */
+    background-color: transparent; 
+    padding: 0;
+}
+
+.products-layout {
+    display: flex;
+    width: 100%;
+    max-width: 1440px;
+    margin: 0 auto;
+    /* Bỏ màu nền chung, để màu nền chia cho 2 phần bên trong */
+    background-color: transparent; 
+}
+
+.products-sidebar {
+    width: 250px; 
+    /* Padding lùi chữ vào khớp với Logo ở trên */
+    padding: 50px 30px 50px 92px; 
+    background-color: #ffffff; /* Nền sidebar màu trắng */
+}
+
+.products-sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.products-sidebar li {
+    margin-bottom: 25px;
+}
+
+.products-sidebar a {
+    text-decoration: none;
+    color: #d94960;
+    font-weight: 800;
+    font-size: 14px;
+}
+
+.products-main {
+    flex: 1;
+    padding: 50px 92px 50px 50px;
+    background-color: #ffe7eb; /* Nền khu vực sản phẩm màu hồng */
+}
+
+.category-section {
+    margin-bottom: 60px;
+    text-align: center;
+}
+
+.category-section h2 {
+    color: #d94960;
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 40px;
+}
+
+.products-grid-layout {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 60px 40px;
+    justify-items: center;
+}
+
+.product-card {
+    text-align: center;
+    width: 100%;
+    max-width: 300px;
+}
+
+.product-card img {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: 20px; /* Bo góc vuông vắn hơn theo đúng ảnh mới */
+    margin-bottom: 15px;
+}
+
+.product-card h3 {
+    color: #d94960;
+    font-size: 16px;
+    font-weight: 800;
+    margin: 0 0 15px 0;
+}
+
+.btn-order {
+    background: #9bd3a6; 
+    color: #fff;
+    border: none;
+    padding: 8px 30px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-weight: 800;
+    font-size: 14px;
+    transition: background 0.3s;
+}
+
+.btn-order:hover {
+    background: #86c994;
+}

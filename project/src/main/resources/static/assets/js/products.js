@@ -5,7 +5,6 @@ let favoriteProductIds = new Set();
 
 document.addEventListener("DOMContentLoaded", () => {
     fetchProducts();
-    document.addEventListener("keydown", handleProductDetailEscape);
 });
 
 async function fetchProducts() {
@@ -142,9 +141,10 @@ function renderProductCard(product) {
             <button class="favorite-toggle ${isFavorite ? "is-saved" : ""}" type="button" data-favorite-toggle-id="${escapeHtml(productId)}" aria-label="${isFavorite ? "Remove from favorites" : "Add to favorites"}">
                 ${isFavorite ? "Saved" : "Favorite"}
             </button>
-            <button class="product-image-button" type="button" data-image-detail-id="${escapeHtml(productId)}" aria-label="View ${escapeHtml(product.name || "Sugar Bliss product")} detail">
+            <button class="product-image-button" type="button" data-image-detail-id="${escapeHtml(productId)}" aria-label="View ${escapeHtml(product.name || "Sugar Bliss product")} detail" style="cursor: pointer; background: transparent; border: none; padding: 0;">
                 <img src="${escapeHtml(imageSrc)}" alt="${escapeHtml(product.name || "Sugar Bliss product")}">
             </button>
+       
             <h3>${escapeHtml(product.name || "Sugar Bliss Product")}</h3>
             <p class="product-price">${price}</p>
             <div class="product-actions">
@@ -157,28 +157,24 @@ function renderProductCard(product) {
 
 function handleProductActionClick(event) {
     const favoriteButton = event.target.closest("[data-favorite-toggle-id]");
-
     if (favoriteButton) {
         toggleFavorite(favoriteButton.dataset.favoriteToggleId, favoriteButton);
         return;
     }
 
     const imageButton = event.target.closest("[data-image-detail-id]");
-
     if (imageButton) {
-        console.log(`Image detail clicked: ${imageButton.dataset.imageDetailId}`);
+        window.location.href = `/pages/product-detail.html?id=${imageButton.dataset.imageDetailId}`;
         return;
     }
 
     const detailButton = event.target.closest("[data-detail-id]");
-
     if (detailButton) {
-        showProductDetail(detailButton.dataset.detailId);
+        window.location.href = `/pages/product-detail.html?id=${detailButton.dataset.detailId}`;
         return;
     }
 
     const orderButton = event.target.closest("[data-product-id]");
-
     if (orderButton) {
         createOrder(orderButton.dataset.productId, orderButton);
     }
@@ -266,93 +262,6 @@ async function createOrder(productId, button) {
         alert(error.message);
         button.textContent = originalText;
         button.disabled = false;
-    }
-}
-
-function showProductDetail(productId) {
-    const product = productsById.get(String(productId));
-
-    if (!product) {
-        return;
-    }
-
-    const modal = ensureProductDetailModal();
-    const ingredients = Array.isArray(product.ingredients) && product.ingredients.length > 0
-        ? product.ingredients.join(", ")
-        : "Updating";
-    const allergens = Array.isArray(product.allergens) && product.allergens.length > 0
-        ? product.allergens.join(", ")
-        : "None listed";
-
-    modal.querySelector("[data-detail-image]").src = resolveImageUrl(product.image);
-    modal.querySelector("[data-detail-image]").alt = product.name || "Sugar Bliss product";
-    modal.querySelector("[data-detail-name]").textContent = product.name || "Sugar Bliss Product";
-    modal.querySelector("[data-detail-price]").textContent = formatPrice(product.price);
-    modal.querySelector("[data-detail-description]").textContent = product.description || "No description available.";
-    modal.querySelector("[data-detail-category]").textContent = product.category || "Other";
-    modal.querySelector("[data-detail-stock]").textContent = product.stock ?? "Updating";
-    modal.querySelector("[data-detail-weight]").textContent = product.weightGram ? `${product.weightGram}g` : "Updating";
-    modal.querySelector("[data-detail-shelf-life]").textContent = product.shelfLifeDays ? `${product.shelfLifeDays} days` : "Updating";
-    modal.querySelector("[data-detail-ingredients]").textContent = ingredients;
-    modal.querySelector("[data-detail-allergens]").textContent = allergens;
-    modal.classList.add("is-open");
-    document.body.classList.add("has-product-modal");
-}
-
-function ensureProductDetailModal() {
-    const existingModal = document.querySelector("[data-product-detail-modal]");
-
-    if (existingModal) {
-        return existingModal;
-    }
-
-    const modal = document.createElement("div");
-    modal.className = "product-detail-modal";
-    modal.dataset.productDetailModal = "";
-    modal.innerHTML = `
-        <div class="product-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="product-detail-title">
-            <button class="product-detail-close" type="button" aria-label="Close detail" data-detail-close></button>
-            <img class="product-detail-image" src="" alt="" data-detail-image>
-            <div class="product-detail-content">
-                <h2 id="product-detail-title" data-detail-name></h2>
-                <p class="product-detail-price" data-detail-price></p>
-                <p class="product-detail-description" data-detail-description></p>
-                <dl class="product-detail-list">
-                    <div><dt>Category</dt><dd data-detail-category></dd></div>
-                    <div><dt>Stock</dt><dd data-detail-stock></dd></div>
-                    <div><dt>Weight</dt><dd data-detail-weight></dd></div>
-                    <div><dt>Shelf life</dt><dd data-detail-shelf-life></dd></div>
-                    <div><dt>Ingredients</dt><dd data-detail-ingredients></dd></div>
-                    <div><dt>Allergens</dt><dd data-detail-allergens></dd></div>
-                </dl>
-            </div>
-        </div>
-    `;
-
-    modal.addEventListener("click", (event) => {
-        if (event.target === modal || event.target.closest("[data-detail-close]")) {
-            closeProductDetail();
-        }
-    });
-
-    document.body.appendChild(modal);
-    return modal;
-}
-
-function closeProductDetail() {
-    const modal = document.querySelector("[data-product-detail-modal]");
-
-    if (!modal) {
-        return;
-    }
-
-    modal.classList.remove("is-open");
-    document.body.classList.remove("has-product-modal");
-}
-
-function handleProductDetailEscape(event) {
-    if (event.key === "Escape") {
-        closeProductDetail();
     }
 }
 

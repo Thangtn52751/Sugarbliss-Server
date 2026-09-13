@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugar Bliss | Product Detail</title>
+    <link rel="stylesheet" href="/assets/css/home.css">
+    <link rel="stylesheet" href="/assets/css/product-detail.css">
+</head>
+<body>
+    <header class="site-header">
+        <a class="brand" href="/home">
+            <img src="/assets/icons/logo.png" alt="Sugar Bliss logo">
+            <span>Sugar Bliss</span>
+        </a>
+        <nav class="main-nav">
+            <a href="/home">About Us</a>
+            <a class="active" href="/products">Products</a>
+            <a href="/special-orders">Special Orders</a>
+            <a href="/contact">Contact</a>
+            <a class="profile-link" href="/login"></a>
+        </nav>
+    </header>
+
+    <main class="page-shell">
+        <div class="detail-container">
+            <!-- Cột trái: Ảnh sản phẩm -->
+            <div class="detail-images">
+                <div class="main-image">
+                    <!-- ID bắt buộc: main-product-image -->
+                    <img id="main-product-image" src="/assets/images/cake1.png" alt="Product Image">
+                </div>
+                <div class="thumbnail-list">
+                    <img src="/assets/images/cake1.png" alt="Thumb" onclick="changeImage(this.src)">
+                    <img src="/assets/images/cake2.png" alt="Thumb" onclick="changeImage(this.src)">
+                    <img src="/assets/images/cake3.png" alt="Thumb" onclick="changeImage(this.src)">
+                </div>
+            </div>
+
+            <!-- Cột phải: Thông tin chi tiết -->
+            <div class="detail-info">
+                <span class="detail-label">Product Detail</span>
+                
+                <h1 class="detail-title" id="product-title-price"></h1>
+                
+                <ul class="detail-specs">
+                    <!-- Các ID bắt buộc để JS chèn thông số -->
+                    <li>⚖️ Weight: <span id="product-weight"></span></li>
+                    <li>📅 Expiration date: <span id="product-exp"></span></li>
+                    <li>🌾 Ingredient: <span id="product-ingredients"></span></li>
+                </ul>
+
+                <div class="detail-description">
+                    <h3>Description</h3>
+                    <p id="product-desc"></p>
+                </div>
+
+                <div class="detail-actions">
+                    <div class="quantity-selector">
+                        <button type="button" onclick="updateQty(-1)">-</button>
+                        <input type="number" id="qty-input" value="1" min="1" readonly>
+                        <button type="button" onclick="updateQty(1)">+</button>
+                    </div>
+                    <button class="btn-favourite" onclick="toggleFavoriteDetail()">♡ Favourites</button>
+                    <button class="btn-add-cart" onclick="createOrderFromDetail()">Add To Cart</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sản phẩm gợi ý -->
+        <div class="related-section">
+            <div class="related-header">
+                <h2>Product you may like</h2>
+            </div>
+            <!-- ID bắt buộc: related-products -->
+            <div class="related-grid" id="related-products">
+                <!-- Dữ liệu render từ JS -->
+            </div>
+        </div>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-left">
+            <strong>Visit Us</strong>
+            <p>15 0095 Hanoi lot, Hanoi VC 21471</p>
+            <p>+123-456-6262</p>
+        </div>
+        <div class="footer-right">
+            <span>Follow Us</span>
+            <a href="#">FB</a>
+            <a href="#">IN</a>
+        </div>
+    </footer>
+
+    <script src="/assets/js/product-detail.js"></script>
+</body>
+</html>

@@ -129,7 +129,7 @@ body {
     height: 58px;
     border: 0;
     border-radius: 999px;
-    background: #bfe7c8;
+    background: #00ff3c;
     color: #fff;
     cursor: pointer;
     font-size: 15px;
@@ -139,7 +139,7 @@ body {
 }
 
 .submit-button:hover {
-    background: #aadcbc;
+    background: #00ff5e;
     transform: translateY(-1px);
 }
 

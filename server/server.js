@@ -6,6 +6,7 @@ const path = require('path');
 const connectDB = require('./config/db');
 const productRoutes = require('./routes/productRoutes');
 const userRoutes = require('./routes/userRoutes');
+const orderRoutes = require('./routes/orderRoutes');
 const requestLogger = require('./middleware/requestLogger');
 
 const app = express();
@@ -29,12 +30,14 @@ app.get('/', (req, res) => {
         endpoints: {
             products: '/api/products',
             users: '/api/users',
+            orders: '/api/orders',
         },
     });
 });
 
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
+app.use('/api/orders', orderRoutes);
 
 app.use((req, res) => {
     res.status(404).json({ message: 'API not found' });

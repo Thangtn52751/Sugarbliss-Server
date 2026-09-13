@@ -1,6 +1,8 @@
 const express = require('express');
 const asyncHandler = require('express-async-handler');
 const User = require('../models/User');
+const Product = require('../models/Product');
+const Order = require('../models/Order');
 const upload = require('../config/upload');
 const generateToken = require('../utils/generateToken');
 const { protect } = require('../middleware/authMiddleware');
@@ -13,13 +15,28 @@ const userResponse = (user) => ({
     email: user.email,
     phone: user.phone,
     address: user.address,
+    dateOfBirth: user.dateOfBirth,
     avatar: user.avatar,
     role: user.role,
     token: generateToken(user._id),
 });
 
+const formatOrderDate = (date) => new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: '2-digit',
+    year: 'numeric',
+}).format(new Date(date));
+
+const orderResponse = (order) => ({
+    id: order._id,
+    productName: order.productName,
+    orderedOn: formatOrderDate(order.orderedOn),
+    status: order.status,
+    total: order.total,
+});
+
 router.post('/register', upload.single('avatar'), asyncHandler(async (req, res) => {
-    const { name, email, password, phone, address } = req.body;
+    const { name, email, password, phone, address, dateOfBirth } = req.body;
 
     if (!name || !email || !password) {
         res.status(400);
@@ -41,6 +58,7 @@ router.post('/register', upload.single('avatar'), asyncHandler(async (req, res) 
         password,
         phone,
         address,
+        dateOfBirth,
         avatar: req.file ? `/uploads/avatars/${req.file.filename}` : '',
         role: isFirstUser ? 'admin' : 'customer',
     });
@@ -75,8 +93,75 @@ router.get('/me', protect, asyncHandler(async (req, res) => {
     res.json(req.user);
 }));
 
+router.get('/me/profile', protect, asyncHandler(async (req, res) => {
+    const [profileUser, orders] = await Promise.all([
+        User.findById(req.user._id)
+            .select('-password')
+            .populate({
+                path: 'favorites',
+                match: { status: 'active' },
+                options: { sort: { createdAt: -1 }, limit: 4 },
+            }),
+        Order.find({ user: req.user._id })
+            .sort({ orderedOn: -1, createdAt: -1 })
+            .limit(3),
+    ]);
+
+    res.json({
+        user: profileUser,
+        recentOrders: orders.map(orderResponse),
+        favorites: profileUser.favorites || [],
+    });
+}));
+
+router.get('/me/orders', protect, asyncHandler(async (req, res) => {
+    const orders = await Order.find({ user: req.user._id })
+        .sort({ orderedOn: -1, createdAt: -1 });
+
+    res.json(orders.map(orderResponse));
+}));
+
+router.get('/me/favorites', protect, asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id)
+        .select('favorites')
+        .populate({
+            path: 'favorites',
+            match: { status: 'active' },
+            options: { sort: { createdAt: -1 } },
+        });
+
+    res.json(user.favorites || []);
+}));
+
+router.post('/me/favorites/:productId', protect, asyncHandler(async (req, res) => {
+    const product = await Product.findById(req.params.productId);
+
+    if (!product) {
+        res.status(404);
+        throw new Error('Product not found.');
+    }
+
+    const user = await User.findById(req.user._id);
+    const alreadyFavorite = user.favorites.some((favoriteId) => favoriteId.equals(product._id));
+
+    if (!alreadyFavorite) {
+        user.favorites.push(product._id);
+        await user.save();
+    }
+
+    res.json({ message: 'Product added to favorites.' });
+}));
+
+router.delete('/me/favorites/:productId', protect, asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id);
+    user.favorites = user.favorites.filter((favoriteId) => !favoriteId.equals(req.params.productId));
+    await user.save();
+
+    res.json({ message: 'Product removed from favorites.' });
+}));
+
 router.put('/me', protect, asyncHandler(async (req, res) => {
-    const { name, phone, address } = req.body;
+    const { name, phone, address, dateOfBirth } = req.body;
     const user = await User.findById(req.user._id);
 
     if (name !== undefined) {
@@ -89,6 +174,10 @@ router.put('/me', protect, asyncHandler(async (req, res) => {
 
     if (address !== undefined) {
         user.address = address;
+    }
+
+    if (dateOfBirth !== undefined) {
+        user.dateOfBirth = dateOfBirth || undefined;
     }
 
     const updatedUser = await user.save();

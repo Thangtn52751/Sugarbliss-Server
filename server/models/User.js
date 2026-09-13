@@ -29,10 +29,17 @@ const userSchema = new mongoose.Schema({
         type: String,
         trim: true,
     },
+    dateOfBirth: {
+        type: Date,
+    },
     avatar: {
         type: String,
         default: '',
     },
+    favorites: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Product',
+    }],
     role: {
         type: String,
         enum: ['customer', 'admin'],

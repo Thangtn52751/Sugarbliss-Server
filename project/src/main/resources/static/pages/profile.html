@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugar Bliss | Profile</title>
+    <link rel="stylesheet" href="/assets/css/home.css">
+    <link rel="stylesheet" href="/assets/css/profile.css">
+</head>
+<body>
+    <header class="site-header">
+        <a class="brand" href="/home" aria-label="Sugar Bliss home">
+            <img src="/assets/icons/logo.png" alt="Sugar Bliss logo">
+            <span>Sugar Bliss</span>
+        </a>
+
+        <nav class="main-nav" aria-label="Main navigation">
+            <a href="/home">About Us</a>
+            <a href="/products">Products</a>
+            <a href="/special-orders">Special Orders</a>
+            <a href="/contact">Contact</a>
+            <a class="profile-link active-profile" href="/profile" aria-label="Account"></a>
+        </nav>
+    </header>
+
+    <main class="profile-page">
+        <section class="profile-hero">
+            <button class="profile-avatar" type="button" data-profile-avatar aria-label="Upload avatar">SB</button>
+            <input class="avatar-input" type="file" accept="image/*" data-avatar-input>
+            <h1 data-profile-name>Sugar Bliss Customer</h1>
+            <p data-profile-email>customer@sugarbliss.com</p>
+        </section>
+
+        <section class="profile-content">
+            <form class="profile-card profile-form" data-profile-form>
+                <div class="profile-card-heading">
+                    <h2>Personal Details</h2>
+                    <p>Update your account details and delivery address.</p>
+                </div>
+
+                <div class="form-grid two-columns">
+                    <label>
+                        <span>First Name</span>
+                        <input type="text" name="firstName" autocomplete="given-name">
+                    </label>
+
+                    <label>
+                        <span>Last Name</span>
+                        <input type="text" name="lastName" autocomplete="family-name">
+                    </label>
+                </div>
+
+                <label>
+                    <span>Email Address</span>
+                    <input type="email" name="email" autocomplete="email" readonly>
+                </label>
+
+                <label>
+                    <span>Phone Number</span>
+                    <input type="tel" name="phone" autocomplete="tel">
+                </label>
+
+                <label>
+                    <span>Address</span>
+                    <input type="text" name="address" autocomplete="street-address">
+                </label>
+
+                <label>
+                    <span>Date of Birth</span>
+                    <input type="date" name="dateOfBirth">
+                </label>
+
+                <p class="profile-message" data-profile-message></p>
+
+                <div class="profile-actions">
+                    <button class="save-button" type="submit">Save Changes</button>
+                    <button class="cancel-button" type="button" data-profile-cancel>Cancel</button>
+                </div>
+            </form>
+
+            <div class="profile-side">
+                <section class="profile-card recent-orders">
+                    <div class="section-title-row">
+                        <h2>Recent Orders</h2>
+                        <a href="/products">View All</a>
+                    </div>
+                    <div class="orders-list" data-profile-orders></div>
+                </section>
+
+                <section class="profile-card favorites-card">
+                    <h2>My Favorites</h2>
+                    <div class="favorites-grid" data-profile-favorites></div>
+                </section>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-brand">
+            <a class="footer-logo" href="/home" aria-label="Sugar Bliss home">
+                <img src="/assets/icons/logo.png" alt="Sugar Bliss logo">
+                <span>Sugar Bliss</span>
+            </a>
+            <p>Crafting bliss in every single bite.</p>
+        </div>
+
+        <div class="footer-visit">
+            <h2>Visit Us</h2>
+            <p><span class="footer-icon location" aria-hidden="true"></span>123 HaNoi VietNam</p>
+            <p><span class="footer-icon phone" aria-hidden="true"></span>0123456789</p>
+        </div>
+    </footer>
+
+    <script src="/assets/js/header-profile.js"></script>
+    <script src="/assets/js/profile.js"></script>
+</body>
+</html>

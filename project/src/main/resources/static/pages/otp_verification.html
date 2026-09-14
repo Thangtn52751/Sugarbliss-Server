@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugar Bliss | OTP Verification</title>
+    <link rel="stylesheet" href="/assets/css/reset-password.css">
+</head>
+<body>
+    <main class="reset-page">
+        <section class="reset-panel">
+            <div class="reset-card otp-card">
+                <a class="mini-brand" href="/login" aria-label="Sugar Bliss login">
+                    <img src="/assets/icons/logo.png" alt="Sugar Bliss logo">
+                    <span>Sugar Bliss</span>
+                </a>
+
+                <h1>Enter Code</h1>
+                <p>We sent a 6-digit verification code to your registered email address.</p>
+
+                <form class="reset-form" data-reset-page="otp">
+                    <div class="otp-inputs" data-otp-inputs>
+                        <input type="text" inputmode="numeric" maxlength="1" aria-label="OTP digit 1">
+                        <input type="text" inputmode="numeric" maxlength="1" aria-label="OTP digit 2">
+                        <input type="text" inputmode="numeric" maxlength="1" aria-label="OTP digit 3">
+                        <input type="text" inputmode="numeric" maxlength="1" aria-label="OTP digit 4">
+                        <input type="text" inputmode="numeric" maxlength="1" aria-label="OTP digit 5">
+                        <input type="text" inputmode="numeric" maxlength="1" aria-label="OTP digit 6">
+                    </div>
+
+                    <button class="reset-button" type="submit">Verify Code</button>
+                </form>
+
+                <p class="reset-message" data-reset-message></p>
+                <p class="reset-link-text">Didn't receive the code? <button type="button" data-resend-otp>Resend Now</button></p>
+            </div>
+        </section>
+    </main>
+
+    <footer class="reset-footer">
+        <div class="footer-brand">
+            <a class="footer-logo" href="/login" aria-label="Sugar Bliss login">
+                <img src="/assets/icons/logo.png" alt="Sugar Bliss logo">
+                <span>Sugar Bliss</span>
+            </a>
+            <p>Crafting bliss in every single bite.</p>
+        </div>
+
+        <div class="footer-visit">
+            <h2>Visit Us</h2>
+            <p>9998 Hayes Isle, Mantefurt 03581</p>
+            <p>505-418-0415</p>
+        </div>
+    </footer>
+
+    <script src="/assets/js/password-reset.js"></script>
+</body>
+</html>

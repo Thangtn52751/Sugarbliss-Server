@@ -1,0 +1,126 @@
+
+.about-page {
+    width: min(100%, 1260px);
+    margin: 0 auto;
+    padding: 20px 92px 60px;
+}
+
+.about-hero img {
+    width: 100%;
+    height: auto;
+    max-height: 450px;
+    object-fit: cover;
+    border-radius: 36px;
+    margin-bottom: 60px;
+}
+
+.about-intro {
+    text-align: center;
+    max-width: 850px;
+    margin: 0 auto 80px;
+}
+
+.about-intro h2 {
+    color: #d94960;
+    font-size: 34px;
+    font-weight: 800;
+    margin-bottom: 24px;
+}
+
+.about-intro p {
+    color: #464044;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+.about-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+    margin-bottom: 80px;
+}
+
+.about-split h2 {
+    color: #d94960;
+    font-size: 34px;
+    font-weight: 800;
+    margin-bottom: 24px;
+}
+
+.about-split p {
+    color: #464044;
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+.split-image img {
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    border-radius: 24px;
+}
+
+.about-cta {
+    position: relative;
+    width: 100%;
+    height: 350px;
+    
+    background-image: url('/assets/images/cta-bg.png'); 
+    background-color: #ffe7eb; 
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.about-cta::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(255, 255, 255, 0.6); 
+}
+
+.cta-content {
+    position: relative;
+    z-index: 1;
+}
+
+.cta-content h2 {
+    color: #d94960;
+    font-size: 34px;
+    font-weight: 800;
+    margin-bottom: 30px;
+}
+
+.btn-contact {
+    display: inline-block;
+    background-color: #d94960;
+    color: #ffffff;
+    padding: 16px 48px;
+    border-radius: 999px;
+    font-size: 18px;
+    font-weight: bold;
+    text-decoration: none;
+    transition: background 0.3s;
+}
+
+.btn-contact:hover {
+    background-color: #bd384d;
+}
+
+@media (max-width: 980px) {
+    .about-page {
+        padding: 20px 28px 60px;
+    }
+    .about-split {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 40px;
+    }
+    .about-split.reverse .split-image {
+        order: -1;
+    }
+}

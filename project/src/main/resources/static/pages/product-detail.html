@@ -14,7 +14,7 @@
             <span>Sugar Bliss</span>
         </a>
         <nav class="main-nav">
-            <a href="/home">About Us</a>
+            <a class="active" href="/pages/about-us.html">About Us</a>
             <a class="active" href="/products">Products</a>
             <a href="/special-orders">Special Orders</a>
             <a href="/contact">Contact</a>
@@ -24,10 +24,8 @@
 
     <main class="page-shell">
         <div class="detail-container">
-            <!-- Cột trái: Ảnh sản phẩm -->
             <div class="detail-images">
                 <div class="main-image">
-                    <!-- ID bắt buộc: main-product-image -->
                     <img id="main-product-image" src="/assets/images/cake1.png" alt="Product Image">
                 </div>
                 <div class="thumbnail-list">
@@ -37,14 +35,12 @@
                 </div>
             </div>
 
-            <!-- Cột phải: Thông tin chi tiết -->
             <div class="detail-info">
                 <span class="detail-label">Product Detail</span>
                 
                 <h1 class="detail-title" id="product-title-price"></h1>
                 
                 <ul class="detail-specs">
-                    <!-- Các ID bắt buộc để JS chèn thông số -->
                     <li>⚖️ Weight: <span id="product-weight"></span></li>
                     <li>📅 Expiration date: <span id="product-exp"></span></li>
                     <li>🌾 Ingredient: <span id="product-ingredients"></span></li>
@@ -72,7 +68,6 @@
                 <h2>Product you may like</h2>
             </div>
             <div class="related-grid" id="related-products">
-                <!-- Dữ liệu render từ JS -->
             </div>
         </div>
     </main>

@@ -11,7 +11,9 @@ const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 const otpStore = new Map();
+const resetTokenStore = new Map();
 const OTP_EXPIRES_IN_MINUTES = Number(process.env.OTP_EXPIRES_IN_MINUTES) || 5;
+const RESET_TOKEN_EXPIRES_IN_MINUTES = Number(process.env.RESET_TOKEN_EXPIRES_IN_MINUTES) || 10;
 const OTP_RESEND_COOLDOWN_SECONDS = Number(process.env.OTP_RESEND_COOLDOWN_SECONDS) || 60;
 const OTP_MAX_ATTEMPTS = Number(process.env.OTP_MAX_ATTEMPTS) || 5;
 let mailTransporter;
@@ -53,7 +55,14 @@ const hashOtp = (email, otp, purpose) => crypto
     .update(`${getOtpKey(email, purpose)}:${otp}:${process.env.JWT_SECRET || 'sugarbliss-otp-secret'}`)
     .digest('hex');
 
+const hashResetToken = (email, token) => crypto
+    .createHash('sha256')
+    .update(`${normalizeEmail(email)}:${token}:${process.env.JWT_SECRET || 'sugarbliss-reset-secret'}`)
+    .digest('hex');
+
 const generateOtp = () => crypto.randomInt(100000, 1000000).toString();
+
+const generateResetToken = () => crypto.randomBytes(32).toString('hex');
 
 const getMailTransporter = () => {
     if (mailTransporter) {
@@ -157,6 +166,12 @@ const cleanupExpiredOtps = () => {
             otpStore.delete(key);
         }
     });
+
+    resetTokenStore.forEach((record, key) => {
+        if (record.expiresAt <= now) {
+            resetTokenStore.delete(key);
+        }
+    });
 };
 
 router.post('/send-otp', asyncHandler(async (req, res) => {
@@ -240,11 +255,56 @@ router.post('/verify-otp', asyncHandler(async (req, res) => {
 
     otpStore.delete(key);
 
-    res.json({
+    const response = {
         message: 'OTP verified successfully.',
         email,
         purpose,
-    });
+    };
+
+    if (purpose === 'reset-password') {
+        const resetToken = generateResetToken();
+        resetTokenStore.set(email, {
+            hash: hashResetToken(email, resetToken),
+            expiresAt: Date.now() + RESET_TOKEN_EXPIRES_IN_MINUTES * 60 * 1000,
+        });
+        response.resetToken = resetToken;
+        response.resetExpiresInSeconds = RESET_TOKEN_EXPIRES_IN_MINUTES * 60;
+    }
+
+    res.json(response);
+}));
+
+router.post('/reset-password', asyncHandler(async (req, res) => {
+    cleanupExpiredOtps();
+
+    const email = normalizeEmail(req.body.email);
+    const resetToken = String(req.body.resetToken || '').trim();
+    const password = String(req.body.password || '');
+
+    if (!email || !isValidEmail(email) || !resetToken || password.length < 6) {
+        res.status(400);
+        throw new Error('Please enter your email, reset token, and a password with at least 6 characters.');
+    }
+
+    const record = resetTokenStore.get(email);
+
+    if (!record || record.hash !== hashResetToken(email, resetToken)) {
+        res.status(400);
+        throw new Error('Reset token is invalid or expired.');
+    }
+
+    const user = await User.findOne({ email }).select('+password');
+
+    if (!user) {
+        res.status(404);
+        throw new Error('User not found.');
+    }
+
+    user.password = password;
+    await user.save();
+    resetTokenStore.delete(email);
+
+    res.json({ message: 'Password reset successfully.' });
 }));
 
 router.post('/register', upload.single('avatar'), asyncHandler(async (req, res) => {

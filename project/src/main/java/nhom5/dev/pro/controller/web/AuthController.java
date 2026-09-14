@@ -23,6 +23,21 @@ public class AuthController {
         return "redirect:/pages/register.html";
     }
 
+    @GetMapping({"/forgot-password", "/forgot-password.html"})
+    public String forgotPassword() {
+        return "redirect:/pages/forgot_password.html";
+    }
+
+    @GetMapping({"/otp-verification", "/otp-verification.html"})
+    public String otpVerification() {
+        return "redirect:/pages/otp_verification.html";
+    }
+
+    @GetMapping({"/new-password", "/new-password.html"})
+    public String newPassword() {
+        return "redirect:/pages/new_password.html";
+    }
+
     @GetMapping({"/products", "/products.html"})
     public String products() {
         return "redirect:/pages/products.html";

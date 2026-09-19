@@ -7,6 +7,8 @@ const connectDB = require('./config/db');
 const productRoutes = require('./routes/productRoutes');
 const userRoutes = require('./routes/userRoutes');
 const orderRoutes = require('./routes/orderRoutes');
+const specialOrderRoutes = require('./routes/specialOrderRoutes');
+const contactRoutes = require('./routes/contactRoutes');
 const requestLogger = require('./middleware/requestLogger');
 
 const app = express();
@@ -31,6 +33,8 @@ app.get('/', (req, res) => {
             products: '/api/products',
             users: '/api/users',
             orders: '/api/orders',
+            specialOrders: '/api/special-orders',
+            contact: '/api/contact',
         },
     });
 });
@@ -38,13 +42,24 @@ app.get('/', (req, res) => {
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/special-orders', specialOrderRoutes);
+app.use('/api/contact', contactRoutes);
 
 app.use((req, res) => {
     res.status(404).json({ message: 'API not found' });
 });
 
 app.use((err, req, res, next) => {
-    const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+    let statusCode = err.statusCode || (res.statusCode === 200 ? 500 : res.statusCode);
+
+    if (err.name === 'ValidationError' || err.name === 'CastError') {
+        statusCode = 400;
+    }
+
+    if (err.code === 11000) {
+        statusCode = 409;
+    }
+
     res.status(statusCode).json({
         message: err.message || 'Server error',
         stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,

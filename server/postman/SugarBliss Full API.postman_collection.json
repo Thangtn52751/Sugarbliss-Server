@@ -761,6 +761,170 @@
       ]
     },
     {
+      "name": "Special Orders",
+      "item": [
+        {
+          "name": "POST /api/special-orders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Special order returns 201', function () { pm.expect(pm.response.code).to.eql(201); });",
+                  "const data = pm.response.json();",
+                  "if (data.specialOrder?._id) pm.environment.set('specialOrderId', data.specialOrder._id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sugar Bliss Customer\",\n  \"email\": \"customer@example.com\",\n  \"phone\": \"0900000000\",\n  \"deliveryOption\": \"local-delivery\",\n  \"address1\": \"123 Sugar Street\",\n  \"address2\": \"\",\n  \"city\": \"Ha Noi\",\n  \"zipCode\": \"100000\",\n  \"orderDetails\": \"A two-tier strawberry birthday cake for twenty guests.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/special-orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "special-orders"]
+            },
+            "description": "Public endpoint. Saves the request and sends confirmation emails to the customer and admin."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/special-orders",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/special-orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "special-orders"]
+            },
+            "description": "Requires an admin token. Supports status, page, and limit query parameters."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/special-orders/:id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/special-orders/{{specialOrderId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "special-orders", "{{specialOrderId}}"]
+            },
+            "description": "Requires an admin token."
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/special-orders/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Reviewing\",\n  \"adminNote\": \"The request is being reviewed.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/special-orders/{{specialOrderId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "special-orders", "{{specialOrderId}}"]
+            },
+            "description": "Requires an admin token."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Contact Messages",
+      "item": [
+        {
+          "name": "POST /api/contact",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Contact message returns 201', function () { pm.expect(pm.response.code).to.eql(201); });",
+                  "const data = pm.response.json();",
+                  "if (data.contactMessage?._id) pm.environment.set('contactMessageId', data.contactMessage._id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sugar Bliss Customer\",\n  \"email\": \"customer@example.com\",\n  \"message\": \"I would like to ask about a custom cake.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/contact",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "contact"]
+            },
+            "description": "Public endpoint. Saves the message and sends a waiting-for-review email to the customer."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/contact",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/contact",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "contact"]
+            },
+            "description": "Requires an admin token. Supports status, page, and limit query parameters."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/contact/:id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/contact/{{contactMessageId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "contact", "{{contactMessageId}}"]
+            },
+            "description": "Requires an admin token."
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/contact/:id",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"In Progress\",\n  \"adminNote\": \"The customer message is being handled.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/contact/{{contactMessageId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "contact", "{{contactMessageId}}"]
+            },
+            "description": "Requires an admin token."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Orders",
       "item": [
         {
@@ -819,6 +983,45 @@
                 "api",
                 "orders",
                 "my"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/orders/:id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "{{orderId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/orders/:id/cancel",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "{{orderId}}",
+                "cancel"
               ]
             }
           },

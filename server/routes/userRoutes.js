@@ -38,11 +38,24 @@ const formatOrderDate = (date) => new Intl.DateTimeFormat('en-US', {
 
 const orderResponse = (order) => ({
     id: order._id,
+    orderNumber: order.orderNumber,
     productName: order.productName,
     orderedOn: formatOrderDate(order.orderedOn),
     status: order.status,
     total: order.total,
+    items: order.items,
 });
+
+const getCart = async (userId) => {
+    const user = await User.findById(userId)
+        .select('cart')
+        .populate({
+            path: 'cart.product',
+            match: { status: 'active' },
+        });
+
+    return user.cart.filter((item) => item.product);
+};
 
 const normalizeEmail = (email = '') => String(email).trim().toLowerCase();
 
@@ -403,6 +416,82 @@ router.get('/me/favorites', protect, asyncHandler(async (req, res) => {
         });
 
     res.json(user.favorites || []);
+}));
+
+router.get('/me/cart', protect, asyncHandler(async (req, res) => {
+    res.json(await getCart(req.user._id));
+}));
+
+router.post('/me/cart/:productId', protect, asyncHandler(async (req, res) => {
+    const quantity = req.body.quantity === undefined ? 1 : Number(req.body.quantity);
+
+    if (!Number.isInteger(quantity) || quantity < 1) {
+        res.status(400);
+        throw new Error('Quantity must be a positive integer.');
+    }
+
+    const product = await Product.findOne({ _id: req.params.productId, status: 'active' });
+
+    if (!product) {
+        res.status(404);
+        throw new Error('Product not found or unavailable.');
+    }
+
+    const user = await User.findById(req.user._id);
+    const cartItem = user.cart.find((item) => item.product.equals(product._id));
+
+    if (cartItem) {
+        cartItem.quantity += quantity;
+    } else {
+        user.cart.push({ product: product._id, quantity });
+    }
+
+    await user.save();
+    res.status(201).json(await getCart(user._id));
+}));
+
+router.patch('/me/cart/:productId', protect, asyncHandler(async (req, res) => {
+    const quantity = Number(req.body.quantity);
+
+    if (!Number.isInteger(quantity) || quantity < 1) {
+        res.status(400);
+        throw new Error('Quantity must be a positive integer.');
+    }
+
+    const user = await User.findById(req.user._id);
+    const cartItem = user.cart.find((item) => item.product.equals(req.params.productId));
+
+    if (!cartItem) {
+        res.status(404);
+        throw new Error('Product is not in your cart.');
+    }
+
+    cartItem.quantity = quantity;
+    await user.save();
+
+    res.json(await getCart(user._id));
+}));
+
+router.delete('/me/cart/:productId', protect, asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id);
+    const previousLength = user.cart.length;
+    user.cart = user.cart.filter((item) => !item.product.equals(req.params.productId));
+
+    if (user.cart.length === previousLength) {
+        res.status(404);
+        throw new Error('Product is not in your cart.');
+    }
+
+    await user.save();
+    res.json(await getCart(user._id));
+}));
+
+router.delete('/me/cart', protect, asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user._id);
+    user.cart = [];
+    await user.save();
+
+    res.json({ message: 'Cart cleared successfully.' });
 }));
 
 router.post('/me/favorites/:productId', protect, asyncHandler(async (req, res) => {

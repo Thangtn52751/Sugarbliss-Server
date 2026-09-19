@@ -132,7 +132,7 @@ function renderCategorySection(category, products) {
 
 function renderProductCard(product) {
     const productId = product._id || product.id || "";
-    const imageSrc = resolveImageUrl(product.image);
+    const imageSrc = resolveImageUrl(product.images?.[0] || product.image);
     const price = formatPrice(product.price);
     const isFavorite = favoriteProductIds.has(String(productId));
 

@@ -179,7 +179,7 @@ function renderFavorites(products) {
 
     container.innerHTML = products.slice(0, 4).map((product) => `
         <button class="favorite-item" type="button" data-favorite-id="${escapeHtml(product._id || product.id || "")}">
-            <img src="${escapeHtml(resolveImageUrl(product.image))}" alt="${escapeHtml(product.name)}">
+            <img src="${escapeHtml(resolveImageUrl(product.images?.[0] || product.image))}" alt="${escapeHtml(product.name)}">
             <div class="favorite-info">
                 <h3>${escapeHtml(truncate(product.name, 28))}</h3>
                 <p>${formatVnd(product.price)}</p>
@@ -213,7 +213,7 @@ function showFavoriteDetail(productId) {
         ? product.allergens.join(", ")
         : "None listed";
 
-    modal.querySelector("[data-favorite-detail-image]").src = resolveImageUrl(product.image);
+    modal.querySelector("[data-favorite-detail-image]").src = resolveImageUrl(product.images?.[0] || product.image);
     modal.querySelector("[data-favorite-detail-image]").alt = product.name || "Sugar Bliss product";
     modal.querySelector("[data-favorite-detail-name]").textContent = product.name || "Sugar Bliss Product";
     modal.querySelector("[data-favorite-detail-price]").textContent = formatVnd(product.price);

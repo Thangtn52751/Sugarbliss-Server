@@ -7,20 +7,7 @@
     <link rel="stylesheet" href="/assets/css/home.css">
 </head>
 <body>
-    <header class="site-header">
-        <a class="brand" href="/home" aria-label="Sugar Bliss home">
-            <img src="/assets/icons/logo.png" alt="Sugar Bliss logo">
-            <span>Sugar Bliss</span>
-        </a>
-
-        <nav class="main-nav" aria-label="Main navigation">
-            <a class="active" href="/pages/about-us.html">About Us</a>
-            <a href="/products">Products</a>
-            <a href="/special-orders">Special Orders</a>
-            <a href="/contact">Contact</a>
-            <a class="profile-link" href="/profile" aria-label="Account"></a>
-        </nav>
-    </header>
+    <sugar-header active="about"></sugar-header>
 
     <main>
         <section class="hero-section" id="about">
@@ -101,21 +88,8 @@
         </section>
     </main>
 
-    <footer class="site-footer">
-        <div class="footer-brand">
-            <a class="footer-logo" href="/home" aria-label="Sugar Bliss home">
-                <img src="/assets/icons/logo.png" alt="Sugar Bliss logo">
-                <span>Sugar Bliss</span>
-            </a>
-            <p>Crafting bliss in every single bite.</p>
-        </div>
-
-        <div class="footer-visit">
-            <h2>Visit Us</h2>
-            <p><span class="footer-icon location" aria-hidden="true"></span>123 HaNoi VietNam</p>
-            <p><span class="footer-icon phone" aria-hidden="true"></span>0123456789</p>
-        </div>
-    </footer>
+    <sugar-footer></sugar-footer>
+    <script src="/assets/js/shared-components.js"></script>
     <script src="/assets/js/header-profile.js"></script>
     <script src="/assets/js/home.js"></script>
 </body>

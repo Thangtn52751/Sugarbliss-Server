@@ -1,4 +1,14 @@
-const sensitiveKeys = ['password', 'token', 'authorization'];
+const sensitiveKeys = [
+    'password',
+    'token',
+    'authorization',
+    'email',
+    'phone',
+    'address',
+    'message',
+    'orderdetails',
+    'adminnote',
+];
 
 const sanitizeValue = (value) => {
     if (!value || typeof value !== 'object') {

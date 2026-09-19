@@ -8,19 +8,7 @@
     <link rel="stylesheet" href="/assets/css/product-detail.css">
 </head>
 <body>
-    <header class="site-header">
-        <a class="brand" href="/home">
-            <img src="/assets/icons/logo.png" alt="Sugar Bliss logo">
-            <span>Sugar Bliss</span>
-        </a>
-        <nav class="main-nav">
-            <a class="active" href="/pages/about-us.html">About Us</a>
-            <a class="active" href="/products">Products</a>
-            <a href="/special-orders">Special Orders</a>
-            <a href="/contact">Contact</a>
-            <a class="profile-link" href="/login"></a>
-        </nav>
-    </header>
+    <sugar-header active="products"></sugar-header>
 
     <main class="page-shell">
         <div class="detail-container">
@@ -72,19 +60,9 @@
         </div>
     </main>
 
-    <footer class="site-footer">
-        <div class="footer-left">
-            <strong>Visit Us</strong>
-            <p>15 0095 Hanoi lot, Hanoi VC 21471</p>
-            <p>+123-456-6262</p>
-        </div>
-        <div class="footer-right">
-            <span>Follow Us</span>
-            <a href="#">FB</a>
-            <a href="#">IN</a>
-        </div>
-    </footer>
-
+    <sugar-footer></sugar-footer>
+    <script src="/assets/js/shared-components.js"></script>
+    <script src="/assets/js/header-profile.js"></script>
     <script src="/assets/js/product-detail.js"></script>
 </body>
 </html>

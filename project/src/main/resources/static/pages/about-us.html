@@ -8,19 +8,7 @@
     <link rel="stylesheet" href="/assets/css/about-us.css">
 </head>
 <body>
-    <header class="site-header">
-        <a class="brand" href="/home">
-            <img src="/assets/icons/logo.png" alt="Sugar Bliss logo" onerror="this.style.display='none'">
-            <span>Sugar Bliss</span>
-        </a>
-        <nav class="main-nav">
-            <a class="active" href="/pages/about-us.html">About Us</a>
-            <a href="/products">Products</a>
-            <a href="/special-orders">Special Orders</a>
-            <a href="/contact">Contact</a>
-            <a class="profile-link" href="/login"></a>
-        </nav>
-    </header>
+    <sugar-header active="about"></sugar-header>
 
     <main class="about-page">
         <section class="about-hero">
@@ -59,13 +47,8 @@
         </div>
     </section>
 
-    <footer class="site-footer">
-        <div class="footer-left">
-            <strong>Visit Us</strong>
-            <p>9998 Hayes Isle, Mantefurt 03581</p>
-            <p>505-418-0415</p>
-        </div>
-
-    </footer>
+    <sugar-footer></sugar-footer>
+    <script src="/assets/js/shared-components.js"></script>
+    <script src="/assets/js/header-profile.js"></script>
 </body>
 </html>

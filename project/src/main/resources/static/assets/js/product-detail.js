@@ -41,7 +41,7 @@ async function fetchProductDetail() {
         
         document.getElementById('product-title-price').innerText = `${product.name} - ${priceStr}`;
         
-        const imgUrl = product.image || "/assets/images/cake1.png";
+        const imgUrl = product.images?.[0] || product.image || "/assets/images/cake1.png";
         document.getElementById('main-product-image').src = imgUrl.startsWith('/') ? `${API_BASE_URL}${imgUrl}` : imgUrl;
         
         document.getElementById('product-desc').innerText = product.description || "Chưa có mô tả cho sản phẩm này.";
@@ -93,7 +93,7 @@ async function fetchRelatedProducts() {
 
         container.innerHTML = related.map(item => {
             const itemId = item._id || item.id;
-            const itemImg = item.image || "/assets/images/cake2.png";
+            const itemImg = item.images?.[0] || item.image || "/assets/images/cake2.png";
             const fullImg = itemImg.startsWith('/') ? `${API_BASE_URL}${itemImg}` : itemImg;
             const itemName = item.name || "Sugar Bliss Product";
             

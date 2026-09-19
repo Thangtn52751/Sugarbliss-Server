@@ -1,5 +1,27 @@
 const mongoose = require('mongoose');
 
+const reviewSchema = new mongoose.Schema({
+    user: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true,
+    },
+    rating: {
+        type: Number,
+        required: true,
+        min: 1,
+        max: 5,
+    },
+    comment: {
+        type: String,
+        required: true,
+        trim: true,
+        maxlength: 1000,
+    },
+}, {
+    timestamps: true,
+});
+
 const productSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -22,9 +44,15 @@ const productSchema = new mongoose.Schema({
         required: true,
         min: 0,
     },
-    image: {
-        type: String,
-        required: true,
+    images: {
+        type: [{
+            type: String,
+            trim: true,
+        }],
+        validate: {
+            validator: (images) => Array.isArray(images) && images.length > 0,
+            message: 'At least one product image is required.',
+        },
     },
     category: {
         type: String,
@@ -61,9 +89,28 @@ const productSchema = new mongoose.Schema({
         enum: ['active', 'inactive', 'out-of-stock'],
         default: 'active',
     },
+    reviews: [reviewSchema],
+    ratingAverage: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 5,
+    },
+    reviewCount: {
+        type: Number,
+        default: 0,
+        min: 0,
+    },
 }, {
     timestamps: true,
 });
+
+productSchema.methods.updateReviewSummary = function updateReviewSummary() {
+    this.reviewCount = this.reviews.length;
+    this.ratingAverage = this.reviewCount
+        ? Number((this.reviews.reduce((total, review) => total + review.rating, 0) / this.reviewCount).toFixed(1))
+        : 0;
+};
 
 productSchema.pre('validate', function createSlug(next) {
     if (this.isModified('name') || !this.slug) {

@@ -1,4 +1,4 @@
-const API_BASE_URL = "http://localhost:3000";
+const API_BASE_URL = window.SugarBlissApi.baseUrl;
 const preferredCategories = ["Cookies", "Waffles", "Macaroons", "Snacks", "Beverages"];
 let productsById = new Map();
 let favoriteProductIds = new Set();

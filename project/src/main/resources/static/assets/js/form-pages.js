@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", () => {
-    const API_BASE_URL = "http://localhost:3000";
+    const API_BASE_URL = window.SugarBlissApi.baseUrl;
     const form = document.querySelector("[data-bliss-form]");
     const message = document.querySelector("[data-form-message]");
     const deliverySelect = document.querySelector("[data-delivery-select]");

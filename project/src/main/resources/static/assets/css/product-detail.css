@@ -1007,19 +1007,31 @@ body {
 
 .thumbnail-list {
     display: flex;
+    flex-wrap: wrap;
     gap: 15px;
 }
 
-.thumbnail-list img {
+.product-thumbnail {
     width: 80px;
     height: 80px;
-    object-fit: cover;
+    padding: 0;
+    overflow: hidden;
+    background: #fff;
+    border: 2px solid transparent;
     border-radius: 12px;
     cursor: pointer;
-    border: 2px solid transparent;
 }
 
-.thumbnail-list img:hover {
+.product-thumbnail img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.product-thumbnail:hover,
+.product-thumbnail:focus-visible,
+.product-thumbnail.active {
     border-color: #d94960;
 }
 

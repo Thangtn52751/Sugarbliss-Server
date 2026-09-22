@@ -1,4 +1,4 @@
-const RESET_API_BASE_URL = "http://localhost:3000";
+const RESET_API_BASE_URL = window.SugarBlissApi.baseUrl;
 const RESET_EMAIL_KEY = "sugarBlissResetEmail";
 const RESET_TOKEN_KEY = "sugarBlissResetToken";
 

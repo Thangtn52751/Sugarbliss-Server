@@ -1,6 +1,6 @@
 const urlParams = new URLSearchParams(window.location.search);
 const currentProductId = urlParams.get('id');
-const API_BASE_URL = 'http://localhost:3000';
+const API_BASE_URL = window.SugarBlissApi.baseUrl;
 
 document.addEventListener('DOMContentLoaded', () => {
     if (!currentProductId) {
@@ -12,8 +12,56 @@ document.addEventListener('DOMContentLoaded', () => {
     fetchRelatedProducts();
 });
 
-function changeImage(src) {
-    document.getElementById('main-product-image').src = src;
+function resolveProductImage(image) {
+    if (!image) {
+        return '';
+    }
+
+    return image.startsWith('/') ? `${API_BASE_URL}${image}` : image;
+}
+
+function renderProductImages(product) {
+    const mainImage = document.getElementById('main-product-image');
+    const thumbnailList = document.getElementById('product-thumbnail-list');
+    const images = Array.isArray(product.images)
+        ? product.images.filter((image) => typeof image === 'string' && image.trim())
+        : [];
+
+    thumbnailList.replaceChildren();
+
+    if (images.length === 0) {
+        mainImage.src = '/assets/images/cake1.png';
+        mainImage.alt = `${product.name || 'Product'} image unavailable`;
+        return;
+    }
+
+    const selectImage = (image, thumbnail) => {
+        mainImage.src = resolveProductImage(image);
+        mainImage.alt = product.name || 'Product image';
+
+        thumbnailList.querySelectorAll('.product-thumbnail').forEach((item) => {
+            item.classList.toggle('active', item === thumbnail);
+            item.setAttribute('aria-selected', String(item === thumbnail));
+        });
+    };
+
+    images.forEach((image, index) => {
+        const thumbnail = document.createElement('button');
+        const thumbnailImage = document.createElement('img');
+
+        thumbnail.type = 'button';
+        thumbnail.className = 'product-thumbnail';
+        thumbnail.setAttribute('aria-label', `View image ${index + 1} of ${images.length}`);
+        thumbnail.setAttribute('aria-selected', String(index === 0));
+        thumbnailImage.src = resolveProductImage(image);
+        thumbnailImage.alt = `${product.name || 'Product'} thumbnail ${index + 1}`;
+
+        thumbnail.appendChild(thumbnailImage);
+        thumbnail.addEventListener('click', () => selectImage(image, thumbnail));
+        thumbnailList.appendChild(thumbnail);
+    });
+
+    selectImage(images[0], thumbnailList.firstElementChild);
 }
 
 function updateQty(change) {
@@ -41,8 +89,7 @@ async function fetchProductDetail() {
         
         document.getElementById('product-title-price').innerText = `${product.name} - ${priceStr}`;
         
-        const imgUrl = product.images?.[0] || product.image || "/assets/images/cake1.png";
-        document.getElementById('main-product-image').src = imgUrl.startsWith('/') ? `${API_BASE_URL}${imgUrl}` : imgUrl;
+        renderProductImages(product);
         
         document.getElementById('product-desc').innerText = product.description || "Chưa có mô tả cho sản phẩm này.";
         document.getElementById('product-weight').innerText = product.weightGram ? `${product.weightGram}g` : "Đang cập nhật";

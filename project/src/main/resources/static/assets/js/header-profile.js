@@ -1,4 +1,4 @@
-const HEADER_PROFILE_API_BASE_URL = "http://localhost:3000";
+const HEADER_PROFILE_API_BASE_URL = window.SugarBlissApi.baseUrl;
 
 document.addEventListener("DOMContentLoaded", () => {
     hydrateHeaderAvatar();

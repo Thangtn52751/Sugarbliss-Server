@@ -8,6 +8,7 @@ const connectDB = async () => {
 
     const connection = await mongoose.connect(process.env.MONGO_URI, {
         dbName: process.env.MONGO_DB_NAME || 'sugarbliss',
+        serverSelectionTimeoutMS: 5000,
     });
 
     console.log(`MongoDB database: ${connection.connection.name}`);

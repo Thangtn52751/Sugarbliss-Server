@@ -16,11 +16,7 @@
                 <div class="main-image">
                     <img id="main-product-image" src="/assets/images/cake1.png" alt="Product Image">
                 </div>
-                <div class="thumbnail-list">
-                    <img src="/assets/images/cake1.png" alt="Thumb" onclick="changeImage(this.src)">
-                    <img src="/assets/images/cake2.png" alt="Thumb" onclick="changeImage(this.src)">
-                    <img src="/assets/images/cake3.png" alt="Thumb" onclick="changeImage(this.src)">
-                </div>
+                <div class="thumbnail-list" id="product-thumbnail-list" aria-label="Product images"></div>
             </div>
 
             <div class="detail-info">
@@ -61,6 +57,7 @@
     </main>
 
     <sugar-footer></sugar-footer>
+    <script src="/assets/js/api-config.js"></script>
     <script src="/assets/js/shared-components.js"></script>
     <script src="/assets/js/header-profile.js"></script>
     <script src="/assets/js/product-detail.js"></script>

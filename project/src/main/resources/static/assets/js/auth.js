@@ -22,7 +22,7 @@ if (form && message) {
         }
 
         try {
-            const response = await fetch(form.action, {
+            const response = await fetch(window.SugarBlissApi.url(form.getAttribute("action")), {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json"

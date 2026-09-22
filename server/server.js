@@ -19,13 +19,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use(requestLogger);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-connectDB()
-    .then(() => console.log('MongoDB connected successfully!'))
-    .catch((err) => {
-        console.error('MongoDB connection error:', err);
-        process.exit(1);
-    });
-
 app.get('/', (req, res) => {
     res.json({
         message: 'SugarBliss API is running!',
@@ -68,6 +61,19 @@ app.use((err, req, res, next) => {
 
 const PORT = process.env.PORT || 3000;
 
-app.listen(PORT, () => {
-    console.log(`Server running at http://localhost:${PORT}`);
-});
+const startServer = async () => {
+    try {
+        await connectDB();
+        console.log('MongoDB connected successfully!');
+
+        app.listen(PORT, () => {
+            console.log(`Server running at http://localhost:${PORT}`);
+        });
+    } catch (err) {
+        console.error(`MongoDB connection failed: ${err.message}`);
+        console.error('Start MongoDB or update MONGO_URI in server/.env, then run the server again.');
+        process.exitCode = 1;
+    }
+};
+
+startServer();

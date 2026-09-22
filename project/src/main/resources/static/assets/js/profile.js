@@ -1,4 +1,4 @@
-const PROFILE_API_BASE_URL = "http://localhost:3000";
+const PROFILE_API_BASE_URL = window.SugarBlissApi.baseUrl;
 let favoriteProductsById = new Map();
 
 document.addEventListener("DOMContentLoaded", () => {

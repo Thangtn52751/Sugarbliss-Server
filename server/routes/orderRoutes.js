@@ -5,6 +5,7 @@ const Product = require('../models/Product');
 const Order = require('../models/Order');
 const User = require('../models/User');
 const { protect } = require('../middleware/authMiddleware');
+const DELIVERY_METHODS = require('../config/deliveryMethods');
 
 const router = express.Router();
 
@@ -24,6 +25,7 @@ const orderResponse = (order) => ({
     shippingFee: order.shippingFee,
     total: order.total,
     items: order.items,
+    deliveryMethod: order.deliveryMethod || DELIVERY_METHODS.standard.code,
     shippingAddress: order.shippingAddress,
     paymentMethod: order.paymentMethod,
     paymentStatus: order.paymentStatus,
@@ -36,6 +38,8 @@ const parseQuantity = (quantity) => {
         ? parsedQuantity
         : null;
 };
+
+const escapeRegex = (value) => String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 const combineRequestedItems = (items) => {
     const combinedItems = new Map();
@@ -136,8 +140,25 @@ const releaseStock = (items) => Promise.all(items.map(restoreStockItem));
 
 router.use(protect);
 
+router.get('/delivery-methods', (req, res) => {
+    res.json(Object.values(DELIVERY_METHODS));
+});
+
 router.get('/my', asyncHandler(async (req, res) => {
-    const orders = await Order.find({ user: req.user._id })
+    const search = String(req.query.search || '').trim();
+    const filter = { user: req.user._id };
+
+    if (search) {
+        const searchPattern = new RegExp(escapeRegex(search), 'i');
+        filter.$or = [
+            { orderNumber: searchPattern },
+            { productName: searchPattern },
+            { status: searchPattern },
+            { 'items.name': searchPattern },
+        ];
+    }
+
+    const orders = await Order.find(filter)
         .sort({ orderedOn: -1, createdAt: -1 });
 
     res.json(orders.map(orderResponse));
@@ -156,6 +177,16 @@ router.get('/:id', asyncHandler(async (req, res) => {
 
 router.post('/', asyncHandler(async (req, res) => {
     const { items: requestedItems, fromCart } = await getRequestedItems(req);
+    const deliveryMethod = String(req.body.deliveryMethod || DELIVERY_METHODS.standard.code).trim().toLowerCase();
+    const deliveryOption = Object.prototype.hasOwnProperty.call(DELIVERY_METHODS, deliveryMethod)
+        ? DELIVERY_METHODS[deliveryMethod]
+        : null;
+
+    if (!deliveryOption) {
+        res.status(400);
+        throw new Error('Invalid delivery method.');
+    }
+
     const productIds = requestedItems.map((item) => item.productId);
     const products = await Product.find({
         _id: { $in: productIds },
@@ -187,7 +218,7 @@ router.post('/', asyncHandler(async (req, res) => {
             lineTotal: item.product.price * item.quantity,
         }));
         const subtotal = itemSnapshots.reduce((total, item) => total + item.lineTotal, 0);
-        const shippingFee = 0;
+        const shippingFee = deliveryOption.fee;
         const productName = itemSnapshots.length === 1
             ? itemSnapshots[0].name
             : `${itemSnapshots[0].name} + ${itemSnapshots.length - 1} more`;
@@ -216,6 +247,7 @@ router.post('/', asyncHandler(async (req, res) => {
             status: 'In Progress',
             orderedOn: new Date(),
             items: itemSnapshots,
+            deliveryMethod,
             shippingAddress,
             paymentMethod,
             paymentStatus: 'Pending',

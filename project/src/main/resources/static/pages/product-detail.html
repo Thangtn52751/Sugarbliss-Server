@@ -37,12 +37,12 @@
 
                 <div class="detail-actions">
                     <div class="quantity-selector">
-                        <button type="button" onclick="updateQty(-1)">-</button>
+                        <button type="button" onclick="updateQty(-1)" aria-label="Decrease quantity">&minus;</button>
                         <input type="number" id="qty-input" value="1" min="1" readonly>
-                        <button type="button" onclick="updateQty(1)">+</button>
+                        <button type="button" onclick="updateQty(1)" aria-label="Increase quantity">+</button>
                     </div>
-                    <button class="btn-favourite" onclick="toggleFavoriteDetail()">♡ Favourites</button>
-                    <button class="btn-add-cart" onclick="createOrderFromDetail()">Add To Cart</button>
+                    <button class="btn-favourite" id="favorite-detail-button" type="button" aria-pressed="false">&#9825; Favourites</button>
+                    <button class="btn-add-cart" type="button" onclick="addProductToCart(this)">Add To Cart</button>
                 </div>
             </div>
         </div>

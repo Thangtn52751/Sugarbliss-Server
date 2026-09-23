@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugar Bliss | Order History</title>
+    <link rel="stylesheet" href="/assets/css/home.css">
+    <link rel="stylesheet" href="/assets/css/order-history.css">
+</head>
+<body>
+    <sugar-header active="orders"></sugar-header>
+
+    <main class="order-history-page">
+        <section class="order-history-hero">
+            <div class="order-history-inner">
+                <p>Account Dashboard / History</p>
+                <h1>Order History</h1>
+            </div>
+        </section>
+
+        <section class="order-history-content">
+            <aside class="order-support">
+                <h2>Concierge Support</h2>
+                <p>Have questions about an order, return, or custom request? Our team is ready to help.</p>
+                <a href="/contact">Chat with advisor</a>
+            </aside>
+
+            <div class="order-history-main">
+                <label class="order-search">
+                    <span class="sr-only">Search orders</span>
+                    <input type="search" placeholder="Search orders by item or order number" data-order-search>
+                </label>
+
+                <div class="order-history-state" data-order-state>Loading orders...</div>
+                <div class="order-history-list" data-order-list></div>
+
+                <div class="order-pagination" data-order-pagination hidden>
+                    <p data-order-summary></p>
+                    <div class="order-page-actions">
+                        <button type="button" data-order-previous aria-label="Previous page" title="Previous page">&larr;</button>
+                        <span data-order-page></span>
+                        <button type="button" data-order-next aria-label="Next page" title="Next page">&rarr;</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <sugar-footer></sugar-footer>
+    <script src="/assets/js/api-config.js"></script>
+    <script src="/assets/js/shared-components.js"></script>
+    <script src="/assets/js/header-profile.js"></script>
+    <script src="/assets/js/order-history.js"></script>
+</body>
+</html>

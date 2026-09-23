@@ -1,7 +1,5 @@
 const API_BASE_URL = window.SugarBlissApi.baseUrl;
 const preferredCategories = ["Cookies", "Waffles", "Macaroons", "Snacks", "Beverages"];
-let productsById = new Map();
-let favoriteProductIds = new Set();
 
 document.addEventListener("DOMContentLoaded", () => {
     fetchProducts();
@@ -30,32 +28,18 @@ async function fetchProducts() {
     container.innerHTML = '<div class="products-state"><p>Loading products...</p></div>';
 
     try {
-        const [productsResponse, favoritesResponse] = await Promise.all([
-            fetch(`${API_BASE_URL}/api/products?status=all&limit=100`, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            }),
-            fetch(`${API_BASE_URL}/api/users/me/favorites`, {
-                headers: {
-                    Authorization: `Bearer ${token}`
-                }
-            })
-        ]);
+        const productsResponse = await fetch(`${API_BASE_URL}/api/products?status=all&limit=100`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
 
         const productsData = await productsResponse.json();
-        const favoritesData = await favoritesResponse.json();
 
         if (!productsResponse.ok) {
             throw new Error(productsData.message || "Cannot load products.");
         }
 
-        if (!favoritesResponse.ok) {
-            throw new Error(favoritesData.message || "Cannot load favorites.");
-        }
-
-        favoriteProductIds = new Set((Array.isArray(favoritesData) ? favoritesData : [])
-            .map((product) => String(product._id || product.id || "")));
         renderProducts(Array.isArray(productsData.products) ? productsData.products : []);
     } catch (error) {
         container.innerHTML = `
@@ -70,8 +54,6 @@ async function fetchProducts() {
 function renderProducts(products) {
     const container = document.querySelector("[data-products-container]");
     const categoryList = document.querySelector("[data-category-list]");
-    productsById = new Map(products.map((product) => [String(product._id || product.id || ""), product]));
-
     if (products.length === 0) {
         container.innerHTML = `
             <div class="products-state">
@@ -134,13 +116,9 @@ function renderProductCard(product) {
     const productId = product._id || product.id || "";
     const imageSrc = resolveImageUrl(product.images?.[0] || product.image);
     const price = formatPrice(product.price);
-    const isFavorite = favoriteProductIds.has(String(productId));
 
     return `
         <article class="product-card">
-            <button class="favorite-toggle ${isFavorite ? "is-saved" : ""}" type="button" data-favorite-toggle-id="${escapeHtml(productId)}" aria-label="${isFavorite ? "Remove from favorites" : "Add to favorites"}">
-                ${isFavorite ? "Saved" : "Favorite"}
-            </button>
             <button class="product-image-button" type="button" data-image-detail-id="${escapeHtml(productId)}" aria-label="View ${escapeHtml(product.name || "Sugar Bliss product")} detail" style="cursor: pointer; background: transparent; border: none; padding: 0;">
                 <img src="${escapeHtml(imageSrc)}" alt="${escapeHtml(product.name || "Sugar Bliss product")}">
             </button>
@@ -156,12 +134,6 @@ function renderProductCard(product) {
 }
 
 function handleProductActionClick(event) {
-    const favoriteButton = event.target.closest("[data-favorite-toggle-id]");
-    if (favoriteButton) {
-        toggleFavorite(favoriteButton.dataset.favoriteToggleId, favoriteButton);
-        return;
-    }
-
     const imageButton = event.target.closest("[data-image-detail-id]");
     if (imageButton) {
         window.location.href = `/pages/product-detail.html?id=${imageButton.dataset.imageDetailId}`;
@@ -177,49 +149,6 @@ function handleProductActionClick(event) {
     const orderButton = event.target.closest("[data-product-id]");
     if (orderButton) {
         createOrder(orderButton.dataset.productId, orderButton);
-    }
-}
-
-async function toggleFavorite(productId, button) {
-    const token = localStorage.getItem("sugarBlissToken");
-
-    if (!token) {
-        window.location.href = "/login";
-        return;
-    }
-
-    const isFavorite = favoriteProductIds.has(String(productId));
-    const originalText = button.textContent;
-    button.disabled = true;
-    button.textContent = isFavorite ? "Removing..." : "Saving...";
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/users/me/favorites/${productId}`, {
-            method: isFavorite ? "DELETE" : "POST",
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
-        });
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(data.message || "Cannot update favorites.");
-        }
-
-        if (isFavorite) {
-            favoriteProductIds.delete(String(productId));
-        } else {
-            favoriteProductIds.add(String(productId));
-        }
-
-        button.classList.toggle("is-saved", !isFavorite);
-        button.textContent = isFavorite ? "Favorite" : "Saved";
-        button.setAttribute("aria-label", isFavorite ? "Add to favorites" : "Remove from favorites");
-    } catch (error) {
-        alert(error.message);
-        button.textContent = originalText;
-    } finally {
-        button.disabled = false;
     }
 }
 

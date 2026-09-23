@@ -345,6 +345,29 @@ body {
     color: #d94960;
 }
 
+.menu-label-with-count {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.menu-label-with-count strong {
+    display: grid;
+    place-items: center;
+    min-width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: #d94960;
+    color: #fff;
+    font-size: 10px;
+}
+
+.profile-menu-item:hover .menu-label-with-count strong {
+    background: #fff;
+    color: #d94960;
+}
+
 .menu-icon {
     position: relative;
     display: inline-grid;

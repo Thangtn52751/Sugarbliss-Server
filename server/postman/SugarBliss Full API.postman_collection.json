@@ -928,6 +928,26 @@
       "name": "Orders",
       "item": [
         {
+          "name": "GET /api/orders/delivery-methods",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/delivery-methods",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "delivery-methods"
+              ]
+            },
+            "description": "Returns the server-owned delivery options, estimates, and fees available during checkout."
+          },
+          "response": []
+        },
+        {
           "name": "POST /api/orders",
           "event": [
             {
@@ -954,7 +974,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 1\n}"
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 1,\n  \"deliveryMethod\": \"standard\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/api/orders",

@@ -1,6 +1,7 @@
 const urlParams = new URLSearchParams(window.location.search);
 const currentProductId = urlParams.get('id');
 const API_BASE_URL = window.SugarBlissApi.baseUrl;
+let isCurrentProductFavorite = false;
 
 document.addEventListener('DOMContentLoaded', () => {
     if (!currentProductId) {
@@ -8,9 +9,97 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
     
+    const favoriteButton = document.getElementById('favorite-detail-button');
+    favoriteButton?.addEventListener('click', toggleFavoriteDetail);
+
     fetchProductDetail();
     fetchRelatedProducts();
+    loadFavoriteState();
 });
+
+function updateFavoriteButton(isFavorite) {
+    const button = document.getElementById('favorite-detail-button');
+
+    if (!button) {
+        return;
+    }
+
+    isCurrentProductFavorite = isFavorite;
+    button.classList.toggle('is-saved', isFavorite);
+    button.setAttribute('aria-pressed', String(isFavorite));
+    button.textContent = isFavorite ? '\u2665 Saved' : '\u2661 Favourites';
+}
+
+async function loadFavoriteState() {
+    const token = localStorage.getItem('sugarBlissToken');
+
+    if (!token) {
+        updateFavoriteButton(false);
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/users/me/favorites`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Cannot load favorites.');
+        }
+
+        const favorites = Array.isArray(data) ? data : [];
+        const isFavorite = favorites.some((product) => String(product._id || product.id) === String(currentProductId));
+        updateFavoriteButton(isFavorite);
+    } catch (error) {
+        console.error('Cannot load favorite state:', error);
+        updateFavoriteButton(false);
+    }
+}
+
+async function toggleFavoriteDetail() {
+    const token = localStorage.getItem('sugarBlissToken');
+    const button = document.getElementById('favorite-detail-button');
+
+    if (!token) {
+        window.location.href = '/login';
+        return;
+    }
+
+    const previousState = isCurrentProductFavorite;
+    button.disabled = true;
+    button.textContent = previousState ? 'Removing...' : 'Saving...';
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/users/me/favorites/${currentProductId}`, {
+            method: previousState ? 'DELETE' : 'POST',
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        const data = await response.json();
+
+        if (response.status === 401) {
+            localStorage.removeItem('sugarBlissToken');
+            localStorage.removeItem('sugarBlissUser');
+            window.location.href = '/login';
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error(data.message || 'Cannot update favorites.');
+        }
+
+        updateFavoriteButton(!previousState);
+    } catch (error) {
+        updateFavoriteButton(previousState);
+        alert(error.message);
+    } finally {
+        button.disabled = false;
+    }
+}
 
 function resolveProductImage(image) {
     if (!image) {
@@ -156,19 +245,22 @@ async function fetchRelatedProducts() {
     }
 }
 
-async function createOrderFromDetail() {
+async function addProductToCart(button) {
     const token = localStorage.getItem("sugarBlissToken");
     if (!token) {
-        alert("Vui lòng đăng nhập để mua hàng!");
         window.location.href = "/login";
         return;
     }
 
     const qtyInput = document.getElementById('qty-input');
     const qty = qtyInput ? qtyInput.value : 1;
-    
+    const originalText = button.textContent;
+
+    button.disabled = true;
+    button.textContent = "Adding...";
+
     try {
-        const response = await fetch(`${API_BASE_URL}/api/orders`, {
+        const response = await fetch(`${API_BASE_URL}/api/users/me/cart/${currentProductId}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -180,13 +272,31 @@ async function createOrderFromDetail() {
             })
         });
 
-        if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(errData.message || "Lỗi khi tạo đơn hàng");
+        const data = await response.json();
+
+        if (response.status === 401) {
+            localStorage.removeItem("sugarBlissToken");
+            localStorage.removeItem("sugarBlissUser");
+            window.location.href = "/login";
+            return;
         }
-        alert(`Đặt hàng thành công ${qty} sản phẩm!`);
+
+        if (!response.ok) {
+            throw new Error(data.message || "Cannot add this product to your cart.");
+        }
+
+        window.dispatchEvent(new CustomEvent("sugarbliss:cart-updated", {
+            detail: { count: Array.isArray(data) ? data.length : 0 }
+        }));
+        button.textContent = "Added to Cart";
+        window.setTimeout(() => {
+            button.textContent = originalText;
+            button.disabled = false;
+        }, 1200);
     } catch (error) {
-        alert("Không thể đặt hàng: " + error.message);
+        alert(error.message);
+        button.textContent = originalText;
+        button.disabled = false;
     }
 }
 

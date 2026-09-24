@@ -1,8 +1,8 @@
 const PROFILE_API_BASE_URL = window.SugarBlissApi.baseUrl;
-let favoriteProductsById = new Map();
 
 document.addEventListener("DOMContentLoaded", () => {
     loadProfile();
+    loadRecentOrders();
 
     const form = document.querySelector("[data-profile-form]");
     const cancelButton = document.querySelector("[data-profile-cancel]");
@@ -13,8 +13,6 @@ document.addEventListener("DOMContentLoaded", () => {
     cancelButton?.addEventListener("click", loadProfile);
     avatarButton?.addEventListener("click", () => avatarInput?.click());
     avatarInput?.addEventListener("change", uploadAvatar);
-    document.querySelector("[data-profile-favorites]")?.addEventListener("click", handleFavoriteClick);
-    document.addEventListener("keydown", handleFavoriteDetailEscape);
 });
 
 async function loadProfile() {
@@ -39,10 +37,45 @@ async function loadProfile() {
 
         localStorage.setItem("sugarBlissUser", JSON.stringify(data.user));
         renderProfile(data.user);
-        renderOrders(data.recentOrders || []);
         renderFavorites(data.favorites || []);
     } catch (error) {
         showProfileMessage(error.message, false);
+    }
+}
+
+async function loadRecentOrders() {
+    const token = localStorage.getItem("sugarBlissToken");
+    const container = document.querySelector("[data-profile-orders]");
+
+    if (!token) {
+        window.location.href = "/login";
+        return;
+    }
+
+    container.innerHTML = '<p class="profile-empty">Loading orders...</p>';
+
+    try {
+        const response = await fetch(`${PROFILE_API_BASE_URL}/api/orders/my`, {
+            headers: {
+                Authorization: `Bearer ${token}`
+            }
+        });
+        const data = await response.json();
+
+        if (response.status === 401) {
+            localStorage.removeItem("sugarBlissToken");
+            localStorage.removeItem("sugarBlissUser");
+            window.location.href = "/login";
+            return;
+        }
+
+        if (!response.ok) {
+            throw new Error(data.message || "Cannot load orders.");
+        }
+
+        renderOrders(Array.isArray(data) ? data.slice(0, 3) : []);
+    } catch (error) {
+        container.innerHTML = `<p class="profile-empty is-error">${escapeHtml(error.message)}</p>`;
     }
 }
 
@@ -162,123 +195,45 @@ function renderOrders(orders) {
                 <p class="order-name">${escapeHtml(truncate(order.productName, 24))}</p>
                 <p class="order-date">Ordered on ${escapeHtml(order.orderedOn)}</p>
             </div>
-            <span class="order-status ${order.status === "In Progress" ? "is-progress" : ""}">${escapeHtml(order.status)}</span>
+            <span class="order-status ${getOrderStatusClass(order.status)}">${escapeHtml(order.status)}</span>
             <strong class="order-total">${formatVnd(order.total)}</strong>
         </article>
     `).join("");
 }
 
+function getOrderStatusClass(status) {
+    if (status === "In Progress") {
+        return "is-progress";
+    }
+
+    if (status === "Cancelled") {
+        return "is-cancelled";
+    }
+
+    return "is-delivered";
+}
+
 function renderFavorites(products) {
     const container = document.querySelector("[data-profile-favorites]");
-    favoriteProductsById = new Map(products.map((product) => [String(product._id || product.id || ""), product]));
 
     if (products.length === 0) {
         container.innerHTML = '<p class="profile-empty">No favorites yet.</p>';
         return;
     }
 
-    container.innerHTML = products.slice(0, 4).map((product) => `
-        <button class="favorite-item" type="button" data-favorite-id="${escapeHtml(product._id || product.id || "")}">
+    container.innerHTML = products.slice(0, 4).map((product) => {
+        const productId = encodeURIComponent(product._id || product.id || "");
+
+        return `
+        <a class="favorite-item" href="/product-detail?id=${productId}" aria-label="View ${escapeHtml(product.name || "Sugar Bliss product")} detail">
             <img src="${escapeHtml(resolveImageUrl(product.images?.[0] || product.image))}" alt="${escapeHtml(product.name)}">
             <div class="favorite-info">
                 <h3>${escapeHtml(truncate(product.name, 28))}</h3>
                 <p>${formatVnd(product.price)}</p>
             </div>
-        </button>
-    `).join("");
-}
-
-function handleFavoriteClick(event) {
-    const item = event.target.closest("[data-favorite-id]");
-
-    if (!item) {
-        return;
-    }
-
-    showFavoriteDetail(item.dataset.favoriteId);
-}
-
-function showFavoriteDetail(productId) {
-    const product = favoriteProductsById.get(String(productId));
-
-    if (!product) {
-        return;
-    }
-
-    const modal = ensureFavoriteDetailModal();
-    const ingredients = Array.isArray(product.ingredients) && product.ingredients.length > 0
-        ? product.ingredients.join(", ")
-        : "Updating";
-    const allergens = Array.isArray(product.allergens) && product.allergens.length > 0
-        ? product.allergens.join(", ")
-        : "None listed";
-
-    modal.querySelector("[data-favorite-detail-image]").src = resolveImageUrl(product.images?.[0] || product.image);
-    modal.querySelector("[data-favorite-detail-image]").alt = product.name || "Sugar Bliss product";
-    modal.querySelector("[data-favorite-detail-name]").textContent = product.name || "Sugar Bliss Product";
-    modal.querySelector("[data-favorite-detail-price]").textContent = formatVnd(product.price);
-    modal.querySelector("[data-favorite-detail-description]").textContent = product.description || "No description available.";
-    modal.querySelector("[data-favorite-detail-category]").textContent = product.category || "Other";
-    modal.querySelector("[data-favorite-detail-stock]").textContent = product.stock ?? "Updating";
-    modal.querySelector("[data-favorite-detail-ingredients]").textContent = ingredients;
-    modal.querySelector("[data-favorite-detail-allergens]").textContent = allergens;
-    modal.classList.add("is-open");
-    document.body.classList.add("has-favorite-modal");
-}
-
-function ensureFavoriteDetailModal() {
-    const existingModal = document.querySelector("[data-favorite-detail-modal]");
-
-    if (existingModal) {
-        return existingModal;
-    }
-
-    const modal = document.createElement("div");
-    modal.className = "favorite-detail-modal";
-    modal.dataset.favoriteDetailModal = "";
-    modal.innerHTML = `
-        <div class="favorite-detail-dialog" role="dialog" aria-modal="true" aria-labelledby="favorite-detail-title">
-            <button class="favorite-detail-close" type="button" aria-label="Close detail" data-favorite-detail-close></button>
-            <img class="favorite-detail-image" src="" alt="" data-favorite-detail-image>
-            <div class="favorite-detail-content">
-                <h2 id="favorite-detail-title" data-favorite-detail-name></h2>
-                <p class="favorite-detail-price" data-favorite-detail-price></p>
-                <p class="favorite-detail-description" data-favorite-detail-description></p>
-                <dl class="favorite-detail-list">
-                    <div><dt>Category</dt><dd data-favorite-detail-category></dd></div>
-                    <div><dt>Stock</dt><dd data-favorite-detail-stock></dd></div>
-                    <div><dt>Ingredients</dt><dd data-favorite-detail-ingredients></dd></div>
-                    <div><dt>Allergens</dt><dd data-favorite-detail-allergens></dd></div>
-                </dl>
-            </div>
-        </div>
+        </a>
     `;
-
-    modal.addEventListener("click", (event) => {
-        if (event.target === modal || event.target.closest("[data-favorite-detail-close]")) {
-            closeFavoriteDetail();
-        }
-    });
-
-    document.body.appendChild(modal);
-    return modal;
-}
-
-function closeFavoriteDetail() {
-    const modal = document.querySelector("[data-favorite-detail-modal]");
-
-    if (!modal) {
-        return;
-    }
-
-    modal.classList.remove("is-open");
-    document.body.classList.remove("has-favorite-modal");
-}
-
-function handleFavoriteDetailEscape(event) {
-    if (event.key === "Escape") {
-        closeFavoriteDetail();
-    }
+    }).join("");
 }
 
 function splitName(name = "") {

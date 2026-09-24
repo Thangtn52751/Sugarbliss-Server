@@ -1,8 +1,11 @@
 const HEADER_PROFILE_API_BASE_URL = window.SugarBlissApi.baseUrl;
+let headerCartRecordCount = 0;
 
 document.addEventListener("DOMContentLoaded", () => {
     hydrateHeaderAvatar();
     attachProfileMenus();
+    hydrateHeaderCartCount();
+    window.addEventListener("sugarbliss:cart-updated", handleHeaderCartUpdate);
 });
 
 async function hydrateHeaderAvatar() {
@@ -103,11 +106,16 @@ function getProfileMenuMarkup(user) {
             <span>Profile</span>
             <span class="menu-chevron" aria-hidden="true"></span>
         </a>
-        <div class="profile-menu-item is-static">
-            <span class="menu-icon" aria-hidden="true"><img src="/assets/icons/ic_cart.png" alt=""></span>
-            <span>Add to cart</span>
+        <a class="profile-menu-item" href="/orders">
+            <span class="menu-icon" aria-hidden="true"><img src="/assets/icons/ic_mail.png" alt=""></span>
+            <span>Order History</span>
             <span class="menu-chevron" aria-hidden="true"></span>
-        </div>
+        </a>
+        <a class="profile-menu-item" href="/cart">
+            <span class="menu-icon" aria-hidden="true"><img src="/assets/icons/ic_cart.png" alt=""></span>
+            <span class="menu-label-with-count">Your Cart <strong data-header-cart-count>${headerCartRecordCount}</strong></span>
+            <span class="menu-chevron" aria-hidden="true"></span>
+        </a>
         <div class="profile-menu-item is-static">
             <span class="menu-icon" aria-hidden="true"><img src="/assets/icons/ic_setting.png" alt=""></span>
             <span>Settings</span>
@@ -118,6 +126,45 @@ function getProfileMenuMarkup(user) {
             <span>Logout</span>
         </button>
     `;
+}
+
+async function hydrateHeaderCartCount() {
+    const token = localStorage.getItem("sugarBlissToken");
+
+    if (!token) {
+        setHeaderCartCount(0);
+        return;
+    }
+
+    try {
+        const response = await fetch(`${HEADER_PROFILE_API_BASE_URL}/api/users/me/cart`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        const cart = await response.json();
+
+        if (response.ok) {
+            setHeaderCartCount(Array.isArray(cart) ? cart.length : 0);
+        }
+    } catch (error) {
+        console.warn("Cannot load cart count.", error);
+    }
+}
+
+function handleHeaderCartUpdate(event) {
+    if (Number.isInteger(event.detail?.count)) {
+        setHeaderCartCount(event.detail.count);
+        return;
+    }
+
+    hydrateHeaderCartCount();
+}
+
+function setHeaderCartCount(count) {
+    headerCartRecordCount = Math.max(Number(count) || 0, 0);
+    document.querySelectorAll("[data-header-cart-count]").forEach((badge) => {
+        badge.textContent = headerCartRecordCount;
+        badge.setAttribute("aria-label", `${headerCartRecordCount} product records in cart`);
+    });
 }
 
 function handleProfileMenuClick(event) {

@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const DELIVERY_METHODS = require('../config/deliveryMethods');
 
 const orderItemSchema = new mongoose.Schema({
     product: {
@@ -86,6 +87,11 @@ const orderSchema = new mongoose.Schema({
             validator: (items) => Array.isArray(items) && items.length > 0,
             message: 'An order must contain at least one product.',
         },
+    },
+    deliveryMethod: {
+        type: String,
+        enum: Object.keys(DELIVERY_METHODS),
+        default: DELIVERY_METHODS.standard.code,
     },
     shippingAddress: {
         recipientName: {

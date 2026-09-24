@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugar Bliss | Shopping Cart</title>
+    <link rel="stylesheet" href="/assets/css/home.css">
+    <link rel="stylesheet" href="/assets/css/cart.css">
+</head>
+<body>
+    <sugar-header></sugar-header>
+
+    <main class="cart-page">
+        <section class="cart-content">
+            <div class="cart-products">
+                <header class="cart-heading">
+                    <h1>Your Sweet Cart <span data-cart-record-count>(0)</span></h1>
+                    <p>Review your delicious selection of treats before checkout.</p>
+                </header>
+
+                <div class="cart-state" data-cart-state>Loading your cart...</div>
+                <div class="cart-list" data-cart-list></div>
+
+                <a class="continue-shopping" href="/products">&larr; Continue browsing desserts</a>
+            </div>
+
+            <aside class="cart-summary">
+                <h2>Order Summary</h2>
+                <label class="delivery-field">
+                    <span>Delivery method</span>
+                    <select data-delivery-method disabled>
+                        <option>Loading delivery methods...</option>
+                    </select>
+                </label>
+
+                <dl class="cart-totals">
+                    <div><dt>Subtotal</dt><dd data-cart-subtotal>0 VND</dd></div>
+                    <div><dt>Estimated Delivery</dt><dd data-cart-delivery>Free</dd></div>
+                    <div class="cart-total"><dt>Total</dt><dd data-cart-total>0 VND</dd></div>
+                </dl>
+
+                <button class="checkout-button" type="button" data-cart-checkout disabled>
+                    <span>Proceed To Checkout</span><span aria-hidden="true">&rarr;</span>
+                </button>
+                <p class="checkout-note">Secure checkout with your saved account details.</p>
+            </aside>
+        </section>
+    </main>
+
+    <sugar-footer></sugar-footer>
+    <script src="/assets/js/api-config.js"></script>
+    <script src="/assets/js/shared-components.js"></script>
+    <script src="/assets/js/header-profile.js"></script>
+    <script src="/assets/js/cart.js"></script>
+</body>
+</html>

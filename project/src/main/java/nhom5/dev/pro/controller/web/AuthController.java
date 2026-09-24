@@ -45,16 +45,26 @@ public class AuthController {
 
     @GetMapping("/products/{id}")
     public String productDetailByPath(@PathVariable String id) {
-        return "redirect:/pages/product_detail.html?id=" + id;
+        return "redirect:/pages/product-detail.html?id=" + id;
     }
 
     @GetMapping({"/product-detail", "/product-detail.html"})
     public String productDetailByQuery(@RequestParam(required = false) String id) {
         if (id == null || id.isBlank()) {
-            return "redirect:/pages/product_detail.html";
+            return "redirect:/pages/product-detail.html";
         }
 
-        return "redirect:/pages/product_detail.html?id=" + id;
+        return "redirect:/pages/product-detail.html?id=" + id;
+    }
+
+    @GetMapping({"/orders", "/order-history", "/order-history.html"})
+    public String orderHistory() {
+        return "redirect:/pages/order-history.html";
+    }
+
+    @GetMapping({"/cart", "/shopping-cart", "/cart.html"})
+    public String cart() {
+        return "redirect:/pages/cart.html";
     }
 
     @GetMapping({"/special-orders", "/special_orders", "/special-orders.html", "/special_orders.html"})

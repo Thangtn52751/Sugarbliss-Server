@@ -1338,34 +1338,6 @@ body {
     max-width: 280px;
 }
 
-.favorite-toggle {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 1;
-    min-width: 82px;
-    height: 30px;
-    border: 1px solid #f0cbd3;
-    border-radius: 999px;
-    background: rgba(255, 250, 251, 0.92);
-    color: #d94960;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 800;
-    box-shadow: 0 4px 12px rgba(217, 73, 96, 0.12);
-}
-
-.favorite-toggle.is-saved {
-    border-color: #9bd3a6;
-    background: #9bd3a6;
-    color: #fff;
-}
-
-.favorite-toggle:disabled {
-    cursor: wait;
-    opacity: 0.76;
-}
-
 .product-card img {
     border-radius: 20px;
     box-shadow: 0 2px 10px rgba(217, 73, 96, 0.08);

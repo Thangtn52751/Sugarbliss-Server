@@ -1,11 +1,9 @@
 const urlParams = new URLSearchParams(window.location.search);
 const currentProductId = urlParams.get('id');
-<<<<<<< HEAD
+// Gộp logic khởi tạo API URL an toàn[cite: 17]
 const API_BASE_URL = window.SugarBlissApi ? window.SugarBlissApi.baseUrl : 'http://localhost:3000';
-=======
-const API_BASE_URL = window.SugarBlissApi.baseUrl;
+// Giữ lại biến lưu trạng thái yêu thích của team bạn[cite: 17]
 let isCurrentProductFavorite = false;
->>>>>>> 2051269e562a9fb0f3a18d326bc27ec1db0cd973
 
 document.addEventListener('DOMContentLoaded', () => {
     if (!currentProductId) {
@@ -13,25 +11,21 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
     
+    // Gắn sự kiện nút yêu thích ngay khi load[cite: 17]
     const favoriteButton = document.getElementById('favorite-detail-button');
     favoriteButton?.addEventListener('click', toggleFavoriteDetail);
 
+    // Gọi song song các API để nạp trang[cite: 17]
     fetchProductDetail();
     fetchRelatedProducts();
-<<<<<<< HEAD
-    renderReviews();
-    checkReviewEligibility(); // Bổ sung: Kiểm tra xem user đã mua hàng chưa
-=======
-    loadFavoriteState();
->>>>>>> 2051269e562a9fb0f3a18d326bc27ec1db0cd973
+    loadFavoriteState(); // Tải trạng thái yêu thích từ team của bạn
+    renderReviews(); // Render khối đánh giá mẫu
+    checkReviewEligibility(); // Kiểm tra xem người dùng đã mua hàng chưa
 });
 
 function updateFavoriteButton(isFavorite) {
     const button = document.getElementById('favorite-detail-button');
-
-    if (!button) {
-        return;
-    }
+    if (!button) return;
 
     isCurrentProductFavorite = isFavorite;
     button.classList.toggle('is-saved', isFavorite);
@@ -41,7 +35,6 @@ function updateFavoriteButton(isFavorite) {
 
 async function loadFavoriteState() {
     const token = localStorage.getItem('sugarBlissToken');
-
     if (!token) {
         updateFavoriteButton(false);
         return;
@@ -49,16 +42,15 @@ async function loadFavoriteState() {
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/users/me/favorites`, {
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
+            headers: { Authorization: `Bearer ${token}` }
         });
-        const data = await response.json();
-
+        
         if (!response.ok) {
+            const data = await response.json();
             throw new Error(data.message || 'Cannot load favorites.');
         }
 
+        const data = await response.json();
         const favorites = Array.isArray(data) ? data : [];
         const isFavorite = favorites.some((product) => String(product._id || product.id) === String(currentProductId));
         updateFavoriteButton(isFavorite);
@@ -84,12 +76,9 @@ async function toggleFavoriteDetail() {
     try {
         const response = await fetch(`${API_BASE_URL}/api/users/me/favorites/${currentProductId}`, {
             method: previousState ? 'DELETE' : 'POST',
-            headers: {
-                Authorization: `Bearer ${token}`
-            }
+            headers: { Authorization: `Bearer ${token}` }
         });
-        const data = await response.json();
-
+        
         if (response.status === 401) {
             localStorage.removeItem('sugarBlissToken');
             localStorage.removeItem('sugarBlissUser');
@@ -98,6 +87,7 @@ async function toggleFavoriteDetail() {
         }
 
         if (!response.ok) {
+            const data = await response.json();
             throw new Error(data.message || 'Cannot update favorites.');
         }
 
@@ -275,34 +265,32 @@ async function addProductToCart(button) {
             })
         });
 
-        const data = await response.json();
-
         if (response.status === 401) {
             localStorage.removeItem("sugarBlissToken");
             localStorage.removeItem("sugarBlissUser");
             window.location.href = "/login";
             return;
         }
-<<<<<<< HEAD
-        alert(`Đặt hàng thành công ${qty} sản phẩm!`);
-        
-        // Cập nhật lại nút review sau khi đặt hàng thành công
-        checkReviewEligibility();
-=======
 
         if (!response.ok) {
+            const data = await response.json();
             throw new Error(data.message || "Cannot add this product to your cart.");
         }
-
+        
+        const data = await response.json();
         window.dispatchEvent(new CustomEvent("sugarbliss:cart-updated", {
             detail: { count: Array.isArray(data) ? data.length : 0 }
         }));
+        
         button.textContent = "Added to Cart";
+        
+        // Gọi hàm kiểm tra review lại sau khi mua hàng thành công
+        checkReviewEligibility();
+        
         window.setTimeout(() => {
             button.textContent = originalText;
             button.disabled = false;
         }, 1200);
->>>>>>> 2051269e562a9fb0f3a18d326bc27ec1db0cd973
     } catch (error) {
         alert(error.message);
         button.textContent = originalText;
@@ -310,28 +298,6 @@ async function addProductToCart(button) {
     }
 }
 
-async function toggleFavoriteDetail() {
-    const token = localStorage.getItem("sugarBlissToken");
-    if (!token) {
-        alert("Vui lòng đăng nhập để thêm vào yêu thích!");
-        window.location.href = "/login";
-        return;
-    }
-    
-    try {
-        const response = await fetch(`${API_BASE_URL}/api/users/me/favorites/${currentProductId}`, {
-            method: "POST",
-            headers: { "Authorization": `Bearer ${token}` }
-        });
-        
-        if (!response.ok) throw new Error("Sản phẩm đã có trong mục yêu thích hoặc có lỗi xảy ra");
-        alert("Đã thêm vào danh sách yêu thích!");
-    } catch (error) {
-        alert(error.message);
-    }
-}
-
-// BỔ SUNG: Kiểm tra xem user có được phép đánh giá hay không
 async function checkReviewEligibility() {
     const reviewBtn = document.querySelector('.btn-submit-review');
     if (!reviewBtn) return;
@@ -343,7 +309,6 @@ async function checkReviewEligibility() {
     }
 
     try {
-        // Lấy danh sách đơn hàng cá nhân
         const response = await fetch(`${API_BASE_URL}/api/users/me/orders`, {
             headers: { "Authorization": `Bearer ${token}` }
         });
@@ -357,7 +322,6 @@ async function checkReviewEligibility() {
         const orders = data.orders || data.data || data;
         let hasPurchased = false;
 
-        // Quét lịch sử mua hàng tìm Product ID hiện tại
         if (Array.isArray(orders)) {
             hasPurchased = orders.some(order => {
                 if (String(order.product || order.productId) === String(currentProductId)) return true;
@@ -371,7 +335,6 @@ async function checkReviewEligibility() {
         if (!hasPurchased) {
             disableReviewButton(reviewBtn, "Bạn phải mua sản phẩm này để viết đánh giá");
         } else {
-            // Đã mua hàng -> Bật lại nút
             reviewBtn.disabled = false;
             reviewBtn.title = "";
             reviewBtn.innerText = "Submit Review";

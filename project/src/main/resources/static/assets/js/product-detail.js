@@ -1,6 +1,6 @@
 const urlParams = new URLSearchParams(window.location.search);
 const currentProductId = urlParams.get('id');
-const API_BASE_URL = window.SugarBlissApi.baseUrl;
+const API_BASE_URL = window.SugarBlissApi ? window.SugarBlissApi.baseUrl : 'http://localhost:3000';
 
 document.addEventListener('DOMContentLoaded', () => {
     if (!currentProductId) {
@@ -10,13 +10,12 @@ document.addEventListener('DOMContentLoaded', () => {
     
     fetchProductDetail();
     fetchRelatedProducts();
+    renderReviews();
+    checkReviewEligibility(); // Bổ sung: Kiểm tra xem user đã mua hàng chưa
 });
 
 function resolveProductImage(image) {
-    if (!image) {
-        return '';
-    }
-
+    if (!image) return '';
     return image.startsWith('/') ? `${API_BASE_URL}${image}` : image;
 }
 
@@ -25,7 +24,7 @@ function renderProductImages(product) {
     const thumbnailList = document.getElementById('product-thumbnail-list');
     const images = Array.isArray(product.images)
         ? product.images.filter((image) => typeof image === 'string' && image.trim())
-        : [];
+        : (product.image ? [product.image] : []);
 
     thumbnailList.replaceChildren();
 
@@ -120,10 +119,7 @@ async function fetchRelatedProducts() {
 
         const response = await fetch(`${API_BASE_URL}/api/products?status=all&limit=20`, { headers });
         
-        if (!response.ok) {
-            console.error("Lỗi API lấy gợi ý:", response.status);
-            return;
-        }
+        if (!response.ok) return;
 
         const data = await response.json();
         const products = Array.isArray(data.products) ? data.products : (Array.isArray(data) ? data : []);
@@ -185,9 +181,123 @@ async function createOrderFromDetail() {
             throw new Error(errData.message || "Lỗi khi tạo đơn hàng");
         }
         alert(`Đặt hàng thành công ${qty} sản phẩm!`);
+        
+        // Cập nhật lại nút review sau khi đặt hàng thành công
+        checkReviewEligibility();
     } catch (error) {
         alert("Không thể đặt hàng: " + error.message);
     }
+}
+
+async function toggleFavoriteDetail() {
+    const token = localStorage.getItem("sugarBlissToken");
+    if (!token) {
+        alert("Vui lòng đăng nhập để thêm vào yêu thích!");
+        window.location.href = "/login";
+        return;
+    }
+    
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/users/me/favorites/${currentProductId}`, {
+            method: "POST",
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+        
+        if (!response.ok) throw new Error("Sản phẩm đã có trong mục yêu thích hoặc có lỗi xảy ra");
+        alert("Đã thêm vào danh sách yêu thích!");
+    } catch (error) {
+        alert(error.message);
+    }
+}
+
+// BỔ SUNG: Kiểm tra xem user có được phép đánh giá hay không
+async function checkReviewEligibility() {
+    const reviewBtn = document.querySelector('.btn-submit-review');
+    if (!reviewBtn) return;
+
+    const token = localStorage.getItem("sugarBlissToken");
+    if (!token) {
+        disableReviewButton(reviewBtn, "Vui lòng đăng nhập để đánh giá");
+        return;
+    }
+
+    try {
+        // Lấy danh sách đơn hàng cá nhân
+        const response = await fetch(`${API_BASE_URL}/api/users/me/orders`, {
+            headers: { "Authorization": `Bearer ${token}` }
+        });
+
+        if (!response.ok) {
+            disableReviewButton(reviewBtn, "Cần mua sản phẩm để đánh giá");
+            return;
+        }
+
+        const data = await response.json();
+        const orders = data.orders || data.data || data;
+        let hasPurchased = false;
+
+        // Quét lịch sử mua hàng tìm Product ID hiện tại
+        if (Array.isArray(orders)) {
+            hasPurchased = orders.some(order => {
+                if (String(order.product || order.productId) === String(currentProductId)) return true;
+                if (Array.isArray(order.items)) {
+                    return order.items.some(item => String(item.product || item.productId || item._id) === String(currentProductId));
+                }
+                return false;
+            });
+        }
+
+        if (!hasPurchased) {
+            disableReviewButton(reviewBtn, "Bạn phải mua sản phẩm này để viết đánh giá");
+        } else {
+            // Đã mua hàng -> Bật lại nút
+            reviewBtn.disabled = false;
+            reviewBtn.title = "";
+            reviewBtn.innerText = "Submit Review";
+        }
+    } catch (error) {
+        console.error("Lỗi kiểm tra lịch sử mua hàng:", error);
+        disableReviewButton(reviewBtn, "Lỗi kiểm tra quyền đánh giá");
+    }
+}
+
+function disableReviewButton(btn, message) {
+    btn.disabled = true;
+    btn.title = message;
+    btn.innerText = "Chưa mua hàng";
+}
+
+function renderReviews() {
+    const reviewsList = document.getElementById('product-reviews-list');
+    if (!reviewsList) return;
+
+    const mockReviews = [
+        {
+            name: "Jane Doe",
+            initial: "J",
+            rating: "★★★★★",
+            text: "The cheesecake was absolutely divine! Perfectly moist and the flavor was spot on. I'll definitely be ordering again."
+        },
+        {
+            name: "Michael Smith",
+            initial: "M",
+            rating: "★★★★☆",
+            text: "Great service and fresh ingredients. The delivery was a bit late but the product quality made up for it."
+        }
+    ];
+
+    reviewsList.innerHTML = mockReviews.map(review => `
+        <div class="review-card">
+            <div class="review-header">
+                <div class="review-user">
+                    <div class="review-avatar">${review.initial}</div>
+                    <div class="review-name">${review.name}</div>
+                </div>
+                <div class="review-stars">${review.rating}</div>
+            </div>
+            <p class="review-text">${review.text}</p>
+        </div>
+    `).join('');
 }
 
 function escapeHtml(value) {

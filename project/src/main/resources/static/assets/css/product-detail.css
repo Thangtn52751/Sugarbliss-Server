@@ -994,6 +994,12 @@ body {
     grid-template-columns: 1fr 1.2fr;
     gap: 60px;
     margin-bottom: 80px;
+    opacity: 0; 
+    transition: opacity 0.5s ease-in-out;
+}
+
+.detail-container.loaded {
+    opacity: 1;
 }
 
 /* Phần Ảnh */
@@ -1240,4 +1246,162 @@ body {
     font-size: 16px;
     margin: 0;
     font-weight: 700;
+}
+/* --- CUSTOMER REVIEWS SECTION --- */
+.reviews-section {
+    margin-top: 80px;
+}
+
+.reviews-section h2 {
+    color: #d94960;
+    font-size: 24px;
+    font-weight: 800;
+    margin-bottom: 30px;
+}
+
+.reviews-container {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 40px;
+}
+
+/* Cột Summary (Trái) */
+.reviews-summary {
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+    display: flex;
+    flex-direction: column;
+    height: fit-content;
+}
+
+.summary-score {
+    font-size: 28px;
+    font-weight: 800;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.summary-count {
+    font-size: 13px;
+    color: #7c7377;
+    margin-bottom: 25px;
+}
+
+.summary-write {
+    margin-bottom: 25px;
+}
+
+.summary-write strong {
+    display: block;
+    font-size: 15px;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+.summary-write span {
+    font-size: 13px;
+    color: #7c7377;
+}
+
+.write-stars {
+    color: #d94960;
+    font-size: 22px;
+    margin-top: 5px;
+    cursor: pointer;
+    letter-spacing: 2px;
+}
+
+.btn-submit-review {
+    background: #d94960;
+    color: #fff;
+    border: none;
+    padding: 14px 20px;
+    border-radius: 999px;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.3s;
+    width: 100%;
+}
+
+.btn-submit-review:hover {
+    background: #bd384d;
+}
+
+/* Cột List Reviews (Phải) */
+.reviews-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.review-card {
+    background: #ffffff;
+    padding: 25px;
+    border-radius: 20px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+}
+
+.review-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.review-user {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.review-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: #ffe7eb;
+    color: #d94960;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.review-name {
+    font-weight: bold;
+    font-size: 14px;
+    color: #333;
+}
+
+.review-stars {
+    color: #555;
+    font-size: 14px;
+    letter-spacing: 2px;
+}
+
+.review-text {
+    color: #666;
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0;
+}
+
+@media (max-width: 980px) {
+    .reviews-container {
+        grid-template-columns: 1fr;
+    }
+}
+.btn-submit-review:disabled {
+    background-color: #e0e0e0;
+    color: #999999;
+    cursor: not-allowed;
+    box-shadow: none;
+    transform: none;
+}
+
+.btn-submit-review:disabled:hover {
+    background-color: #e0e0e0;
 }

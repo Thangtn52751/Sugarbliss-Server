@@ -2,11 +2,13 @@ class SugarHeader extends HTMLElement {
     connectedCallback() {
         const activePage = this.getAttribute("active") || "";
         const navigationItems = [
-            { key: "about", label: "About Us", href: "/about" },
+            { key: "home", label: "Home", href: "/home" },
+            { key: "about", label: "About Us", href: "/pages/about-us.html" }, 
             { key: "products", label: "Products", href: "/products" },
             { key: "special-orders", label: "Special Orders", href: "/special-orders" },
             { key: "contact", label: "Contact", href: "/contact" },
         ];
+        
         const navigationMarkup = navigationItems.map((item) => {
             const isActive = item.key === activePage;
             const activeClass = isActive ? " class=\"active\"" : "";
@@ -14,6 +16,7 @@ class SugarHeader extends HTMLElement {
 
             return `<a${activeClass}${currentPage} href="${item.href}">${item.label}</a>`;
         }).join("");
+        
         const profileClass = activePage === "profile"
             ? "profile-link active-profile"
             : "profile-link";

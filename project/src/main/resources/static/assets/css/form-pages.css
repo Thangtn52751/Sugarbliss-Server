@@ -1,4 +1,5 @@
 .form-page {
+    width: 100%;
     background: #fff0f3;
     padding: 12px 24px 88px;
 }
@@ -247,5 +248,124 @@
 
     .form-footer {
         padding: 32px 24px 36px;
+    }
+}
+.contact-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    max-width: 1260px;
+    margin: 0 auto;
+    padding: 0 92px;
+    align-items: flex-start;
+}
+
+.contact-info {
+    text-align: left;
+}
+
+.contact-info h1 {
+    color: #d94960;
+    font-size: 38px;
+    font-weight: 800;
+    margin-bottom: 24px;
+    margin-top: 0;
+}
+
+.contact-info p {
+    color: #2c2528;
+    font-size: 15px;
+    line-height: 1.6;
+    margin-bottom: 20px;
+}
+
+/* Cột phải: Form */
+.contact-form-wrapper {
+    width: 100%;
+}
+
+.bliss-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.bliss-field {
+    display: block;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+.bliss-field input,
+.bliss-field textarea {
+    width: 100%;
+    padding: 20px 24px;
+    border: 1px solid #7c7377; 
+    border-radius: 16px; 
+    font-family: inherit;
+    font-size: 15px;
+    background-color: #ffffff;
+    box-sizing: border-box;
+    transition: border-color 0.3s;
+}
+
+.bliss-field textarea {
+    min-height: 240px;
+    resize: vertical;
+}
+
+.bliss-field input:focus,
+.bliss-field textarea:focus {
+    outline: none;
+    border-color: #d94960;
+}
+
+.bliss-submit {
+    text-align: left; 
+    margin-top: 10px;
+}
+
+.submit-button {
+    background-color: #92d3a3;
+    color: #ffffff;
+    border: none;
+    padding: 16px 46px;
+    border-radius: 999px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.submit-button:hover:not(:disabled) {
+    background-color: #79bf8c;
+}
+
+.submit-button:disabled {
+    background-color: #e0e0e0;
+    cursor: not-allowed;
+}
+
+.form-message {
+    display: none;
+    margin-top: 10px;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+@media (max-width: 980px) {
+    .contact-container {
+        grid-template-columns: 1fr;
+        gap: 40px;
+        padding: 0 28px;
     }
 }

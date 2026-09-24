@@ -11,42 +11,46 @@
     <sugar-header active="contact"></sugar-header>
 
     <main class="form-page">
-        <div class="form-page-inner">
-            <div class="form-heading">
-                <h1>Let's Get In Touch</h1>
-                <p>Have a question about flavors, custom cakes, or store hours? We would love to hear from you.</p>
-                <p>Send us a note and our team will get back to you as soon as we can.</p>
+        <div class="contact-container">
+            <div class="contact-info">
+                <h1>Let’s Get In Touch</h1>
+                <p>Lorem ipsum dolor sit amet consectetur. Faucibus nulla dui ut nulla nec viverra enim luctus ut. Venenatis urna leo facilisi facilisi iaculis pellentesque at purus.</p>
+                <p>Neque erat sit sed venenatis platea volutpat justo tristique. Sagittis sagittis magna tellus magna ridiculus parturient. Egestas tempor lobortis vitae amet facilisi diam nec metus imperdiet. At proin et enim fermentum. Erat blandit nibh cras consequat cras mauris. In eu turpis sed dolor sit dapibus magnis arcu dictum.</p>
             </div>
 
-            <form class="bliss-form" data-bliss-form="contact" novalidate>
-                <label class="bliss-field">
-                    <span class="sr-only">Your Name</span>
-                    <input type="text" name="name" placeholder="Your Name" autocomplete="name" required>
-                </label>
+            <div class="contact-form-wrapper">
+                <form class="bliss-form" data-bliss-form="contact" novalidate>
+                    <label class="bliss-field">
+                        <span class="sr-only">Your Name</span>
+                        <input type="text" name="name" placeholder="Your Name" autocomplete="name" required>
+                    </label>
 
-                <label class="bliss-field">
-                    <span class="sr-only">Your Email</span>
-                    <input type="email" name="email" placeholder="Your Email" autocomplete="email" required>
-                </label>
+                    <label class="bliss-field">
+                        <span class="sr-only">Your Email</span>
+                        <input type="email" name="email" placeholder="Your Email" autocomplete="email" required>
+                    </label>
 
-                <label class="bliss-field">
-                    <span class="sr-only">Your Message</span>
-                    <textarea name="message" placeholder="Your Message" required></textarea>
-                </label>
+                    <label class="bliss-field">
+                        <span class="sr-only">Your Message</span>
+                        <textarea name="message" placeholder="Your Message" required></textarea>
+                    </label>
 
-                <p class="form-message" data-form-message></p>
+                    <p class="form-message" data-form-message></p>
 
-                <div class="bliss-submit">
-                    <button class="submit-button" type="submit">Submit</button>
-                </div>
-            </form>
+                    <div class="bliss-submit">
+                        <button class="submit-button" type="submit">Submit</button>
+                    </div>
+                </form>
+            </div>
         </div>
     </main>
 
-    <sugar-footer variant="form"></sugar-footer>
+    <sugar-footer></sugar-footer>
+    
     <script src="/assets/js/api-config.js"></script>
     <script src="/assets/js/shared-components.js"></script>
     <script src="/assets/js/header-profile.js"></script>
     <script src="/assets/js/form-pages.js"></script>
+    <script src="/assets/js/contact.js"></script>
 </body>
 </html>

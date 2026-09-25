@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
         syncSelectColor();
     }
 
-    if (!form || !message) {
+    if (!form || !message || form.dataset.blissForm === "special-order" || form.dataset.blissForm === "contact") {
         return;
     }
 

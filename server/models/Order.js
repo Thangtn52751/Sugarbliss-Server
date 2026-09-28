@@ -114,13 +114,39 @@ const orderSchema = new mongoose.Schema({
     },
     paymentMethod: {
         type: String,
-        enum: ['COD', 'Bank Transfer'],
+        enum: ['COD', 'Bank Transfer', 'ZaloPay'],
         default: 'COD',
     },
     paymentStatus: {
         type: String,
-        enum: ['Pending', 'Paid', 'Refunded'],
+        enum: ['Pending', 'Paid', 'Refunded', 'Failed'],
         default: 'Pending',
+    },
+    // Thong tin giao dich ZaloPay (chi dung khi paymentMethod === 'ZaloPay')
+    payment: {
+        provider: {
+            type: String,
+            trim: true,
+        },
+        // app_trans_id gui len ZaloPay (dinh dang yymmdd_orderNumber)
+        appTransId: {
+            type: String,
+            trim: true,
+            index: true,
+        },
+        // zp_trans_id ZaloPay tra ve sau khi thanh toan thanh cong
+        zpTransId: {
+            type: String,
+            trim: true,
+        },
+        // Link thanh toan (order_url) ZaloPay tra ve khi tao giao dich
+        paymentUrl: {
+            type: String,
+            trim: true,
+        },
+        paidAt: {
+            type: Date,
+        },
     },
 }, {
     timestamps: true,

@@ -6,6 +6,7 @@ const Order = require('../models/Order');
 const User = require('../models/User');
 const { protect } = require('../middleware/authMiddleware');
 const DELIVERY_METHODS = require('../config/deliveryMethods');
+const zalopayService = require('../services/zalopayService');
 
 const router = express.Router();
 
@@ -29,6 +30,7 @@ const orderResponse = (order) => ({
     shippingAddress: order.shippingAddress,
     paymentMethod: order.paymentMethod,
     paymentStatus: order.paymentStatus,
+    paymentUrl: order.payment?.paymentUrl || null,
 });
 
 const parseQuantity = (quantity) => {
@@ -231,8 +233,8 @@ router.post('/', asyncHandler(async (req, res) => {
         };
         const paymentMethod = req.body.paymentMethod || 'COD';
 
-        if (!['COD', 'Bank Transfer'].includes(paymentMethod)) {
-            const error = new Error('Payment method must be COD or Bank Transfer.');
+        if (!['COD', 'Bank Transfer', 'ZaloPay'].includes(paymentMethod)) {
+            const error = new Error('Payment method must be COD, Bank Transfer or ZaloPay.');
             error.statusCode = 400;
             throw error;
         }
@@ -252,6 +254,24 @@ router.post('/', asyncHandler(async (req, res) => {
             paymentMethod,
             paymentStatus: 'Pending',
         });
+
+        // Voi ZaloPay: tao giao dich va luu link thanh toan vao don hang
+        if (paymentMethod === 'ZaloPay') {
+            try {
+                const payment = await zalopayService.createPayment(order);
+                order.payment = {
+                    provider: 'ZaloPay',
+                    appTransId: payment.appTransId,
+                    paymentUrl: payment.orderUrl,
+                };
+                await order.save();
+            } catch (paymentError) {
+                // Tao giao dich that bai: xoa don vua tao de tranh don rac, roi nem loi
+                await Order.deleteOne({ _id: order._id });
+                order = undefined;
+                throw paymentError;
+            }
+        }
     } catch (error) {
         await releaseStock(orderItems);
         throw error;

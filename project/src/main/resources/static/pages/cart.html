@@ -39,6 +39,18 @@
                     <div class="cart-total"><dt>Total</dt><dd data-cart-total>0 VND</dd></div>
                 </dl>
 
+                <fieldset class="payment-methods" data-payment-methods>
+                    <legend>Payment method</legend>
+                    <label class="payment-option">
+                        <input type="radio" name="paymentMethod" value="COD" checked>
+                        <span>Cash on Delivery (COD)</span>
+                    </label>
+                    <label class="payment-option">
+                        <input type="radio" name="paymentMethod" value="ZaloPay">
+                        <span>Pay with ZaloPay</span>
+                    </label>
+                </fieldset>
+
                 <button class="checkout-button" type="button" data-cart-checkout disabled>
                     <span>Proceed To Checkout</span><span aria-hidden="true">&rarr;</span>
                 </button>

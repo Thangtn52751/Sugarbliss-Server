@@ -9,6 +9,7 @@ const userRoutes = require('./routes/userRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const specialOrderRoutes = require('./routes/specialOrderRoutes');
 const contactRoutes = require('./routes/contactRoutes');
+const paymentRoutes = require('./routes/paymentRoutes');
 const requestLogger = require('./middleware/requestLogger');
 
 const app = express();
@@ -28,6 +29,7 @@ app.get('/', (req, res) => {
             orders: '/api/orders',
             specialOrders: '/api/special-orders',
             contact: '/api/contact',
+            payments: '/api/payments',
         },
     });
 });
@@ -37,6 +39,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/special-orders', specialOrderRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/payments', paymentRoutes);
 
 app.use((req, res) => {
     res.status(404).json({ message: 'API not found' });

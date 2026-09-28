@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugar Bliss | Payment Result</title>
+    <link rel="stylesheet" href="/assets/css/home.css">
+    <style>
+        .payment-result-page {
+            min-height: 60vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+        .result-card {
+            max-width: 460px;
+            width: 100%;
+            text-align: center;
+            background: #fff;
+            border: 1px solid #f0d9de;
+            border-radius: 18px;
+            padding: 40px 32px;
+            box-shadow: 0 12px 30px rgba(217, 73, 96, 0.08);
+        }
+        .result-icon {
+            width: 72px;
+            height: 72px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 38px;
+            color: #fff;
+        }
+        .result-icon.success { background: #34c759; }
+        .result-icon.pending { background: #f0a020; }
+        .result-icon.failed  { background: #e35d5d; }
+        .result-card h1 { font-size: 22px; margin: 0 0 10px; color: #2c2528; }
+        .result-card p { color: #7c7377; font-size: 15px; margin: 0 0 8px; }
+        .result-order { font-weight: 700; color: #d94960; }
+        .result-actions { margin-top: 26px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .result-actions a {
+            display: inline-block;
+            padding: 11px 22px;
+            border-radius: 24px;
+            font-weight: 600;
+            font-size: 14px;
+            text-decoration: none;
+        }
+        .btn-primary { background: #d94960; color: #fff; }
+        .btn-secondary { background: #f8d7de; color: #d94960; }
+    </style>
+</head>
+<body>
+    <sugar-header></sugar-header>
+
+    <main class="payment-result-page">
+        <div class="result-card">
+            <div class="result-icon pending" data-result-icon>⏳</div>
+            <h1 data-result-title>Checking your payment...</h1>
+            <p data-result-message>Please wait while we confirm your transaction with ZaloPay.</p>
+            <p class="result-order" data-result-order hidden></p>
+            <div class="result-actions">
+                <a class="btn-primary" href="/orders">View My Orders</a>
+                <a class="btn-secondary" href="/products">Continue Shopping</a>
+            </div>
+        </div>
+    </main>
+
+    <sugar-footer></sugar-footer>
+    <script src="/assets/js/api-config.js"></script>
+    <script src="/assets/js/shared-components.js"></script>
+    <script src="/assets/js/header-profile.js"></script>
+    <script src="/assets/js/payment-result.js"></script>
+</body>
+</html>

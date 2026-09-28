@@ -308,3 +308,35 @@
         width: 106px;
     }
 }
+
+/* ===== Phuong thuc thanh toan (ZaloPay / COD) ===== */
+.payment-methods {
+    border: 1px solid #f0d9de;
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin: 18px 0;
+}
+
+.payment-methods legend {
+    padding: 0 6px;
+    font-weight: 700;
+    color: #d94960;
+    font-size: 14px;
+}
+
+.payment-option {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 4px;
+    cursor: pointer;
+    font-size: 14px;
+    color: #2c2528;
+}
+
+.payment-option input {
+    accent-color: #d94960;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}

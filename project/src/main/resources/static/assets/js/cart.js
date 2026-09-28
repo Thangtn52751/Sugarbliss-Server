@@ -214,9 +214,15 @@ async function removeCartItem(productId, button) {
     }
 }
 
+function getSelectedPaymentMethod() {
+    const checked = document.querySelector('input[name="paymentMethod"]:checked');
+    return checked ? checked.value : "COD";
+}
+
 async function checkoutCart() {
     const button = document.querySelector("[data-cart-checkout]");
     const originalText = button.innerHTML;
+    const paymentMethod = getSelectedPaymentMethod();
 
     button.disabled = true;
     button.textContent = "Creating order...";
@@ -225,7 +231,7 @@ async function checkoutCart() {
         const response = await fetch(`${CART_API_BASE_URL}/api/orders`, {
             method: "POST",
             headers: getCartHeaders(true),
-            body: JSON.stringify({ deliveryMethod: selectedDeliveryMethod })
+            body: JSON.stringify({ deliveryMethod: selectedDeliveryMethod, paymentMethod })
         });
         const data = await response.json();
 
@@ -239,6 +245,13 @@ async function checkoutCart() {
         }
 
         setCartItems([]);
+
+        // ZaloPay: chuyen huong sang trang thanh toan cua ZaloPay
+        if (paymentMethod === "ZaloPay" && data.paymentUrl) {
+            window.location.href = data.paymentUrl;
+            return;
+        }
+
         window.location.href = "/orders";
     } catch (error) {
         alert(error.message);

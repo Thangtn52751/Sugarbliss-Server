@@ -13,32 +13,32 @@
     <main class="form-page">
         <div class="contact-container">
             <div class="contact-info">
-                <h1>Let’s Get In Touch</h1>
-                <p>Lorem ipsum dolor sit amet consectetur. Faucibus nulla dui ut nulla nec viverra enim luctus ut. Venenatis urna leo facilisi facilisi iaculis pellentesque at purus.</p>
-                <p>Neque erat sit sed venenatis platea volutpat justo tristique. Sagittis sagittis magna tellus magna ridiculus parturient. Egestas tempor lobortis vitae amet facilisi diam nec metus imperdiet. At proin et enim fermentum. Erat blandit nibh cras consequat cras mauris. In eu turpis sed dolor sit dapibus magnis arcu dictum.</p>
+                <h1 data-i18n="contact.title">Let’s Get In Touch</h1>
+                <p data-i18n="contact.intro1">Lorem ipsum dolor sit amet consectetur. Faucibus nulla dui ut nulla nec viverra enim luctus ut. Venenatis urna leo facilisi facilisi iaculis pellentesque at purus.</p>
+                <p data-i18n="contact.intro2">Neque erat sit sed venenatis platea volutpat justo tristique. Sagittis sagittis magna tellus magna ridiculus parturient. Egestas tempor lobortis vitae amet facilisi diam nec metus imperdiet. At proin et enim fermentum. Erat blandit nibh cras consequat cras mauris. In eu turpis sed dolor sit dapibus magnis arcu dictum.</p>
             </div>
 
             <div class="contact-form-wrapper">
                 <form class="bliss-form" data-bliss-form="contact" novalidate>
                     <label class="bliss-field">
                         <span class="sr-only">Your Name</span>
-                        <input type="text" name="name" placeholder="Your Name" autocomplete="name" required>
+                        <input type="text" name="name" placeholder="Your Name" autocomplete="name" data-i18n-attr="placeholder:contact.namePlaceholder" required>
                     </label>
 
                     <label class="bliss-field">
                         <span class="sr-only">Your Email</span>
-                        <input type="email" name="email" placeholder="Your Email" autocomplete="email" required>
+                        <input type="email" name="email" placeholder="Your Email" autocomplete="email" data-i18n-attr="placeholder:contact.emailPlaceholder" required>
                     </label>
 
                     <label class="bliss-field">
                         <span class="sr-only">Your Message</span>
-                        <textarea name="message" placeholder="Your Message" required></textarea>
+                        <textarea name="message" placeholder="Your Message" data-i18n-attr="placeholder:contact.messagePlaceholder" required></textarea>
                     </label>
 
                     <p class="form-message" data-form-message></p>
 
                     <div class="bliss-submit">
-                        <button class="submit-button" type="submit">Submit</button>
+                        <button class="submit-button" type="submit" data-i18n="contact.submit">Submit</button>
                     </div>
                 </form>
             </div>
@@ -48,6 +48,7 @@
     <sugar-footer></sugar-footer>
     
     <script src="/assets/js/api-config.js"></script>
+    <script src="/assets/js/i18n.js"></script>
     <script src="/assets/js/shared-components.js"></script>
     <script src="/assets/js/header-profile.js"></script>
     <script src="/assets/js/form-pages.js"></script>

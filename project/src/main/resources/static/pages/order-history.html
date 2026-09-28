@@ -13,22 +13,22 @@
     <main class="order-history-page">
         <section class="order-history-hero">
             <div class="order-history-inner">
-                <p>Account Dashboard / History</p>
-                <h1>Order History</h1>
+                <p data-i18n="orders.breadcrumb">Account Dashboard / History</p>
+                <h1 data-i18n="orders.title">Order History</h1>
             </div>
         </section>
 
         <section class="order-history-content">
             <aside class="order-support">
-                <h2>Concierge Support</h2>
-                <p>Have questions about an order, return, or custom request? Our team is ready to help.</p>
-                <a href="/contact">Chat with advisor</a>
+                <h2 data-i18n="orders.supportTitle">Concierge Support</h2>
+                <p data-i18n="orders.supportText">Have questions about an order, return, or custom request? Our team is ready to help.</p>
+                <a href="/contact" data-i18n="orders.chatAdvisor">Chat with advisor</a>
             </aside>
 
             <div class="order-history-main">
                 <label class="order-search">
                     <span class="sr-only">Search orders</span>
-                    <input type="search" placeholder="Search orders by item or order number" data-order-search>
+                    <input type="search" placeholder="Search orders by item or order number" data-order-search data-i18n-attr="placeholder:orders.searchPlaceholder">
                 </label>
 
                 <div class="order-history-state" data-order-state>Loading orders...</div>
@@ -48,6 +48,7 @@
 
     <sugar-footer></sugar-footer>
     <script src="/assets/js/api-config.js"></script>
+    <script src="/assets/js/i18n.js"></script>
     <script src="/assets/js/shared-components.js"></script>
     <script src="/assets/js/header-profile.js"></script>
     <script src="/assets/js/order-history.js"></script>

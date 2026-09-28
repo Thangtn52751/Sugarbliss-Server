@@ -13,67 +13,67 @@
     <main class="form-page">
         <div class="form-page-inner">
             <div class="form-heading">
-                <h1>Special Order Form</h1>
-                <p>Please fill out the form and someone from our team will get back to you within 24 hours.</p>
+                <h1 data-i18n="special.title">Special Order Form</h1>
+                <p data-i18n="special.subtitle">Please fill out the form and someone from our team will get back to you within 24 hours.</p>
             </div>
 
             <form class="bliss-form" data-bliss-form="special-order" novalidate>
                 <label class="bliss-field">
                     <span class="sr-only">Email</span>
-                    <input type="email" name="email" placeholder="Email" autocomplete="email" required>
+                    <input type="email" name="email" placeholder="Email" autocomplete="email" data-i18n-attr="placeholder:special.emailPlaceholder" required>
                 </label>
 
                 <label class="bliss-field">
                     <span class="sr-only">Phone Number</span>
-                    <input type="tel" name="phone" placeholder="Phone Number" autocomplete="tel" required>
+                    <input type="tel" name="phone" placeholder="Phone Number" autocomplete="tel" data-i18n-attr="placeholder:special.phonePlaceholder" required>
                 </label>
 
                 <label class="bliss-field">
                     <span class="sr-only">Name</span>
-                    <input type="text" name="name" placeholder="Name" autocomplete="name" required>
+                    <input type="text" name="name" placeholder="Name" autocomplete="name" data-i18n-attr="placeholder:special.namePlaceholder" required>
                 </label>
 
                 <label class="bliss-field bliss-select">
                     <span class="sr-only">Choose a delivery option</span>
                     <select name="deliveryOption" data-delivery-select required>
-                        <option value="" selected disabled>Choose a delivery option</option>
-                        <option value="pickup">Store Pickup</option>
-                        <option value="local-delivery">Local Delivery</option>
-                        <option value="shipping">Nationwide Shipping</option>
+                        <option value="" selected disabled data-i18n="special.deliveryDefault">Choose a delivery option</option>
+                        <option value="pickup" data-i18n="special.deliveryPickup">Store Pickup</option>
+                        <option value="local-delivery" data-i18n="special.deliveryLocal">Local Delivery</option>
+                        <option value="shipping" data-i18n="special.deliveryShipping">Nationwide Shipping</option>
                     </select>
                 </label>
 
                 <div class="form-row" data-address-fields>
                     <label class="bliss-field">
                         <span class="sr-only">Address 1</span>
-                        <input type="text" name="address1" placeholder="Address 1" autocomplete="address-line1" required>
+                        <input type="text" name="address1" placeholder="Address 1" autocomplete="address-line1" data-i18n-attr="placeholder:special.address1Placeholder" required>
                     </label>
                     <label class="bliss-field">
                         <span class="sr-only">Address 2</span>
-                        <input type="text" name="address2" placeholder="Address 2" autocomplete="address-line2">
+                        <input type="text" name="address2" placeholder="Address 2" autocomplete="address-line2" data-i18n-attr="placeholder:special.address2Placeholder">
                     </label>
                 </div>
 
                 <div class="form-row" data-address-fields>
                     <label class="bliss-field">
                         <span class="sr-only">City</span>
-                        <input type="text" name="city" placeholder="City" autocomplete="address-level2" required>
+                        <input type="text" name="city" placeholder="City" autocomplete="address-level2" data-i18n-attr="placeholder:special.cityPlaceholder" required>
                     </label>
                     <label class="bliss-field">
                         <span class="sr-only">Zip Code</span>
-                        <input type="text" name="zipCode" placeholder="Zip Code" autocomplete="postal-code" required>
+                        <input type="text" name="zipCode" placeholder="Zip Code" autocomplete="postal-code" data-i18n-attr="placeholder:special.zipPlaceholder" required>
                     </label>
                 </div>
 
                 <label class="bliss-field">
                     <span class="sr-only">Order Details</span>
-                    <textarea name="orderDetails" placeholder="Order Details" required></textarea>
+                    <textarea name="orderDetails" placeholder="Order Details" data-i18n-attr="placeholder:special.orderDetailsPlaceholder" required></textarea>
                 </label>
 
                 <p class="form-message" data-form-message></p>
 
                 <div class="bliss-submit">
-                    <button class="submit-button" type="submit">Submit</button>
+                    <button class="submit-button" type="submit" data-i18n="special.submit">Submit</button>
                 </div>
             </form>
         </div>
@@ -81,6 +81,7 @@
 
     <sugar-footer variant="form"></sugar-footer>
     <script src="/assets/js/api-config.js"></script>
+    <script src="/assets/js/i18n.js"></script>
     <script src="/assets/js/shared-components.js"></script>
     <script src="/assets/js/header-profile.js"></script>
     <script src="/assets/js/special-orders.js"></script>

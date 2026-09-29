@@ -21,61 +21,61 @@
         <section class="profile-content">
             <form class="profile-card profile-form" data-profile-form>
                 <div class="profile-card-heading">
-                    <h2>Personal Details</h2>
-                    <p>Update your account details and delivery address.</p>
+                    <h2 data-i18n="profile.personalDetails">Personal Details</h2>
+                    <p data-i18n="profile.personalSubtitle">Update your account details and delivery address.</p>
                 </div>
 
                 <div class="form-grid two-columns">
                     <label>
-                        <span>First Name</span>
+                        <span data-i18n="profile.firstName">First Name</span>
                         <input type="text" name="firstName" autocomplete="given-name">
                     </label>
 
                     <label>
-                        <span>Last Name</span>
+                        <span data-i18n="profile.lastName">Last Name</span>
                         <input type="text" name="lastName" autocomplete="family-name">
                     </label>
                 </div>
 
                 <label>
-                    <span>Email Address</span>
+                    <span data-i18n="profile.email">Email Address</span>
                     <input type="email" name="email" autocomplete="email" readonly>
                 </label>
 
                 <label>
-                    <span>Phone Number</span>
+                    <span data-i18n="profile.phone">Phone Number</span>
                     <input type="tel" name="phone" autocomplete="tel">
                 </label>
 
                 <label>
-                    <span>Address</span>
+                    <span data-i18n="profile.address">Address</span>
                     <input type="text" name="address" autocomplete="street-address">
                 </label>
 
                 <label>
-                    <span>Date of Birth</span>
+                    <span data-i18n="profile.dob">Date of Birth</span>
                     <input type="date" name="dateOfBirth">
                 </label>
 
                 <p class="profile-message" data-profile-message></p>
 
                 <div class="profile-actions">
-                    <button class="save-button" type="submit">Save Changes</button>
-                    <button class="cancel-button" type="button" data-profile-cancel>Cancel</button>
+                    <button class="save-button" type="submit" data-i18n="profile.save">Save Changes</button>
+                    <button class="cancel-button" type="button" data-profile-cancel data-i18n="profile.cancel">Cancel</button>
                 </div>
             </form>
 
             <div class="profile-side">
                 <section class="profile-card recent-orders">
                     <div class="section-title-row">
-                        <h2>Recent Orders</h2>
-                        <a href="/orders">View All</a>
+                        <h2 data-i18n="profile.recentOrders">Recent Orders</h2>
+                        <a href="/orders" data-i18n="profile.viewAll">View All</a>
                     </div>
                     <div class="orders-list" data-profile-orders></div>
                 </section>
 
                 <section class="profile-card favorites-card">
-                    <h2>My Favorites</h2>
+                    <h2 data-i18n="profile.favorites">My Favorites</h2>
                     <div class="favorites-grid" data-profile-favorites></div>
                 </section>
             </div>
@@ -84,6 +84,7 @@
 
     <sugar-footer></sugar-footer>
     <script src="/assets/js/api-config.js"></script>
+    <script src="/assets/js/i18n.js"></script>
     <script src="/assets/js/shared-components.js"></script>
     <script src="/assets/js/header-profile.js"></script>
     <script src="/assets/js/profile.js"></script>

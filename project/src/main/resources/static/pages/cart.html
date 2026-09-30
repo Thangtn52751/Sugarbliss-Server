@@ -14,41 +14,42 @@
         <section class="cart-content">
             <div class="cart-products">
                 <header class="cart-heading">
-                    <h1>Your Sweet Cart <span data-cart-record-count>(0)</span></h1>
-                    <p>Review your delicious selection of treats before checkout.</p>
+                    <h1><span data-i18n="cart.title">Your Sweet Cart</span> <span data-cart-record-count>(0)</span></h1>
+                    <p data-i18n="cart.subtitle">Review your delicious selection of treats before checkout.</p>
                 </header>
 
                 <div class="cart-state" data-cart-state>Loading your cart...</div>
                 <div class="cart-list" data-cart-list></div>
 
-                <a class="continue-shopping" href="/products">&larr; Continue browsing desserts</a>
+                <a class="continue-shopping" href="/products" data-i18n="cart.continue">&larr; Continue browsing desserts</a>
             </div>
 
             <aside class="cart-summary">
-                <h2>Order Summary</h2>
+                <h2 data-i18n="cart.summary">Order Summary</h2>
                 <label class="delivery-field">
-                    <span>Delivery method</span>
+                    <span data-i18n="cart.deliveryMethod">Delivery method</span>
                     <select data-delivery-method disabled>
                         <option>Loading delivery methods...</option>
                     </select>
                 </label>
 
                 <dl class="cart-totals">
-                    <div><dt>Subtotal</dt><dd data-cart-subtotal>0 VND</dd></div>
-                    <div><dt>Estimated Delivery</dt><dd data-cart-delivery>Free</dd></div>
-                    <div class="cart-total"><dt>Total</dt><dd data-cart-total>0 VND</dd></div>
+                    <div><dt data-i18n="cart.subtotal">Subtotal</dt><dd data-cart-subtotal>0 VND</dd></div>
+                    <div><dt data-i18n="cart.estimatedDelivery">Estimated Delivery</dt><dd data-cart-delivery data-i18n="cart.free">Free</dd></div>
+                    <div class="cart-total"><dt data-i18n="cart.total">Total</dt><dd data-cart-total>0 VND</dd></div>
                 </dl>
 
                 <button class="checkout-button" type="button" data-cart-checkout disabled>
-                    <span>Proceed To Checkout</span><span aria-hidden="true">&rarr;</span>
+                    <span data-i18n="cart.checkout">Proceed To Checkout</span><span aria-hidden="true">&rarr;</span>
                 </button>
-                <p class="checkout-note">Review your delivery details and pay cash on delivery.</p>
+                <p class="checkout-note" data-i18n="cart.checkoutNote">Secure checkout with your saved account details.</p>
             </aside>
         </section>
     </main>
 
     <sugar-footer></sugar-footer>
     <script src="/assets/js/api-config.js"></script>
+    <script src="/assets/js/i18n.js"></script>
     <script src="/assets/js/shared-components.js"></script>
     <script src="/assets/js/header-profile.js"></script>
     <script src="/assets/js/cart.js"></script>

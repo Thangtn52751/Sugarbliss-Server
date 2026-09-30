@@ -1010,3 +1010,34 @@ body {
     filter: none;
 }
 
+
+/* ===== Nut chuyen doi ngon ngu (i18n) ===== */
+.lang-switch {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 30px;
+    padding: 0 10px;
+    border: 1.5px solid #d94960;
+    border-radius: 999px;
+    background: transparent;
+    color: #d94960;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: background 0.25s ease, color 0.25s ease, transform 0.15s ease;
+}
+
+.lang-switch:hover {
+    background: #d94960;
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.lang-switch:focus-visible {
+    outline: 2px solid #d94960;
+    outline-offset: 2px;
+}

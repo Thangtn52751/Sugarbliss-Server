@@ -15,8 +15,8 @@
                     <span>Sugar Bliss</span>
                 </a>
 
-                <h1>Enter Code</h1>
-                <p>We sent a 6-digit verification code to your registered email address.</p>
+                <h1 data-i18n="otp.title">Enter Code</h1>
+                <p data-i18n="otp.subtitle">We sent a 6-digit verification code to your registered email address.</p>
 
                 <form class="reset-form" data-reset-page="otp">
                     <div class="otp-inputs" data-otp-inputs>
@@ -28,17 +28,18 @@
                         <input type="text" inputmode="numeric" maxlength="1" aria-label="OTP digit 6">
                     </div>
 
-                    <button class="reset-button" type="submit">Verify Code</button>
+                    <button class="reset-button" type="submit" data-i18n="otp.verify">Verify Code</button>
                 </form>
 
                 <p class="reset-message" data-reset-message></p>
-                <p class="reset-link-text">Didn't receive the code? <button type="button" data-resend-otp>Resend Now</button></p>
+                <p class="reset-link-text"><span data-i18n="otp.noCode">Didn't receive the code?</span> <button type="button" data-resend-otp data-i18n="otp.resend">Resend Now</button></p>
             </div>
         </section>
     </main>
 
     <sugar-footer variant="reset"></sugar-footer>
     <script src="/assets/js/api-config.js"></script>
+    <script src="/assets/js/i18n.js"></script>
     <script src="/assets/js/shared-components.js"></script>
     <script src="/assets/js/password-reset.js"></script>
 </body>

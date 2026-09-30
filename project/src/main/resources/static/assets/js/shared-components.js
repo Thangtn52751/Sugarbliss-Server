@@ -1,9 +1,11 @@
 class SugarHeader extends HTMLElement {
     connectedCallback() {
         const activePage = this.getAttribute("active") || "";
+        
+        // Bổ sung lại mục Home vào danh sách điều hướng
         const navigationItems = [
             { key: "home", label: "Home", href: "/home" },
-            { key: "about", label: "About Us", href: "/pages/about-us.html" },
+            { key: "about", label: "About Us", href: "/pages/about-us.html" }, 
             { key: "menu", label: "Menu", href: "/products" },
             { key: "special-orders", label: "Special Orders", href: "/special-orders" },
             { key: "contact", label: "Contact", href: "/contact" },
@@ -13,7 +15,7 @@ class SugarHeader extends HTMLElement {
             const activeClass = isActive ? " class=\"active\"" : "";
             const currentPage = isActive ? " aria-current=\"page\"" : "";
 
-            return `<a${activeClass}${currentPage} href="${item.href}">${item.label}</a>`;
+            return `<a${activeClass}${currentPage} href="${item.href}" data-i18n="${item.i18nKey}">${item.label}</a>`;
         }).join("");
         const profileClass = activePage === "profile"
             ? "profile-link active-profile"
@@ -77,259 +79,14 @@ class SugarHeader extends HTMLElement {
                         </svg>
                     </a>
 
+                    <button type="button" class="lang-switch" aria-label="Language / Ngôn ngữ">
+                        <span class="lang-code" data-lang-code>VI</span>
+                    </button>
+
                     <a class="${profileClass}" href="/profile" aria-label="Account"></a>
                 </div>
             </header>
         `;
-
-        this.initializeProductSearch();
-    }
-
-    disconnectedCallback() {
-        document.removeEventListener("pointerdown", this.outsideSearchHandler);
-        window.clearTimeout(this.searchDebounceTimer);
-        this.searchAbortController?.abort();
-    }
-
-    ensureSearchStyles() {
-        if (document.querySelector("link[data-sugar-header-styles]")) return;
-
-        const stylesheet = document.createElement("link");
-        stylesheet.rel = "stylesheet";
-        stylesheet.href = "/assets/css/header-search.css";
-        stylesheet.dataset.sugarHeaderStyles = "true";
-        document.head.appendChild(stylesheet);
-    }
-
-    initializeProductSearch() {
-        this.searchRoot = this.querySelector("[data-header-search]");
-        this.searchToggle = this.querySelector("[data-header-search-toggle]");
-        this.searchPanel = this.querySelector("[data-header-search-panel]");
-        this.searchInput = this.querySelector("[data-header-search-input]");
-        this.searchClear = this.querySelector("[data-header-search-clear]");
-        this.searchResults = this.querySelector("[data-header-search-results]");
-        this.activeSuggestionIndex = -1;
-
-        this.searchToggle.addEventListener("click", () => this.setSearchOpen(
-            !this.searchRoot.classList.contains("is-open"),
-        ));
-        this.searchInput.addEventListener("input", () => this.handleSearchInput());
-        this.searchInput.addEventListener("keydown", (event) => this.handleSearchKeydown(event));
-        this.searchClear.addEventListener("click", () => this.clearProductSearch());
-        this.outsideSearchHandler = (event) => {
-            if (!this.contains(event.target)) this.setSearchOpen(false);
-        };
-        document.addEventListener("pointerdown", this.outsideSearchHandler);
-    }
-
-    setSearchOpen(isOpen) {
-        this.searchRoot.classList.toggle("is-open", isOpen);
-        this.searchToggle.setAttribute("aria-expanded", String(isOpen));
-        this.searchPanel.setAttribute("aria-hidden", String(!isOpen));
-        this.searchInput.setAttribute("aria-expanded", String(isOpen));
-
-        if (isOpen) {
-            window.requestAnimationFrame(() => this.searchInput.focus());
-        } else {
-            this.setActiveSuggestion(-1);
-        }
-    }
-
-    handleSearchInput() {
-        const query = this.searchInput.value.replace(/\s+/g, " ").trim();
-        this.searchClear.hidden = query.length === 0;
-        window.clearTimeout(this.searchDebounceTimer);
-        this.searchAbortController?.abort();
-
-        if (query.length < 2) {
-            this.renderSearchState("Type at least 2 characters to search.");
-            return;
-        }
-
-        this.renderSearchState("Searching products...", true);
-        this.searchDebounceTimer = window.setTimeout(() => this.fetchProductSuggestions(query), 280);
-    }
-
-    async fetchProductSuggestions(query) {
-        const token = localStorage.getItem("sugarBlissToken");
-
-        if (!token) {
-            this.renderSearchSignIn();
-            return;
-        }
-
-        this.searchAbortController = new AbortController();
-        const requestController = this.searchAbortController;
-        const apiBaseUrl = window.SugarBlissApi?.baseUrl
-            || `${window.location.protocol}//${window.location.hostname}:3000`;
-        const params = new URLSearchParams({ q: query, limit: "6" });
-
-        try {
-            const response = await fetch(`${apiBaseUrl}/api/products/search?${params}`, {
-                headers: { Authorization: `Bearer ${token}` },
-                signal: requestController.signal,
-            });
-            const data = await response.json().catch(() => ({}));
-
-            if (requestController !== this.searchAbortController) return;
-
-            if (response.status === 401) {
-                this.renderSearchSignIn();
-                return;
-            }
-
-            if (!response.ok) {
-                throw new Error(data.message || "Product search failed.");
-            }
-
-            if (data.query !== this.searchInput.value.replace(/\s+/g, " ").trim()) return;
-            this.renderProductSuggestions(Array.isArray(data.suggestions) ? data.suggestions : []);
-        } catch (error) {
-            if (error.name === "AbortError") return;
-            console.warn("Cannot search products.", error);
-            this.renderSearchState("Search is unavailable. Please try again.");
-        }
-    }
-
-    renderProductSuggestions(products) {
-        this.searchResults.replaceChildren();
-        this.searchResults.removeAttribute("aria-busy");
-        this.activeSuggestionIndex = -1;
-
-        if (products.length === 0) {
-            this.renderSearchState("No matching products found.");
-            return;
-        }
-
-        const fragment = document.createDocumentFragment();
-
-        products.forEach((product, index) => {
-            const option = document.createElement("a");
-            option.className = "header-search-option";
-            option.href = `/products/${encodeURIComponent(product.id)}`;
-            option.id = `header-search-option-${index}`;
-            option.setAttribute("role", "option");
-            option.setAttribute("aria-selected", "false");
-
-            const media = document.createElement("span");
-            media.className = "header-search-option-media";
-
-            if (product.image) {
-                const image = document.createElement("img");
-                image.src = this.resolveProductImage(product.image);
-                image.alt = "";
-                image.loading = "lazy";
-                media.appendChild(image);
-            } else {
-                media.textContent = String(product.name || "S").charAt(0).toUpperCase();
-            }
-
-            const copy = document.createElement("span");
-            copy.className = "header-search-option-copy";
-            const name = document.createElement("strong");
-            name.textContent = product.name || "Sugar Bliss product";
-            const meta = document.createElement("span");
-            const price = Number.isFinite(Number(product.price))
-                ? `${new Intl.NumberFormat("vi-VN").format(Number(product.price))} \u20ab`
-                : "Contact for price";
-            meta.textContent = `${product.category || "Treat"} · ${price}`;
-            copy.append(name, meta);
-
-            const availability = document.createElement("span");
-            availability.className = product.inStock
-                ? "header-search-stock"
-                : "header-search-stock is-unavailable";
-            availability.textContent = product.inStock ? "In stock" : "Out of stock";
-
-            option.append(media, copy, availability);
-            option.addEventListener("pointerenter", () => this.setActiveSuggestion(index));
-            option.addEventListener("click", () => this.setSearchOpen(false));
-            fragment.appendChild(option);
-        });
-
-        this.searchResults.appendChild(fragment);
-    }
-
-    renderSearchState(message, isLoading = false) {
-        const state = document.createElement("p");
-        state.className = "header-search-state";
-        state.setAttribute("role", "status");
-        state.textContent = message;
-        this.searchResults.replaceChildren(state);
-        this.searchResults.toggleAttribute("aria-busy", isLoading);
-        this.setActiveSuggestion(-1);
-    }
-
-    renderSearchSignIn() {
-        const state = document.createElement("p");
-        state.className = "header-search-state";
-        state.append("Please ");
-        const link = document.createElement("a");
-        link.href = "/login";
-        link.textContent = "log in";
-        state.append(link, " to search products.");
-        this.searchResults.replaceChildren(state);
-        this.searchResults.removeAttribute("aria-busy");
-        this.setActiveSuggestion(-1);
-    }
-
-    handleSearchKeydown(event) {
-        const options = [...this.searchResults.querySelectorAll(".header-search-option")];
-
-        if (event.key === "Escape") {
-            event.preventDefault();
-            this.setSearchOpen(false);
-            this.searchToggle.focus();
-            return;
-        }
-
-        if (!options.length || !["ArrowDown", "ArrowUp", "Enter"].includes(event.key)) return;
-
-        if (event.key === "Enter") {
-            const selected = options[this.activeSuggestionIndex] || options[0];
-            event.preventDefault();
-            selected.click();
-            return;
-        }
-
-        event.preventDefault();
-        const step = event.key === "ArrowDown" ? 1 : -1;
-        const nextIndex = (this.activeSuggestionIndex + step + options.length) % options.length;
-        this.setActiveSuggestion(nextIndex);
-        options[nextIndex].scrollIntoView({ block: "nearest" });
-    }
-
-    setActiveSuggestion(index) {
-        const options = [...this.searchResults?.querySelectorAll(".header-search-option") || []];
-        this.activeSuggestionIndex = index;
-
-        options.forEach((option, optionIndex) => {
-            const isActive = optionIndex === index;
-            option.classList.toggle("is-active", isActive);
-            option.setAttribute("aria-selected", String(isActive));
-        });
-
-        if (this.searchInput) {
-            if (index >= 0 && options[index]) {
-                this.searchInput.setAttribute("aria-activedescendant", options[index].id);
-            } else {
-                this.searchInput.removeAttribute("aria-activedescendant");
-            }
-        }
-    }
-
-    clearProductSearch() {
-        this.searchAbortController?.abort();
-        this.searchInput.value = "";
-        this.searchClear.hidden = true;
-        this.renderSearchState("Type at least 2 characters to search.");
-        this.searchInput.focus();
-    }
-
-    resolveProductImage(image) {
-        if (/^https?:\/\//i.test(image)) return image;
-        if (image.startsWith("/uploads")) return `${window.SugarBlissApi.baseUrl}${image}`;
-        return image;
     }
 }
 
@@ -349,16 +106,22 @@ class SugarFooter extends HTMLElement {
                         <img src="/assets/icons/logo.png" alt="Sugar Bliss logo">
                         <span>Sugar Bliss</span>
                     </a>
-                    <p>Crafting bliss in every single bite.</p>
+                    <p data-i18n="footer.tagline">Crafting bliss in every single bite.</p>
                 </div>
 
                 <div class="footer-visit">
-                    <h2>Visit Us</h2>
+                    <h2 data-i18n="footer.visitUs">Visit Us</h2>
                     <p><span class="footer-icon location" aria-hidden="true"></span>123 HaNoi VietNam</p>
                     <p><span class="footer-icon phone" aria-hidden="true"></span>0123456789</p>
                 </div>
             </footer>
         `;
+
+        // Dich footer + cap nhat khi doi ngon ngu
+        if (window.SugarI18n) {
+            window.SugarI18n.apply(this);
+            window.addEventListener("sugarbliss:lang-changed", () => window.SugarI18n.apply(this));
+        }
     }
 }
 

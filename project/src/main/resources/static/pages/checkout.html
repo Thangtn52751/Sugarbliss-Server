@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugar Bliss | Checkout</title>
+    <link rel="stylesheet" href="/assets/css/home.css">
+    <link rel="stylesheet" href="/assets/css/checkout.css">
+</head>
+<body>
+    <sugar-header></sugar-header>
+    <main class="checkout-page">
+        <div class="checkout-container">
+            <div class="checkout-state" data-checkout-loading role="status">Preparing your checkout...</div>
+            <section data-checkout-review hidden>
+                <header class="checkout-heading">
+                    <p class="checkout-eyebrow">Final step</p>
+                    <h1>Review your order</h1>
+                    <p>Check your treats and delivery details before placing your order. A little bliss is almost yours.</p>
+                </header>
+                <div class="checkout-layout">
+                    <div class="checkout-stack">
+                        <section class="checkout-card">
+                            <div class="checkout-card-heading"><h2>Your items</h2><a href="/cart" data-edit-cart>Edit cart</a></div>
+                            <div data-checkout-items></div>
+                        </section>
+                        <section class="checkout-card">
+                            <div class="checkout-card-heading"><h2>Delivery &amp; payment</h2></div>
+                            <form data-address-form>
+                                <fieldset class="checkout-address-fields">
+                                    <legend><span class="checkout-icon" data-icon="pin"></span>Delivery address</legend>
+                                    <div class="checkout-field-grid">
+                                        <label>Recipient name<input name="recipientName" autocomplete="name" maxlength="100" required></label>
+                                        <label>Phone number<input name="phone" type="tel" autocomplete="tel" placeholder="0901234567" pattern="(?:0[0-9]{9,10}|\+84[0-9]{9,10})" title="Enter a Vietnamese phone number such as 0901234567 or +84901234567" required><small class="checkout-field-error" data-phone-status hidden>Enter a valid number, for example 0901234567 or +84901234567.</small></label>
+                                        <label class="checkout-field-full">Street address
+                                            <span class="checkout-address-search">
+                                                <input name="address" data-address-search autocomplete="off" maxlength="300" placeholder="Search delivery address" role="combobox" aria-autocomplete="list" aria-controls="delivery-address-suggestions" aria-expanded="false" required>
+                                                <span class="checkout-address-spinner" data-address-spinner hidden aria-hidden="true"></span>
+                                                <span class="checkout-address-suggestions" id="delivery-address-suggestions" data-address-suggestions role="listbox" hidden></span>
+                                            </span>
+                                            <small class="checkout-address-help" data-address-status>Type at least 3 characters, then select a verified address.</small>
+                                            <small class="checkout-address-attribution">Address data may include <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>.</small>
+                                        </label>
+                                    </div>
+                                    <label class="checkout-note-field">Delivery note <span>(optional)</span><textarea name="note" rows="2" maxlength="500" placeholder="Anything we should know for a smooth delivery?"></textarea></label>
+                                </fieldset>
+                            </form>
+                            <div class="checkout-detail-row">
+                                <span class="checkout-icon" data-icon="truck"></span>
+                                <div><span class="checkout-detail-label">Shipping method</span><strong data-method-name>Standard Delivery</strong><p data-method-description>Delivered by Lalamove. Get your delivery fee before placing the order.</p></div>
+                                <a href="/cart" data-edit-cart>Change</a>
+                            </div>
+                            <fieldset class="checkout-payment">
+                                <legend>Payment method</legend>
+                                <label class="checkout-payment-option"><input type="radio" name="paymentMethod" value="COD" checked><span class="checkout-icon" data-icon="wallet"></span><span><strong>Cash on delivery (COD)</strong><small>Pay when you receive your order.</small></span><span class="checkout-selected">Selected</span></label>
+                            </fieldset>
+                        </section>
+                    </div>
+                    <aside class="checkout-card checkout-summary">
+                        <h2>Order summary</h2>
+                        <dl class="checkout-totals">
+                            <div><dt>Subtotal</dt><dd data-checkout-subtotal>—</dd></div>
+                            <div><dt>Delivery</dt><dd data-checkout-fee>Select an address</dd></div>
+                            <div class="checkout-total"><dt>Total</dt><dd><strong data-checkout-total>—</strong><small>VND</small></dd></div>
+                        </dl>
+                        <button class="checkout-button checkout-button-secondary" type="button" data-get-quote hidden>Retry delivery fee</button>
+                        <p class="checkout-quote-status" data-quote-status role="status" aria-live="polite">Search for and select your delivery address.</p>
+                        <button class="checkout-button checkout-button-primary" type="button" data-place-order disabled>Place order</button>
+                        <p class="checkout-payment-note"><span data-icon="shield"></span>Cash on delivery · No online payment</p>
+                        <p class="checkout-fine-print">Review the total above. Your order is placed only when you select Place order.</p>
+                    </aside>
+                </div>
+            </section>
+            <section data-checkout-result hidden aria-live="polite"></section>
+        </div>
+    </main>
+    <sugar-footer></sugar-footer>
+    <script src="/assets/js/api-config.js"></script>
+    <script src="/assets/js/shared-components.js"></script>
+    <script src="/assets/js/header-profile.js"></script>
+    <script src="/assets/js/checkout.js?v=2"></script>
+</body>
+</html>

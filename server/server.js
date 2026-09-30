@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('node:path').join(__dirname, '.env') });
 
 const express = require('express');
 const cors = require('cors');
@@ -9,6 +9,9 @@ const userRoutes = require('./routes/userRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const specialOrderRoutes = require('./routes/specialOrderRoutes');
 const contactRoutes = require('./routes/contactRoutes');
+const shippingRoutes = require('./routes/shippingRoutes');
+const deliveryRoutes = require('./routes/deliveryRoutes');
+const chatboxRoutes = require('./routes/chatboxRoutes');
 const requestLogger = require('./middleware/requestLogger');
 
 const app = express();
@@ -28,6 +31,9 @@ app.get('/', (req, res) => {
             orders: '/api/orders',
             specialOrders: '/api/special-orders',
             contact: '/api/contact',
+            delivery: '/api/delivery',
+            productSearch: '/api/products/search?q=cake',
+            chatbox: '/api/chatbox/message',
         },
     });
 });
@@ -37,6 +43,9 @@ app.use('/api/users', userRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/special-orders', specialOrderRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/shipping', shippingRoutes);
+app.use('/api/delivery', deliveryRoutes);
+app.use('/api/chatbox', chatboxRoutes);
 
 app.use((req, res) => {
     res.status(404).json({ message: 'API not found' });
@@ -55,6 +64,7 @@ app.use((err, req, res, next) => {
 
     res.status(statusCode).json({
         message: err.message || 'Server error',
+        code: err.code,
         stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
     });
 });

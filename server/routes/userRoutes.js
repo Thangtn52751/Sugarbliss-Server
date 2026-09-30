@@ -8,6 +8,7 @@ const Order = require('../models/Order');
 const upload = require('../config/upload');
 const generateToken = require('../utils/generateToken');
 const { protect } = require('../middleware/authMiddleware');
+const { getOrderStatusView } = require('../utils/orderStatus');
 
 const router = express.Router();
 const otpStore = new Map();
@@ -36,15 +37,21 @@ const formatOrderDate = (date) => new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
 }).format(new Date(date));
 
-const orderResponse = (order) => ({
-    id: order._id,
-    orderNumber: order.orderNumber,
-    productName: order.productName,
-    orderedOn: formatOrderDate(order.orderedOn),
-    status: order.status,
-    total: order.total,
-    items: order.items,
-});
+const orderResponse = (order) => {
+    const displayStatus = getOrderStatusView(order);
+    return {
+        id: order._id,
+        orderNumber: order.orderNumber,
+        productName: order.productName,
+        orderedOn: formatOrderDate(order.orderedOn),
+        status: order.status,
+        displayStatus: displayStatus.label,
+        displayStatusCode: displayStatus.code,
+        displayStatusTone: displayStatus.tone,
+        total: order.total,
+        items: order.items,
+    };
+};
 
 const getCart = async (userId) => {
     const user = await User.findById(userId)

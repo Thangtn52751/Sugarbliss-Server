@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "f74fbb98-8892-4b39-97fb-7981a1324001",
     "name": "SugarBliss Full API",
-    "description": "Full Postman collection for every Express router in the SugarBliss server: health, auth, user profile, favorites, products, and orders.",
+    "description": "Complete collection generated from the SugarBliss Express server routes.\nSet authToken for customer APIs and adminToken for admin-only APIs.\nRun Health and Authentication first; requests save IDs for later folders.\nGemini and Lalamove credentials stay in server/.env and are never stored here.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -21,11 +21,11 @@
       "script": {
         "type": "text/javascript",
         "exec": [
-          "if (!pm.environment.get('baseUrl')) {",
-          "  pm.environment.set('baseUrl', 'http://localhost:3000');",
+          "if (!pm.collectionVariables.get('registeredEmail')) {",
+          "  pm.collectionVariables.set('registeredEmail', `postman.${Date.now()}@example.com`);",
           "}",
-          "if (!pm.environment.get('password')) {",
-          "  pm.environment.set('password', 'Test123456');",
+          "if (!pm.collectionVariables.get('password')) {",
+          "  pm.collectionVariables.set('password', 'Test123456');",
           "}"
         ]
       }
@@ -38,7 +38,13 @@
     },
     {
       "key": "authToken",
-      "value": ""
+      "value": "",
+      "description": "JWT returned by customer register/login."
+    },
+    {
+      "key": "adminToken",
+      "value": "",
+      "description": "JWT for a user whose role is admin."
     },
     {
       "key": "registeredEmail",
@@ -49,20 +55,117 @@
       "value": "Test123456"
     },
     {
+      "key": "newPassword",
+      "value": "NewPass123456"
+    },
+    {
+      "key": "adminEmail",
+      "value": ""
+    },
+    {
+      "key": "adminPassword",
+      "value": ""
+    },
+    {
+      "key": "userId",
+      "value": ""
+    },
+    {
+      "key": "otpEmail",
+      "value": ""
+    },
+    {
+      "key": "otpCode",
+      "value": ""
+    },
+    {
+      "key": "resetToken",
+      "value": ""
+    },
+    {
       "key": "productId",
+      "value": ""
+    },
+    {
+      "key": "createdProductId",
+      "value": ""
+    },
+    {
+      "key": "uploadedProductId",
+      "value": ""
+    },
+    {
+      "key": "reviewId",
+      "value": ""
+    },
+    {
+      "key": "searchQuery",
+      "value": "cake"
+    },
+    {
+      "key": "specialOrderId",
+      "value": ""
+    },
+    {
+      "key": "contactMessageId",
+      "value": ""
+    },
+    {
+      "key": "deliveryAddress",
+      "value": "Toa Vimeco Pham Hung, Ha Noi"
+    },
+    {
+      "key": "shippingQuoteId",
+      "value": ""
+    },
+    {
+      "key": "directShippingQuoteId",
       "value": ""
     },
     {
       "key": "orderId",
       "value": ""
+    },
+    {
+      "key": "lalamoveOrderId",
+      "value": ""
+    },
+    {
+      "key": "lalamoveApiKey",
+      "value": "",
+      "description": "Local-only sandbox key used to sign a webhook sample."
+    },
+    {
+      "key": "lalamoveApiSecret",
+      "value": "",
+      "description": "Local-only sandbox secret used to sign a webhook sample."
     }
   ],
   "item": [
     {
       "name": "Health",
+      "description": "Server availability and endpoint index.",
       "item": [
         {
           "name": "GET /",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "pm.test('API advertises search and chatbox', function () {",
+                  "  const data = pm.response.json();",
+                  "  pm.expect(data.endpoints.productSearch).to.include('/api/products/search');",
+                  "  pm.expect(data.endpoints.chatbox).to.eql('/api/chatbox/message');",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
             "auth": {
               "type": "noauth"
@@ -74,169 +177,31 @@
               "host": [
                 "{{baseUrl}}"
               ],
-              "path": [
-                ""
-              ]
-            },
-            "description": "Checks whether the SugarBliss API server is running."
+              "path": []
+            }
           },
           "response": []
         }
       ]
     },
     {
-      "name": "Users / Auth",
+      "name": "Authentication & Profile",
+      "description": "Registration, JWT login, profile data, avatar, and password reset.",
       "item": [
-        {
-          "name": "POST /api/users/send-otp",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "pm.test('Send OTP returns 200', function () {",
-                  "  pm.expect(pm.response.code).to.eql(200);",
-                  "});",
-                  "const data = pm.response.json();",
-                  "if (data.email) pm.environment.set('otpEmail', data.email);",
-                  "if (data.devOtp) pm.environment.set('otpCode', data.devOtp);"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "noauth"
-            },
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"{{registeredEmail}}\",\n  \"purpose\": \"verify\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/users/send-otp",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "users",
-                "send-otp"
-              ]
-            },
-            "description": "Sends a 6-digit OTP to the requested email. In local dev without SMTP_HOST, the response includes devOtp for testing."
-          },
-          "response": []
-        },
-        {
-          "name": "POST /api/users/verify-otp",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "if (pm.response.code === 200) {",
-                  "  const data = pm.response.json();",
-                  "  if (data.resetToken) pm.environment.set('resetToken', data.resetToken);",
-                  "}"
-                ]
-              }
-            }
-          ],
-          "request": {
-            "auth": {
-              "type": "noauth"
-            },
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"{{otpEmail}}\",\n  \"otp\": \"{{otpCode}}\",\n  \"purpose\": \"verify\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/users/verify-otp",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "users",
-                "verify-otp"
-              ]
-            },
-            "description": "Verifies the OTP generated by POST /api/users/send-otp."
-          },
-          "response": []
-        },
-        {
-          "name": "POST /api/users/reset-password",
-          "request": {
-            "auth": {
-              "type": "noauth"
-            },
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"{{otpEmail}}\",\n  \"resetToken\": \"{{resetToken}}\",\n  \"password\": \"NewPass123\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/users/reset-password",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "users",
-                "reset-password"
-              ]
-            },
-            "description": "Resets the user password after OTP verification returns resetToken. Use purpose reset-password in send/verify OTP."
-          },
-          "response": []
-        },
         {
           "name": "POST /api/users/register",
           "event": [
             {
-              "listen": "prerequest",
-              "script": {
-                "type": "text/javascript",
-                "exec": [
-                  "const email = `postman.${Date.now()}@sugarbliss.local`;",
-                  "pm.environment.set('registeredEmail', email);"
-                ]
-              }
-            },
-            {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Register returns 201', function () {",
-                  "  pm.expect(pm.response.code).to.eql(201);",
+                  "pm.test('Status code is 201', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201]);",
                   "});",
                   "const data = pm.response.json();",
-                  "if (data.token) pm.environment.set('authToken', data.token);",
-                  "if (data._id) pm.environment.set('userId', data._id);"
+                  "if (data.token) pm.collectionVariables.set('authToken', data.token);",
+                  "if (data._id) pm.collectionVariables.set('userId', data._id);"
                 ]
               }
             }
@@ -254,7 +219,78 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Postman Customer\",\n  \"email\": \"{{registeredEmail}}\",\n  \"password\": \"{{password}}\",\n  \"phone\": \"0123456789\",\n  \"address\": \"123 HaNoi VietNam\",\n  \"dateOfBirth\": \"2000-01-01\"\n}"
+              "raw": "{\n  \"name\": \"Postman Customer\",\n  \"email\": \"{{registeredEmail}}\",\n  \"password\": \"{{password}}\",\n  \"phone\": \"0901234567\",\n  \"address\": \"123 Sugar Street, Ha Noi\",\n  \"dateOfBirth\": \"2000-01-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "register"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/users/register (multipart avatar)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "Postman Avatar Customer",
+                  "type": "text"
+                },
+                {
+                  "key": "email",
+                  "value": "avatar.{{$timestamp}}@example.com",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "text"
+                },
+                {
+                  "key": "phone",
+                  "value": "0901234567",
+                  "type": "text"
+                },
+                {
+                  "key": "avatar",
+                  "type": "file",
+                  "src": [],
+                  "description": "Choose an image before sending."
+                }
+              ]
             },
             "url": {
               "raw": "{{baseUrl}}/api/users/register",
@@ -278,12 +314,12 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Login returns 200', function () {",
-                  "  pm.expect(pm.response.code).to.eql(200);",
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
                   "});",
                   "const data = pm.response.json();",
-                  "if (data.token) pm.environment.set('authToken', data.token);",
-                  "if (data._id) pm.environment.set('userId', data._id);"
+                  "if (data.token) pm.collectionVariables.set('authToken', data.token);",
+                  "if (data._id) pm.collectionVariables.set('userId', data._id);"
                 ]
               }
             }
@@ -301,7 +337,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"{{registeredEmail}}\",\n  \"password\": \"{{password}}\"\n}"
+              "raw": "{\n  \"email\": \"{{registeredEmail}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/api/users/login",
@@ -318,7 +359,73 @@
           "response": []
         },
         {
+          "name": "POST /api/users/login (admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "pm.test('Account is admin', function () { pm.expect(data.role).to.eql('admin'); });",
+                  "if (data.token) pm.collectionVariables.set('adminToken', data.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "login"
+              ]
+            },
+            "description": "Set adminEmail and adminPassword before sending. Saves the admin JWT separately."
+          },
+          "response": []
+        },
+        {
           "name": "GET /api/users/me",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
@@ -338,6 +445,19 @@
         },
         {
           "name": "GET /api/users/me/profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
@@ -358,6 +478,19 @@
         },
         {
           "name": "PUT /api/users/me",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "PUT",
             "header": [
@@ -368,7 +501,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Postman Customer Updated\",\n  \"phone\": \"0987654321\",\n  \"address\": \"456 Sugar Street, HaNoi\",\n  \"dateOfBirth\": \"2000-02-02\"\n}"
+              "raw": "{\n  \"name\": \"Postman Customer Updated\",\n  \"phone\": \"0987654321\",\n  \"address\": \"456 Sugar Street, Ha Noi\",\n  \"dateOfBirth\": \"2000-02-02\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/api/users/me",
@@ -386,6 +524,19 @@
         },
         {
           "name": "PATCH /api/users/me/avatar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "PATCH",
             "header": [],
@@ -396,7 +547,7 @@
                   "key": "avatar",
                   "type": "file",
                   "src": [],
-                  "description": "Choose an image file before sending."
+                  "description": "Choose an image before sending."
                 }
               ]
             },
@@ -417,6 +568,19 @@
         },
         {
           "name": "GET /api/users/me/orders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
@@ -436,62 +600,153 @@
           "response": []
         },
         {
-          "name": "GET /api/users/me/favorites",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/users/me/favorites",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "users",
-                "me",
-                "favorites"
-              ]
+          "name": "POST /api/users/send-otp (password reset)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data.email) pm.collectionVariables.set('otpEmail', data.email);",
+                  "if (data.devOtp) pm.collectionVariables.set('otpCode', data.devOtp);"
+                ]
+              }
             }
-          },
-          "response": []
-        },
-        {
-          "name": "POST /api/users/me/favorites/:productId",
+          ],
           "request": {
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
-            "header": [],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{registeredEmail}}\",\n  \"purpose\": \"reset-password\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
-              "raw": "{{baseUrl}}/api/users/me/favorites/{{productId}}",
+              "raw": "{{baseUrl}}/api/users/send-otp",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "users",
-                "me",
-                "favorites",
-                "{{productId}}"
+                "send-otp"
               ]
             }
           },
           "response": []
         },
         {
-          "name": "DELETE /api/users/me/favorites/:productId",
+          "name": "POST /api/users/verify-otp (password reset)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data.resetToken) pm.collectionVariables.set('resetToken', data.resetToken);"
+                ]
+              }
+            }
+          ],
           "request": {
-            "method": "DELETE",
-            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{otpEmail}}\",\n  \"otp\": \"{{otpCode}}\",\n  \"purpose\": \"reset-password\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
-              "raw": "{{baseUrl}}/api/users/me/favorites/{{productId}}",
+              "raw": "{{baseUrl}}/api/users/verify-otp",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "users",
-                "me",
-                "favorites",
-                "{{productId}}"
+                "verify-otp"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/users/reset-password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "pm.collectionVariables.set('password', pm.collectionVariables.get('newPassword'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{otpEmail}}\",\n  \"resetToken\": \"{{resetToken}}\",\n  \"password\": \"{{newPassword}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/reset-password",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "reset-password"
               ]
             }
           },
@@ -501,6 +756,7 @@
     },
     {
       "name": "Products",
+      "description": "Catalog CRUD, autocomplete search, image upload, and customer reviews.",
       "item": [
         {
           "name": "GET /api/products",
@@ -510,14 +766,11 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Products list returns 200', function () {",
-                  "  pm.expect(pm.response.code).to.eql(200);",
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
                   "});",
                   "const data = pm.response.json();",
-                  "if (data.products && data.products.length > 0) {",
-                  "  pm.environment.set('productId', data.products[0]._id || data.products[0].id);",
-                  "  pm.environment.set('productName', data.products[0].name);",
-                  "}"
+                  "if (data.products?.[0]) pm.collectionVariables.set('productId', data.products[0]._id || data.products[0].id);"
                 ]
               }
             }
@@ -559,7 +812,7 @@
                 },
                 {
                   "key": "search",
-                  "value": "cake",
+                  "value": "{{searchQuery}}",
                   "disabled": true
                 }
               ]
@@ -568,7 +821,65 @@
           "response": []
         },
         {
+          "name": "GET /api/products/search",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "pm.test('Returns compact suggestions', function () { pm.expect(data.suggestions).to.be.an('array'); });",
+                  "if (data.suggestions?.[0]) pm.collectionVariables.set('productId', data.suggestions[0].id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/search?q={{searchQuery}}&limit=6",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{searchQuery}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "6"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "GET /api/products/:id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
@@ -594,16 +905,26 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "if (pm.response.code === 201) {",
-                  "  const data = pm.response.json();",
-                  "  if (data._id) pm.environment.set('productId', data._id);",
-                  "  if (data.name) pm.environment.set('productName', data.name);",
-                  "}"
+                  "pm.test('Status code is 201', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201]);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data._id) pm.collectionVariables.set('createdProductId', data._id);"
                 ]
               }
             }
           ],
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "POST",
             "header": [
               {
@@ -613,7 +934,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Postman Strawberry Cake\",\n  \"description\": \"A soft strawberry cake created from Postman.\",\n  \"price\": 250000,\n  \"image\": \"/assets/images/cake2.png\",\n  \"category\": \"Cake\",\n  \"stock\": 20,\n  \"ingredients\": [\"Flour\", \"Eggs\", \"Strawberry\", \"Cream\"],\n  \"allergens\": [\"Eggs\", \"Dairy\", \"Gluten\"],\n  \"weightGram\": 650,\n  \"shelfLifeDays\": 3,\n  \"featured\": true,\n  \"status\": \"active\"\n}"
+              "raw": "{\n  \"name\": \"Postman Strawberry Cake {{$timestamp}}\",\n  \"description\": \"A soft strawberry cake created from the full Postman collection.\",\n  \"price\": 250000,\n  \"images\": [\n    \"/assets/images/cake2.png\",\n    \"/assets/images/cake3.png\"\n  ],\n  \"category\": \"Cake\",\n  \"stock\": 20,\n  \"ingredients\": [\n    \"Flour\",\n    \"Eggs\",\n    \"Strawberry\",\n    \"Cream\"\n  ],\n  \"allergens\": [\n    \"Eggs\",\n    \"Dairy\",\n    \"Gluten\"\n  ],\n  \"weightGram\": 650,\n  \"shelfLifeDays\": 3,\n  \"featured\": true,\n  \"status\": \"active\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/api/products",
@@ -624,29 +950,38 @@
                 "api",
                 "products"
               ]
-            },
-            "description": "Requires an admin token. The first registered user is automatically admin if the database has no users."
+            }
           },
           "response": []
         },
         {
-          "name": "POST /api/products multipart image",
+          "name": "POST /api/products (multipart images)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "if (pm.response.code === 201) {",
-                  "  const data = pm.response.json();",
-                  "  if (data._id) pm.environment.set('productId', data._id);",
-                  "  if (data.name) pm.environment.set('productName', data.name);",
-                  "}"
+                  "pm.test('Status code is 201', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201]);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data._id) pm.collectionVariables.set('uploadedProductId', data._id);"
                 ]
               }
             }
           ],
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "POST",
             "header": [],
             "body": {
@@ -654,7 +989,7 @@
               "formdata": [
                 {
                   "key": "name",
-                  "value": "Postman Upload Cake",
+                  "value": "Postman Upload Cake {{$timestamp}}",
                   "type": "text"
                 },
                 {
@@ -688,10 +1023,17 @@
                   "type": "text"
                 },
                 {
-                  "key": "image",
+                  "key": "images",
                   "type": "file",
                   "src": [],
-                  "description": "Choose a product image before sending."
+                  "description": "Choose the first product image."
+                },
+                {
+                  "key": "images",
+                  "type": "file",
+                  "src": [],
+                  "description": "Optional second image.",
+                  "disabled": true
                 }
               ]
             },
@@ -704,13 +1046,130 @@
                 "api",
                 "products"
               ]
-            },
-            "description": "Requires an admin token."
+            }
           },
           "response": []
         },
         {
           "name": "PUT /api/products/:id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"description\": \"Updated description from Postman.\",\n  \"price\": 280000,\n  \"stock\": 18,\n  \"featured\": false,\n  \"status\": \"active\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{createdProductId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "{{createdProductId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/products/:id/reviews",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201]);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data._id) pm.collectionVariables.set('reviewId', data._id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Fresh, beautiful, and delicious.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}/reviews",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "{{productId}}",
+                "reviews"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PUT /api/products/:id/reviews/:reviewId",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "PUT",
             "header": [
@@ -721,204 +1180,548 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Postman Strawberry Cake Updated\",\n  \"description\": \"Updated description from Postman.\",\n  \"price\": 280000,\n  \"image\": \"/assets/images/cake3.png\",\n  \"category\": \"Cake\",\n  \"stock\": 18,\n  \"ingredients\": [\"Flour\", \"Eggs\", \"Cream\"],\n  \"allergens\": [\"Eggs\", \"Dairy\", \"Gluten\"],\n  \"weightGram\": 700,\n  \"shelfLifeDays\": 4,\n  \"featured\": false,\n  \"status\": \"active\"\n}"
+              "raw": "{\n  \"rating\": 4,\n  \"comment\": \"Updated review from Postman.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
-              "raw": "{{baseUrl}}/api/products/{{productId}}",
+              "raw": "{{baseUrl}}/api/products/{{productId}}/reviews/{{reviewId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "products",
-                "{{productId}}"
+                "{{productId}}",
+                "reviews",
+                "{{reviewId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/products/:id/reviews/:reviewId",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{productId}}/reviews/{{reviewId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "{{productId}}",
+                "reviews",
+                "{{reviewId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/products/:id (uploaded product)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
               ]
             },
-            "description": "Requires an admin token."
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/products/{{uploadedProductId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "products",
+                "{{uploadedProductId}}"
+              ]
+            }
           },
           "response": []
         },
         {
           "name": "DELETE /api/products/:id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/products/{{productId}}",
+              "raw": "{{baseUrl}}/api/products/{{createdProductId}}",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "products",
+                "{{createdProductId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cart & Favorites",
+      "description": "Authenticated customer cart records and favorite products.",
+      "item": [
+        {
+          "name": "GET /api/users/me/cart",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/cart",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "cart"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/users/me/cart/:productId",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/cart/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "cart",
                 "{{productId}}"
               ]
-            },
-            "description": "Requires an admin token. Be careful: this deletes the product referenced by {{productId}}."
+            }
           },
           "response": []
-        }
-      ]
-    },
-    {
-      "name": "Special Orders",
-      "item": [
+        },
         {
-          "name": "POST /api/special-orders",
+          "name": "PATCH /api/users/me/cart/:productId",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Special order returns 201', function () { pm.expect(pm.response.code).to.eql(201); });",
-                  "const data = pm.response.json();",
-                  "if (data.specialOrder?._id) pm.environment.set('specialOrderId', data.specialOrder._id);"
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
                 ]
               }
             }
           ],
           "request": {
-            "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Sugar Bliss Customer\",\n  \"email\": \"customer@example.com\",\n  \"phone\": \"0900000000\",\n  \"deliveryOption\": \"local-delivery\",\n  \"address1\": \"123 Sugar Street\",\n  \"address2\": \"\",\n  \"city\": \"Ha Noi\",\n  \"zipCode\": \"100000\",\n  \"orderDetails\": \"A two-tier strawberry birthday cake for twenty guests.\"\n}"
-            },
-            "url": {
-              "raw": "{{baseUrl}}/api/special-orders",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "special-orders"]
-            },
-            "description": "Public endpoint. Saves the request and sends confirmation emails to the customer and admin."
-          },
-          "response": []
-        },
-        {
-          "name": "GET /api/special-orders",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/special-orders",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "special-orders"]
-            },
-            "description": "Requires an admin token. Supports status, page, and limit query parameters."
-          },
-          "response": []
-        },
-        {
-          "name": "GET /api/special-orders/:id",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/special-orders/{{specialOrderId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "special-orders", "{{specialOrderId}}"]
-            },
-            "description": "Requires an admin token."
-          },
-          "response": []
-        },
-        {
-          "name": "PATCH /api/special-orders/:id",
-          "request": {
             "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"status\": \"Reviewing\",\n  \"adminNote\": \"The request is being reviewed.\"\n}"
+              "raw": "{\n  \"quantity\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
-              "raw": "{{baseUrl}}/api/special-orders/{{specialOrderId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "special-orders", "{{specialOrderId}}"]
-            },
-            "description": "Requires an admin token."
+              "raw": "{{baseUrl}}/api/users/me/cart/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "cart",
+                "{{productId}}"
+              ]
+            }
           },
           "response": []
-        }
-      ]
-    },
-    {
-      "name": "Contact Messages",
-      "item": [
+        },
         {
-          "name": "POST /api/contact",
+          "name": "DELETE /api/users/me/cart/:productId",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Contact message returns 201', function () { pm.expect(pm.response.code).to.eql(201); });",
-                  "const data = pm.response.json();",
-                  "if (data.contactMessage?._id) pm.environment.set('contactMessageId', data.contactMessage._id);"
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/cart/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "cart",
+                "{{productId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "DELETE /api/users/me/cart",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/cart",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "cart"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/users/me/favorites",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/favorites",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "favorites"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/users/me/favorites/:productId",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
                 ]
               }
             }
           ],
           "request": {
             "method": "POST",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Sugar Bliss Customer\",\n  \"email\": \"customer@example.com\",\n  \"message\": \"I would like to ask about a custom cake.\"\n}"
-            },
+            "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/contact",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "contact"]
-            },
-            "description": "Public endpoint. Saves the message and sends a waiting-for-review email to the customer."
+              "raw": "{{baseUrl}}/api/users/me/favorites/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "favorites",
+                "{{productId}}"
+              ]
+            }
           },
           "response": []
         },
         {
-          "name": "GET /api/contact",
+          "name": "DELETE /api/users/me/favorites/:productId",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/users/me/favorites/{{productId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "users",
+                "me",
+                "favorites",
+                "{{productId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Delivery Checkout",
+      "description": "Address-only geocoding and server-side Lalamove quotation flow.",
+      "item": [
+        {
+          "name": "GET /api/delivery/addresses",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "pm.test('Coordinates stay private', function () {",
+                  "  pm.expect(JSON.stringify(data)).not.to.include('coordinates');",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/contact",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "contact"]
-            },
-            "description": "Requires an admin token. Supports status, page, and limit query parameters."
+              "raw": "{{baseUrl}}/api/delivery/addresses?query={{deliveryAddress}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "delivery",
+                "addresses"
+              ],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "{{deliveryAddress}}"
+                }
+              ]
+            }
           },
           "response": []
         },
         {
-          "name": "GET /api/contact/:id",
+          "name": "POST /api/delivery/quote",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201]);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data.id) pm.collectionVariables.set('shippingQuoteId', data.id);",
+                  "pm.test('Coordinates stay private', function () {",
+                  "  pm.expect(data).not.to.have.property('coordinates');",
+                  "  pm.expect(data).not.to.have.property('latitude');",
+                  "  pm.expect(data).not.to.have.property('longitude');",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/api/contact/{{contactMessageId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "contact", "{{contactMessageId}}"]
-            },
-            "description": "Requires an admin token."
-          },
-          "response": []
-        },
-        {
-          "name": "PATCH /api/contact/:id",
-          "request": {
-            "method": "PATCH",
-            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"status\": \"In Progress\",\n  \"adminNote\": \"The customer message is being handled.\"\n}"
+              "raw": "{\n  \"recipientName\": \"Nguyen Van A\",\n  \"phone\": \"0901234567\",\n  \"address\": \"{{deliveryAddress}}\",\n  \"note\": \"Call on arrival\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
-              "raw": "{{baseUrl}}/api/contact/{{contactMessageId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "contact", "{{contactMessageId}}"]
-            },
-            "description": "Requires an admin token."
+              "raw": "{{baseUrl}}/api/delivery/quote",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "delivery",
+                "quote"
+              ]
+            }
           },
           "response": []
         }
@@ -926,9 +1729,23 @@
     },
     {
       "name": "Orders",
+      "description": "Delivery methods, checkout, history search, status refresh, and cancellation.",
       "item": [
         {
           "name": "GET /api/orders/delivery-methods",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
@@ -942,24 +1759,23 @@
                 "orders",
                 "delivery-methods"
               ]
-            },
-            "description": "Returns the server-owned delivery options, estimates, and fees available during checkout."
+            }
           },
           "response": []
         },
         {
-          "name": "POST /api/orders",
+          "name": "POST /api/orders (store pickup)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Create order returns 201', function () {",
-                  "  pm.expect(pm.response.code).to.eql(201);",
+                  "pm.test('Status code is 201', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201]);",
                   "});",
                   "const data = pm.response.json();",
-                  "if (data.id) pm.environment.set('orderId', data.id);"
+                  "if (data.id) pm.collectionVariables.set('orderId', data.id);"
                 ]
               }
             }
@@ -974,7 +1790,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 1,\n  \"deliveryMethod\": \"standard\"\n}"
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 1,\n  \"deliveryMethod\": \"pickup\",\n  \"paymentMethod\": \"COD\",\n  \"shippingAddress\": {\n    \"recipientName\": \"Nguyen Van A\",\n    \"phone\": \"0901234567\",\n    \"address\": \"Store Pickup\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{baseUrl}}/api/orders",
@@ -990,12 +1811,124 @@
           "response": []
         },
         {
+          "name": "POST /api/orders (Lalamove quote)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200 or 201', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data.id) pm.collectionVariables.set('orderId', data.id);",
+                  "if (data.shippingOrderId) pm.collectionVariables.set('lalamoveOrderId', data.shippingOrderId);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 1,\n  \"deliveryMethod\": \"standard\",\n  \"shippingQuoteId\": \"{{shippingQuoteId}}\",\n  \"paymentMethod\": \"COD\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders"
+              ]
+            },
+            "description": "Uses the quote returned by POST /api/delivery/quote and books Lalamove on the backend."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/orders (from current cart)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201]);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data.id) pm.collectionVariables.set('orderId', data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"deliveryMethod\": \"pickup\",\n  \"paymentMethod\": \"COD\",\n  \"shippingAddress\": {\n    \"recipientName\": \"Nguyen Van A\",\n    \"phone\": \"0901234567\",\n    \"address\": \"Store Pickup\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders"
+              ]
+            },
+            "description": "When productId/items are omitted, the server creates the order from the current user cart."
+          },
+          "response": []
+        },
+        {
           "name": "GET /api/orders/my",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data[0]?.id) pm.collectionVariables.set('orderId', data[0].id);"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
             "url": {
-              "raw": "{{baseUrl}}/api/orders/my",
+              "raw": "{{baseUrl}}/api/orders/my?search={{searchQuery}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1003,6 +1936,12 @@
                 "api",
                 "orders",
                 "my"
+              ],
+              "query": [
+                {
+                  "key": "search",
+                  "value": "{{searchQuery}}"
+                }
               ]
             }
           },
@@ -1010,6 +1949,19 @@
         },
         {
           "name": "GET /api/orders/:id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [],
@@ -1028,7 +1980,55 @@
           "response": []
         },
         {
+          "name": "POST /api/orders/:id/shipping/refresh",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{orderId}}/shipping/refresh",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "orders",
+                "{{orderId}}",
+                "shipping",
+                "refresh"
+              ]
+            },
+            "description": "Only valid for an order booked through Lalamove."
+          },
+          "response": []
+        },
+        {
           "name": "PATCH /api/orders/:id/cancel",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "PATCH",
             "header": [],
@@ -1044,6 +2044,755 @@
                 "cancel"
               ]
             }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Special Orders",
+      "description": "Public submission plus admin review workflow and email notifications.",
+      "item": [
+        {
+          "name": "POST /api/special-orders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201]);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data.specialOrder?._id) pm.collectionVariables.set('specialOrderId', data.specialOrder._id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sugar Bliss Customer\",\n  \"email\": \"{{registeredEmail}}\",\n  \"phone\": \"0901234567\",\n  \"deliveryOption\": \"local-delivery\",\n  \"address1\": \"123 Sugar Street\",\n  \"address2\": \"\",\n  \"city\": \"Ha Noi\",\n  \"zipCode\": \"100000\",\n  \"orderDetails\": \"A two-tier strawberry birthday cake for twenty guests.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/special-orders",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "special-orders"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/special-orders",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/special-orders?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "special-orders"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "Pending",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/special-orders/:id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/special-orders/{{specialOrderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "special-orders",
+                "{{specialOrderId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/special-orders/:id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Reviewing\",\n  \"adminNote\": \"The request is being reviewed.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/special-orders/{{specialOrderId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "special-orders",
+                "{{specialOrderId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Contact Messages",
+      "description": "Public contact submission plus admin processing and acknowledgment email.",
+      "item": [
+        {
+          "name": "POST /api/contact",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201]);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data.contactMessage?._id) pm.collectionVariables.set('contactMessageId', data.contactMessage._id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Sugar Bliss Customer\",\n  \"email\": \"{{registeredEmail}}\",\n  \"message\": \"I would like to ask about a custom cake.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/contact",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "contact"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/contact",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/contact?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "contact"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "New",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/contact/:id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/contact/{{contactMessageId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "contact",
+                "{{contactMessageId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "PATCH /api/contact/:id",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"In Progress\",\n  \"adminNote\": \"The customer message is being handled.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/contact/{{contactMessageId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "contact",
+                "{{contactMessageId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Shipping / Lalamove (Advanced)",
+      "description": "Provider webhook and direct diagnostics. Normal checkout should use /api/delivery/quote.",
+      "item": [
+        {
+          "name": "POST /api/shipping/lalamove/webhook",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const apiKey = pm.collectionVariables.get('lalamoveApiKey');",
+                  "const secret = pm.collectionVariables.get('lalamoveApiSecret');",
+                  "if (!apiKey || !secret) throw new Error('Set lalamoveApiKey and lalamoveApiSecret locally first.');",
+                  "const body = JSON.parse(pm.variables.replaceIn(pm.request.body.raw));",
+                  "body.apiKey = apiKey;",
+                  "body.timestamp = String(Date.now());",
+                  "body.data.updatedAt = new Date().toISOString();",
+                  "const raw = `${body.timestamp}\r\nPOST\r\n/api/shipping/lalamove/webhook\r\n\r\n${JSON.stringify(body.data)}`;",
+                  "const encoder = new TextEncoder();",
+                  "const key = await crypto.subtle.importKey('raw', encoder.encode(secret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);",
+                  "const signed = await crypto.subtle.sign('HMAC', key, encoder.encode(raw));",
+                  "body.signature = Array.from(new Uint8Array(signed), (byte) => byte.toString(16).padStart(2, '0')).join('');",
+                  "pm.request.body.update(JSON.stringify(body, null, 2));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"apiKey\": \"{{lalamoveApiKey}}\",\n  \"timestamp\": \"\",\n  \"signature\": \"\",\n  \"data\": {\n    \"updatedAt\": \"2026-09-30T08:00:00.000Z\",\n    \"order\": {\n      \"orderId\": \"{{lalamoveOrderId}}\",\n      \"status\": \"ON_GOING\",\n      \"shareLink\": \"https://share.sandbox.lalamove.com/example\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/shipping/lalamove/webhook",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "shipping",
+                "lalamove",
+                "webhook"
+              ]
+            },
+            "description": "Developer-only signed webhook simulation. Set local sandbox key/secret variables first."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/shipping/lalamove/quotes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([201]);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "if (data.id) pm.collectionVariables.set('directShippingQuoteId', data.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shippingAddress\": {\n    \"recipientName\": \"Nguyen Van A\",\n    \"phone\": \"0901234567\",\n    \"address\": \"{{deliveryAddress}}\",\n    \"note\": \"Call on arrival\",\n    \"coordinates\": {\n      \"lat\": \"21.0012\",\n      \"lng\": \"105.7821\"\n    }\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/shipping/lalamove/quotes",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "shipping",
+                "lalamove",
+                "quotes"
+              ]
+            },
+            "description": "Advanced direct diagnostic route. Customer UI must use /api/delivery/quote and never ask for coordinates."
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/shipping/lalamove/cities",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/shipping/lalamove/cities",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "shipping",
+                "lalamove",
+                "cities"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "GET /api/shipping/lalamove/test-connection",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200 or 502 or 503', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200, 502, 503]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/shipping/lalamove/test-connection",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "shipping",
+                "lalamove",
+                "test-connection"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/shipping/lalamove/orders/:id/reconcile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shippingOrderId\": \"{{lalamoveOrderId}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/shipping/lalamove/orders/{{orderId}}/reconcile",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "shipping",
+                "lalamove",
+                "orders",
+                "{{orderId}}",
+                "reconcile"
+              ]
+            },
+            "description": "Manual recovery only after confirming the matching delivery in the Lalamove sandbox portal."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "AI Chatbox (Gemini)",
+      "description": "Authenticated Sugar Bliss assistant grounded in the active product catalog.",
+      "item": [
+        {
+          "name": "POST /api/chatbox/message",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "pm.test('Returns an AI reply', function () { pm.expect(data.reply).to.be.a('string').and.not.empty; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"Recommend a cake under 300,000 VND.\",\n  \"history\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"I need a birthday dessert.\"\n    },\n    {\n      \"role\": \"assistant\",\n      \"content\": \"What budget and flavors do you prefer?\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/chatbox/message",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "chatbox",
+                "message"
+              ]
+            },
+            "description": "Requires GEMINI_API_KEY in server/.env. The Gemini key is never sent from Postman or the browser."
           },
           "response": []
         }

@@ -8,6 +8,10 @@ const sensitiveKeys = [
     'message',
     'orderdetails',
     'adminnote',
+    'apikey',
+    'signature',
+    'coordinates',
+    'query',
 ];
 
 const sanitizeValue = (value) => {
@@ -33,8 +37,9 @@ const sanitizeValue = (value) => {
 const requestLogger = (req, res, next) => {
     const startedAt = Date.now();
     const startedTime = new Date().toISOString();
+    const requestPath = req.originalUrl.split('?')[0];
 
-    console.log(`[${startedTime}] --> ${req.method} ${req.originalUrl}`);
+    console.log(`[${startedTime}] --> ${req.method} ${requestPath}`);
 
     res.on('finish', () => {
         const durationMs = Date.now() - startedAt;
@@ -46,7 +51,7 @@ const requestLogger = (req, res, next) => {
             : '';
 
         console.log(
-            `[${new Date().toISOString()}] <-- ${req.method} ${req.originalUrl} ${res.statusCode} ${durationMs}ms${query}${body}`
+            `[${new Date().toISOString()}] <-- ${req.method} ${requestPath} ${res.statusCode} ${durationMs}ms${query}${body}`
         );
     });
 

@@ -67,6 +67,20 @@ const orderSchema = new mongoose.Schema({
         min: 0,
         default: 0,
     },
+    shippingProvider: { type: String, default: '' },
+    shippingQuote: { type: mongoose.Schema.Types.ObjectId, ref: 'ShippingQuote' },
+    shippingOrderId: { type: String },
+    shippingRequestId: { type: String },
+    shippingStatus: { type: String, default: '' },
+    shippingTrackingUrl: { type: String, default: '' },
+    shippingError: { type: String, default: '' },
+    shippingLastEventAt: { type: Date, default: () => new Date(0) },
+    delivery_address: { type: String, trim: true },
+    delivery_latitude: { type: String },
+    delivery_longitude: { type: String },
+    delivery_fee: { type: Number, min: 0 },
+    delivery_provider: { type: String },
+    lalamove_order_id: { type: String },
     total: {
         type: Number,
         min: 0,
@@ -94,6 +108,7 @@ const orderSchema = new mongoose.Schema({
         default: DELIVERY_METHODS.standard.code,
     },
     shippingAddress: {
+        coordinates: { lat: String, lng: String },
         recipientName: {
             type: String,
             trim: true,
@@ -125,5 +140,8 @@ const orderSchema = new mongoose.Schema({
 }, {
     timestamps: true,
 });
+
+orderSchema.index({ shippingQuote: 1 }, { unique: true, sparse: true });
+orderSchema.index({ shippingOrderId: 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model('Order', orderSchema);

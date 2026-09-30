@@ -6,6 +6,12 @@ const Order = require('../models/Order');
 const User = require('../models/User');
 const { protect } = require('../middleware/authMiddleware');
 const DELIVERY_METHODS = require('../config/deliveryMethods');
+const crypto = require('node:crypto');
+const ShippingQuote = require('../models/ShippingQuote');
+const lalamove = require('../services/lalamove');
+const shipping = require('../services/shipping');
+const geocoding = require('../services/geocoding');
+const { getOrderStatusView } = require('../utils/orderStatus');
 
 const router = express.Router();
 
@@ -15,21 +21,39 @@ const formatOrderDate = (date) => new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
 }).format(new Date(date));
 
-const orderResponse = (order) => ({
-    id: order._id,
-    orderNumber: order.orderNumber,
-    productName: order.productName,
-    orderedOn: formatOrderDate(order.orderedOn),
-    status: order.status,
-    subtotal: order.subtotal,
-    shippingFee: order.shippingFee,
-    total: order.total,
-    items: order.items,
-    deliveryMethod: order.deliveryMethod || DELIVERY_METHODS.standard.code,
-    shippingAddress: order.shippingAddress,
-    paymentMethod: order.paymentMethod,
-    paymentStatus: order.paymentStatus,
-});
+const orderResponse = (order) => {
+    const displayStatus = getOrderStatusView(order);
+    return {
+        id: order._id,
+        orderNumber: order.orderNumber,
+        productName: order.productName,
+        orderedOn: formatOrderDate(order.orderedOn),
+        status: order.status,
+        displayStatus: displayStatus.label,
+        displayStatusCode: displayStatus.code,
+        displayStatusTone: displayStatus.tone,
+        deliveryStatusTerminal: displayStatus.terminal,
+        subtotal: order.subtotal,
+        shippingFee: order.shippingFee,
+        total: order.total,
+        items: order.items,
+        deliveryMethod: order.deliveryMethod || DELIVERY_METHODS.standard.code,
+        shippingAddress: order.shippingAddress,
+        paymentMethod: order.paymentMethod,
+        paymentStatus: order.paymentStatus,
+        shippingProvider: order.shippingProvider,
+        shippingOrderId: order.shippingOrderId,
+        shippingStatus: order.shippingStatus,
+        shippingTrackingUrl: order.shippingTrackingUrl,
+        shippingError: order.shippingError,
+        delivery_address: order.delivery_address || order.shippingAddress?.address || '',
+        delivery_latitude: order.delivery_latitude || order.shippingAddress?.coordinates?.lat || '',
+        delivery_longitude: order.delivery_longitude || order.shippingAddress?.coordinates?.lng || '',
+        delivery_fee: order.delivery_fee ?? order.shippingFee,
+        delivery_provider: order.delivery_provider || (order.shippingProvider === 'lalamove' ? 'Lalamove' : ''),
+        lalamove_order_id: order.lalamove_order_id || order.shippingOrderId || '',
+    };
+};
 
 const parseQuantity = (quantity) => {
     const parsedQuantity = Number(quantity);
@@ -141,7 +165,8 @@ const releaseStock = (items) => Promise.all(items.map(restoreStockItem));
 router.use(protect);
 
 router.get('/delivery-methods', (req, res) => {
-    res.json(Object.values(DELIVERY_METHODS));
+    res.json(Object.values(DELIVERY_METHODS).filter((method) => !method.hidden).map((method) => method.provider === 'lalamove'
+        ? { ...method, available: lalamove.isAvailable() && geocoding.isAvailable() } : method));
 });
 
 router.get('/my', asyncHandler(async (req, res) => {
@@ -154,6 +179,7 @@ router.get('/my', asyncHandler(async (req, res) => {
             { orderNumber: searchPattern },
             { productName: searchPattern },
             { status: searchPattern },
+            { shippingStatus: searchPattern },
             { 'items.name': searchPattern },
         ];
     }
@@ -176,6 +202,22 @@ router.get('/:id', asyncHandler(async (req, res) => {
 }));
 
 router.post('/', asyncHandler(async (req, res) => {
+    const requestedMethod = String(req.body.deliveryMethod || DELIVERY_METHODS.standard.code).trim().toLowerCase();
+    const isLalamove = DELIVERY_METHODS[requestedMethod]?.provider === 'lalamove';
+    const paymentMethod = req.body.paymentMethod || 'COD';
+    if (paymentMethod !== 'COD') throw lalamove.fail('Only cash on delivery (COD) is available at checkout.');
+    let quote;
+    const newOrderId = new mongoose.Types.ObjectId();
+    if (isLalamove) {
+        if (!mongoose.isValidObjectId(req.body.shippingQuoteId)) throw lalamove.fail('Get a delivery quote before checkout.');
+        const existing = await Order.findOne({ shippingQuote: req.body.shippingQuoteId, user: req.user._id });
+        if (existing) return res.json(orderResponse(existing));
+        lalamove.assertConfigured();
+        quote = await ShippingQuote.findOne({ _id: req.body.shippingQuoteId, user: req.user._id,
+            expiresAt: { $gt: new Date() }, claimedOrder: null });
+        if (!quote) throw lalamove.fail('Delivery quote expired or is already being used. Get a new quote or check order history.', 409);
+        if (!quote.cashOnDelivery) throw lalamove.fail('Get a new COD delivery quote before checkout.', 409);
+    }
     const { items: requestedItems, fromCart } = await getRequestedItems(req);
     const deliveryMethod = String(req.body.deliveryMethod || DELIVERY_METHODS.standard.code).trim().toLowerCase();
     const deliveryOption = Object.prototype.hasOwnProperty.call(DELIVERY_METHODS, deliveryMethod)
@@ -203,12 +245,22 @@ router.post('/', asyncHandler(async (req, res) => {
         product: productById.get(item.productId),
         quantity: item.quantity,
     }));
-
-    await reserveStock(orderItems);
+    const goodsTotal = orderItems.reduce((total, item) => total + item.product.price * item.quantity, 0);
+    if (quote?.specialRequests?.includes('PURCHASE_SERVICE_1') && goodsTotal >= 500000) {
+        throw lalamove.fail('This COD delivery service supports goods below 500,000 VND. Reduce your cart or choose store pickup.');
+    }
 
     let order;
+    let stockReserved = false;
+    if (quote) {
+        const claimed = await ShippingQuote.findOneAndUpdate({ _id: quote._id, claimedOrder: null,
+            expiresAt: { $gt: new Date() } }, { $set: { claimedOrder: newOrderId } });
+        if (!claimed) throw lalamove.fail('This quote is already being used or expired. Check order history.', 409);
+    }
 
     try {
+        await reserveStock(orderItems);
+        stockReserved = true;
         const itemSnapshots = orderItems.map((item) => ({
             product: item.product._id,
             name: item.product.name,
@@ -218,26 +270,19 @@ router.post('/', asyncHandler(async (req, res) => {
             lineTotal: item.product.price * item.quantity,
         }));
         const subtotal = itemSnapshots.reduce((total, item) => total + item.lineTotal, 0);
-        const shippingFee = deliveryOption.fee;
+        const shippingFee = quote ? quote.fee : deliveryOption.fee;
         const productName = itemSnapshots.length === 1
             ? itemSnapshots[0].name
             : `${itemSnapshots[0].name} + ${itemSnapshots.length - 1} more`;
         const user = await User.findById(req.user._id);
-        const shippingAddress = {
+        const shippingAddress = quote ? quote.recipient.toObject() : {
             recipientName: req.body.shippingAddress?.recipientName || user.name,
             phone: req.body.shippingAddress?.phone || user.phone || '',
             address: req.body.shippingAddress?.address || user.address || '',
             note: req.body.shippingAddress?.note || '',
         };
-        const paymentMethod = req.body.paymentMethod || 'COD';
-
-        if (!['COD', 'Bank Transfer'].includes(paymentMethod)) {
-            const error = new Error('Payment method must be COD or Bank Transfer.');
-            error.statusCode = 400;
-            throw error;
-        }
-
         order = await Order.create({
+            _id: newOrderId,
             user: req.user._id,
             product: itemSnapshots[0].product,
             productName,
@@ -251,17 +296,44 @@ router.post('/', asyncHandler(async (req, res) => {
             shippingAddress,
             paymentMethod,
             paymentStatus: 'Pending',
+            delivery_address: shippingAddress.address || '',
+            delivery_latitude: shippingAddress.coordinates?.lat || '',
+            delivery_longitude: shippingAddress.coordinates?.lng || '',
+            delivery_fee: shippingFee,
+            delivery_provider: quote ? 'Lalamove' : '',
+            ...(quote ? {
+                shippingProvider: 'lalamove', shippingQuote: quote._id,
+                shippingStatus: 'CREATING', shippingRequestId: crypto.randomUUID(),
+            } : {}),
         });
     } catch (error) {
-        await releaseStock(orderItems);
+        if (stockReserved) await releaseStock(orderItems);
+        if (quote) await ShippingQuote.updateOne({ _id: quote._id, claimedOrder: newOrderId }, { $set: { claimedOrder: null } });
         throw error;
     }
 
     if (fromCart) {
-        await User.updateOne({ _id: req.user._id }, { $set: { cart: [] } });
+        await User.updateOne({ _id: req.user._id }, { $set: { cart: [] } }).catch(() => {
+            console.error(`Could not clear cart after saved order ${order._id}`);
+        });
+    }
+    if (quote) {
+        try {
+            order = await shipping.dispatch(order, quote) || order;
+        } catch {
+            // Purchase is durable. Do not undo stock or invite checkout to repeat a remote booking.
+            console.error(`Delivery reconciliation required for order ${order._id}`);
+            order.shippingError = 'Order saved. Delivery confirmation is pending; please contact the store.';
+        }
     }
 
     res.status(201).json(orderResponse(order));
+}));
+
+router.post('/:id/shipping/refresh', asyncHandler(async (req, res) => {
+    const order = await Order.findOne({ _id: req.params.id, user: req.user._id, shippingProvider: 'lalamove' });
+    if (!order) throw lalamove.fail('Lalamove order not found.', 404);
+    res.json(orderResponse(await shipping.refresh(order)));
 }));
 
 router.patch('/:id/cancel', asyncHandler(async (req, res) => {
@@ -277,13 +349,23 @@ router.patch('/:id/cancel', asyncHandler(async (req, res) => {
         throw new Error('Only orders in progress can be cancelled.');
     }
 
+    if (existingOrder.shippingProvider === 'lalamove') {
+        if (['CREATING', 'UNKNOWN'].includes(existingOrder.shippingStatus)) {
+            throw lalamove.fail('Delivery confirmation is pending. Contact the store before cancelling.', 409);
+        }
+        if (existingOrder.shippingOrderId && !['CANCELED', 'REJECTED', 'EXPIRED'].includes(existingOrder.shippingStatus)) {
+            await lalamove.cancelOrder(existingOrder.shippingOrderId);
+        }
+    }
+
     const order = await Order.findOneAndUpdate(
         {
             _id: existingOrder._id,
             user: req.user._id,
             status: 'In Progress',
         },
-        { $set: { status: 'Cancelled' } },
+        { $set: { status: 'Cancelled', ...(existingOrder.shippingProvider === 'lalamove'
+            ? { shippingStatus: 'CANCELED', shippingError: '' } : {}) } },
         { new: true },
     );
 

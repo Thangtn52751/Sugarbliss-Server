@@ -67,6 +67,11 @@ public class AuthController {
         return "redirect:/pages/cart.html";
     }
 
+    @GetMapping({"/checkout", "/checkout.html"})
+    public String checkout() {
+        return "forward:/pages/checkout.html";
+    }
+
     @GetMapping({"/special-orders", "/special_orders", "/special-orders.html", "/special_orders.html"})
     public String specialOrders() {
         return "redirect:/pages/special_orders.html";

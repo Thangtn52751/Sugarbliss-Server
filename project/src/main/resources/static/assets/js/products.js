@@ -116,6 +116,7 @@ function renderProductCard(product) {
     const productId = product._id || product.id || "";
     const imageSrc = resolveImageUrl(product.images?.[0] || product.image);
     const price = formatPrice(product.price);
+    const isUnavailable = product.status !== "active" || Number(product.stock) <= 0;
 
     return `
         <article class="product-card">
@@ -127,7 +128,9 @@ function renderProductCard(product) {
             <p class="product-price">${price}</p>
             <div class="product-actions">
                 <button class="btn-detail" type="button" data-detail-id="${escapeHtml(productId)}">View Detail</button>
-                <button class="btn-order" type="button" data-product-id="${escapeHtml(productId)}">Order Now</button>
+                <button class="btn-add-cart" type="button" data-add-cart-id="${escapeHtml(productId)}" ${isUnavailable ? "disabled" : ""}>
+                    ${isUnavailable ? "Unavailable" : "Add To Cart"}
+                </button>
             </div>
         </article>
     `;
@@ -146,13 +149,13 @@ function handleProductActionClick(event) {
         return;
     }
 
-    const orderButton = event.target.closest("[data-product-id]");
-    if (orderButton) {
-        createOrder(orderButton.dataset.productId, orderButton);
+    const addCartButton = event.target.closest("[data-add-cart-id]");
+    if (addCartButton) {
+        addProductToCart(addCartButton.dataset.addCartId, addCartButton);
     }
 }
 
-async function createOrder(productId, button) {
+async function addProductToCart(productId, button) {
     const token = localStorage.getItem("sugarBlissToken");
 
     if (!token) {
@@ -160,30 +163,39 @@ async function createOrder(productId, button) {
         return;
     }
 
-    const originalText = button.textContent;
+    const originalText = button.textContent.trim();
     button.disabled = true;
-    button.textContent = "Ordering...";
+    button.textContent = "Adding...";
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/orders`, {
+        const response = await fetch(`${API_BASE_URL}/api/users/me/cart/${productId}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`
             },
-            body: JSON.stringify({
-                productId,
-                quantity: 1
-            })
+            body: JSON.stringify({ quantity: 1 })
         });
+
+        if (response.status === 401) {
+            localStorage.removeItem("sugarBlissToken");
+            localStorage.removeItem("sugarBlissUser");
+            window.location.href = "/login";
+            return;
+        }
+
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.message || "Cannot create order.");
+            throw new Error(data.message || "Cannot add this product to your cart.");
         }
 
-        button.textContent = "Ordered";
-        setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("sugarbliss:cart-updated", {
+            detail: { count: Array.isArray(data) ? data.length : 0 }
+        }));
+
+        button.textContent = "Added";
+        window.setTimeout(() => {
             button.textContent = originalText;
             button.disabled = false;
         }, 1200);

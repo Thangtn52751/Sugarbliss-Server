@@ -1101,8 +1101,8 @@ body {
     margin: 0 0 15px 0;
 }
 
-.btn-order {
-    background: #9bd3a6; 
+.btn-add-cart {
+    background: #2f7f4d;
     color: #fff;
     border: none;
     padding: 8px 30px;
@@ -1113,8 +1113,8 @@ body {
     transition: background 0.3s;
 }
 
-.btn-order:hover {
-    background: #86c994;
+.btn-add-cart:hover:not(:disabled) {
+    background: #24663d;
 }
 
 .product-actions {
@@ -1124,7 +1124,7 @@ body {
 }
 
 .btn-detail,
-.btn-order {
+.btn-add-cart {
     min-width: 112px;
     border: none;
     padding: 8px 16px;
@@ -1133,6 +1133,11 @@ body {
     font-weight: 800;
     font-size: 13px;
     transition: background 0.3s, color 0.3s;
+}
+
+.btn-add-cart:disabled {
+    cursor: not-allowed;
+    opacity: 0.62;
 }
 
 .btn-detail {

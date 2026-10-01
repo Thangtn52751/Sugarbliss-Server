@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugar Bliss | Admin Dashboard</title>
+    <link rel="stylesheet" href="/assets/css/admin.css">
+    <script src="/assets/js/api-config.js" defer></script>
+    <script src="/assets/js/admin-shell.js" defer></script>
+    <script src="/assets/js/admin-dashboard.js" defer></script>
+</head>
+<body class="admin-page">
+    <sugar-admin-sidebar active="dashboard"></sugar-admin-sidebar>
+    <main class="admin-main">
+        <div class="admin-access-state" data-admin-access-state role="status">Loading your dashboard...</div>
+        <div class="admin-content" data-admin-content hidden>
+            <header class="admin-page-header">
+                <h1>Dashboard Overview</h1>
+                <time class="admin-date" data-dashboard-date></time>
+            </header>
+
+            <div class="admin-dashboard-error" data-dashboard-error role="alert" hidden>
+                <p>Unable to load the dashboard.</p>
+                <button class="admin-retry" type="button" data-dashboard-retry>Try again</button>
+            </div>
+
+            <div data-dashboard-data aria-busy="true">
+                <section class="admin-kpis" aria-label="Dashboard statistics">
+                    <article class="admin-kpi" data-kpi="totalRevenue">
+                        <div class="admin-kpi-heading"><h2>Total Revenue</h2><span class="admin-kpi-icon"><img src="/assets/icons/ic_money.png" alt=""></span></div>
+                        <p class="admin-kpi-value" data-kpi-value>--</p>
+                        <p class="admin-kpi-change" data-kpi-change>Loading...</p>
+                    </article>
+                    <article class="admin-kpi" data-kpi="ordersToday">
+                        <div class="admin-kpi-heading"><h2>Orders Today</h2><span class="admin-kpi-icon"><img src="/assets/icons/ic_cart.png" alt=""></span></div>
+                        <p class="admin-kpi-value" data-kpi-value>--</p>
+                        <p class="admin-kpi-change" data-kpi-change>Loading...</p>
+                    </article>
+                    <article class="admin-kpi" data-kpi="activeCustomers">
+                        <div class="admin-kpi-heading"><h2>Active Customers</h2><span class="admin-kpi-icon"><img src="/assets/icons/ic_costumer.png" alt=""></span></div>
+                        <p class="admin-kpi-value" data-kpi-value>--</p>
+                        <p class="admin-kpi-change" data-kpi-change>Loading...</p>
+                    </article>
+                    <article class="admin-kpi" data-kpi="productsListed">
+                        <div class="admin-kpi-heading"><h2>Products Listed</h2><span class="admin-kpi-icon"><img src="/assets/icons/ic_boxproduct.png" alt=""></span></div>
+                        <p class="admin-kpi-value" data-kpi-value>--</p>
+                        <p class="admin-kpi-change" data-kpi-change>Loading...</p>
+                    </article>
+                </section>
+
+                <div class="admin-overview-grid">
+                    <section class="admin-panel admin-sales" aria-labelledby="sales-title">
+                        <div class="admin-panel-heading">
+                            <h2 id="sales-title">Monthly Sales Volume</h2>
+                            <label class="admin-period-field">
+                                <span class="admin-sr-only">Dashboard period</span>
+                                <select data-dashboard-range>
+                                    <option value="7d">Last 7 days</option>
+                                    <option value="30d" selected>Last 30 days</option>
+                                    <option value="90d">Last 90 days</option>
+                                    <option value="12m">Last 12 months</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="admin-chart" data-sales-chart>
+                            <canvas data-sales-canvas role="img" aria-label="Sales revenue chart"></canvas>
+                            <p class="admin-chart-state" data-chart-state role="status">Loading sales...</p>
+                            <div class="admin-chart-tooltip" data-chart-tooltip hidden></div>
+                        </div>
+                        <div class="admin-chart-labels" data-chart-labels aria-hidden="true"></div>
+                        <p class="admin-sr-only" data-chart-summary></p>
+                    </section>
+
+                    <section class="admin-panel admin-best-sellers" aria-labelledby="best-sellers-title">
+                        <div class="admin-panel-heading"><h2 id="best-sellers-title">Best-Selling Desserts</h2></div>
+                        <div class="admin-best-seller-list" data-best-sellers><p class="admin-empty-state">Loading best sellers...</p></div>
+                    </section>
+                </div>
+
+                <section class="admin-panel admin-recent-orders" aria-labelledby="recent-orders-title">
+                    <div class="admin-panel-heading"><h2 id="recent-orders-title">Recent Orders</h2></div>
+                    <div class="admin-table-scroll" tabindex="0" aria-label="Recent orders table">
+                        <table class="admin-order-table">
+                            <thead><tr><th scope="col">Order ID</th><th scope="col">Customer Name</th><th scope="col">Items Ordered</th><th scope="col" class="admin-amount-column">Total Amount</th><th scope="col">Status</th></tr></thead>
+                            <tbody data-recent-orders><tr><td colspan="5" class="admin-empty-state">Loading recent orders...</td></tr></tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </main>
+</body>
+</html>

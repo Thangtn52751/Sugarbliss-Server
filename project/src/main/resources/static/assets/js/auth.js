@@ -46,7 +46,7 @@ if (form && message) {
                 localStorage.setItem("sugarBlissUser", JSON.stringify(data));
 
                 setTimeout(() => {
-                    window.location.href = "/home";
+                    window.location.href = data.role === "admin" ? "/admin/dashboard" : "/home";
                 }, 700);
             }
         } catch (error) {

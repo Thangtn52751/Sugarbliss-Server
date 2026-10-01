@@ -12,6 +12,7 @@ const contactRoutes = require('./routes/contactRoutes');
 const shippingRoutes = require('./routes/shippingRoutes');
 const deliveryRoutes = require('./routes/deliveryRoutes');
 const chatboxRoutes = require('./routes/chatboxRoutes');
+const adminDashboardRoutes = require('./routes/adminDashboardRoutes');
 const requestLogger = require('./middleware/requestLogger');
 
 const app = express();
@@ -34,6 +35,7 @@ app.get('/', (req, res) => {
             delivery: '/api/delivery',
             productSearch: '/api/products/search?q=cake',
             chatbox: '/api/chatbox/message',
+            adminDashboard: '/api/admin/dashboard/overview',
         },
     });
 });
@@ -46,6 +48,7 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/shipping', shippingRoutes);
 app.use('/api/delivery', deliveryRoutes);
 app.use('/api/chatbox', chatboxRoutes);
+app.use('/api/admin/dashboard', adminDashboardRoutes);
 
 app.use((req, res) => {
     res.status(404).json({ message: 'API not found' });

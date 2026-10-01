@@ -6,7 +6,8 @@
     const state = { items: [], methods: [], method: query.get("delivery") || "standard", user: {}, quote: null,
         pending: null, busy: false, quoting: false, quoteVersion: 0, quoteTimer: null, storageKey: "",
         selectedAddress: "", suggestions: [], addressSearchTimer: null, addressSearchController: null,
-        contactQuoteTimer: null, quoteError: false, quoteQueued: false };
+        contactQuoteTimer: null, quoteError: false, quoteQueued: false,
+        voucher: null, voucherBusy: false };
     const $ = (selector) => document.querySelector(selector);
     const money = (value) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(Number(value) || 0);
     const escape = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char]);
@@ -42,6 +43,10 @@
         $("[data-address-form]").elements.phone.addEventListener("blur", () => updatePhoneStatus(true));
         $("[data-get-quote]").addEventListener("click", requestQuoteForCurrentAddress);
         $("[data-place-order]").addEventListener("click", placeOrder);
+        $("[data-voucher-apply]")?.addEventListener("click", applyVoucher);
+        $("[data-voucher-input]")?.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") { event.preventDefault(); applyVoucher(); }
+        });
         $("[data-checkout-result]").addEventListener("click", handleResultAction);
         document.addEventListener("click", (event) => {
             if (!event.target.closest(".checkout-address-search")) closeAddressSuggestions();
@@ -173,20 +178,84 @@
         updateSummary();
     }
 
+    function voucherStatus(message, kind) {
+        const el = $("[data-voucher-status]");
+        if (!el) return;
+        el.hidden = !message;
+        el.textContent = message || "";
+        el.classList.toggle("is-success", kind === "success");
+        el.classList.toggle("is-error", kind === "error");
+    }
+
+    async function applyVoucher() {
+        const input = $("[data-voucher-input]");
+        const code = (input?.value || "").trim();
+        if (state.voucherBusy) return;
+
+        // Bo trong -> go voucher dang ap
+        if (!code) {
+            state.voucher = null;
+            voucherStatus("", null);
+            updateSummary();
+            return;
+        }
+        if (!state.items.length) {
+            voucherStatus("Your cart is empty.", "error");
+            return;
+        }
+
+        state.voucherBusy = true;
+        $("[data-voucher-apply]").disabled = true;
+        voucherStatus("Checking...", null);
+
+        try {
+            const result = await request("/api/vouchers/validate", {
+                method: "POST",
+                body: JSON.stringify({ code, subtotal: subtotal() }),
+            });
+            state.voucher = { code: result.code, type: result.type, value: result.value, discount: result.discount };
+            voucherStatus(`${result.code}: - ${money(result.discount)}`, "success");
+            updateSummary();
+        } catch (error) {
+            state.voucher = null;
+            voucherStatus(error.message || "This voucher cannot be applied.", "error");
+            updateSummary();
+        } finally {
+            state.voucherBusy = false;
+            $("[data-voucher-apply]").disabled = false;
+        }
+    }
+
+    // So tien giam theo voucher dang ap (dua tren subtotal hien tai)
+    function discountAmount() {
+        if (!state.voucher) return 0;
+        return Math.min(Number(state.voucher.discount) || 0, subtotal());
+    }
+
     function updateSummary() {
         const fee = needsQuote() ? (state.quote?.fee ?? null) : Number(method()?.fee || 0);
         const typedAddress = $("[data-address-search]").value.trim();
+        const discount = discountAmount();
+        const total = Math.max(0, subtotal() - discount) + Number(fee || 0);
         $("[data-checkout-subtotal]").textContent = money(subtotal());
         $("[data-checkout-fee]").textContent = state.quoting ? "Calculating delivery fee..."
             : fee === null ? "Select an address" : Number(fee) === 0 ? "Free" : money(fee);
-        $("[data-checkout-total]").textContent = money(subtotal() + Number(fee || 0));
+
+        // Dong giam gia: chi hien khi co voucher
+        const discountRow = $("[data-discount-row]");
+        if (discountRow) {
+            discountRow.hidden = discount <= 0;
+            const discountCell = $("[data-checkout-discount]");
+            if (discountCell) discountCell.textContent = `- ${money(discount)}`;
+        }
+        $("[data-checkout-total]").textContent = money(total);
         $("[data-get-quote]").hidden = !needsQuote() || quoteValid() || typedAddress.length < 3;
         $("[data-get-quote]").disabled = state.busy || state.quoting || Boolean(state.pending) || method()?.available === false;
         $("[data-get-quote]").textContent = state.quoting ? "Calculating delivery fee..."
             : state.quoteError ? "Retry delivery fee" : "Calculate delivery fee";
         $("[data-place-order]").disabled = state.busy || state.quoting || !state.items.length || method()?.available === false ||
             (needsQuote() && (!state.selectedAddress || !quoteValid()));
-        $("[data-place-order]").textContent = state.busy ? "Placing your order..." : `Place order${fee === null ? "" : ` · ${money(subtotal() + Number(fee || 0))}`}`;
+        $("[data-place-order]").textContent = state.busy ? "Placing your order..." : `Place order${fee === null ? "" : ` · ${money(total)}`}`;
         $("[data-quote-status]").hidden = !needsQuote();
         if (method()?.available === false) {
             $("[data-quote-status]").hidden = false;
@@ -446,6 +515,7 @@
             const address = readAddress();
             state.pending = { attempted: true, quote: state.quote, address, items: state.items,
                 body: { deliveryMethod: state.method, paymentMethod: "COD",
+                    ...(state.voucher ? { voucherCode: state.voucher.code } : {}),
                     ...(needsQuote() ? { shippingQuoteId: state.quote.id } : { shippingAddress: address }) } };
             if (!persistPending()) {
                 state.pending = null;

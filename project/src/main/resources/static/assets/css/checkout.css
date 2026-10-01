@@ -143,3 +143,81 @@
     .checkout-item > strong { width: 100%; padding-left: 76px; }
     .checkout-result-actions .checkout-button { width: 100%; }
 }
+
+/* ===== Ma giam gia (voucher) ===== */
+.checkout-voucher {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #f1e3e7;
+}
+
+.checkout-voucher-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #4c4448;
+    margin-bottom: 8px;
+}
+
+.checkout-voucher-row {
+    display: flex;
+    gap: 8px;
+}
+
+.checkout-voucher-row input {
+    flex: 1;
+    min-width: 0;
+    padding: 10px 12px;
+    border: 1.5px solid #e4d4d9;
+    border-radius: 10px;
+    font: inherit;
+    font-size: 14px;
+    text-transform: uppercase;
+    outline: none;
+    transition: border-color 0.18s;
+}
+
+.checkout-voucher-row input:focus {
+    border-color: #d94960;
+}
+
+.checkout-voucher-apply {
+    flex-shrink: 0;
+    padding: 10px 18px;
+    border: 0;
+    border-radius: 10px;
+    background: #d94960;
+    color: #fff;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s;
+}
+
+.checkout-voucher-apply:hover {
+    background: #c93d54;
+}
+
+.checkout-voucher-apply:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.checkout-voucher-status {
+    margin: 8px 0 0;
+    font-size: 13px;
+}
+
+.checkout-voucher-status.is-success {
+    color: #278347;
+}
+
+.checkout-voucher-status.is-error {
+    color: #d94960;
+}
+
+.checkout-discount-row dd {
+    color: #278347;
+    font-weight: 600;
+}

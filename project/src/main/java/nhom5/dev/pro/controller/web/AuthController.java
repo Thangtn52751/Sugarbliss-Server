@@ -86,4 +86,9 @@ public class AuthController {
     public String profile() {
         return "redirect:/pages/profile.html";
     }
+
+    @GetMapping({"/settings", "/settings.html"})
+    public String settings() {
+        return "redirect:/pages/settings.html";
+    }
 }

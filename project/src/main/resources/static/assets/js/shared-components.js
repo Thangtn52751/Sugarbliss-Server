@@ -457,7 +457,7 @@ class SugarChatbox extends HTMLElement {
                 .sb-chat-wrapper { position: fixed; bottom: 24px; right: 24px; z-index: 9999; font-family: inherit; }
                 .sb-chat-toggle { width: 56px; height: 56px; border-radius: 50%; background: #d94960; color: white; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(217,73,96,0.3); display: flex; align-items: center; justify-content: center; transition: transform 0.2s; }
                 .sb-chat-toggle:hover { transform: scale(1.05); }
-                .sb-chat-window { display: none; width: 350px; height: 500px; background: white; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); flex-direction: column; overflow: hidden; position: absolute; bottom: 76px; right: 0; border: 1px solid #f3d9df; }
+                .sb-chat-window { display: none; width: min(350px, calc(100vw - 48px)); height: min(500px, calc(100dvh - 124px)); background: white; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); flex-direction: column; overflow: hidden; position: absolute; bottom: 76px; right: 0; border: 1px solid #f3d9df; box-sizing: border-box; }
                 .sb-chat-window.active { display: flex; animation: slideUpChat 0.3s ease; }
                 .sb-chat-header { background: #d94960; color: white; padding: 16px 20px; font-weight: 800; font-size: 16px; display: flex; justify-content: space-between; align-items: center; }
                 .sb-chat-close { background: none; border: none; color: white; font-size: 24px; line-height: 1; cursor: pointer; }
@@ -465,11 +465,24 @@ class SugarChatbox extends HTMLElement {
                 .sb-msg { max-width: 85%; padding: 12px 16px; font-size: 14px; line-height: 1.5; word-wrap: break-word; }
                 .sb-msg.user { align-self: flex-end; background: #d94960; color: white; border-radius: 16px 16px 2px 16px; }
                 .sb-msg.assistant { align-self: flex-start; background: #ffffff; color: #2c2528; border: 1px solid #f3d9df; border-radius: 16px 16px 16px 2px; }
+                .sb-msg.assistant.has-products { width: 100%; max-width: 100%; padding: 0; border: 0; border-radius: 0; background: transparent; box-sizing: border-box; }
+                .sb-chat-reply-copy { margin: 0 0 10px; padding: 12px 16px; white-space: pre-wrap; background: white; border: 1px solid #f3d9df; border-radius: 16px 16px 16px 2px; overflow-wrap: anywhere; }
+                .sb-chat-products { display: grid; gap: 8px; }
+                .sb-chat-product-card { display: grid; grid-template-columns: 72px minmax(0, 1fr); align-items: center; gap: 12px; padding: 8px; color: #2c2528; background: white; border: 1px solid #f3d9df; border-radius: 8px; text-decoration: none; transition: background 0.15s, border-color 0.15s; }
+                .sb-chat-product-card:hover { background: #fff1f4; border-color: #d94960; }
+                .sb-chat-product-card:focus-visible { outline: 2px solid #d94960; outline-offset: 2px; }
+                .sb-chat-product-media { display: flex; align-items: center; justify-content: center; width: 72px; aspect-ratio: 1; overflow: hidden; border-radius: 6px; background: #fff1f4; color: #d94960; font-weight: 700; }
+                .sb-chat-product-media img { width: 100%; height: 100%; object-fit: cover; }
+                .sb-chat-product-copy { display: grid; gap: 4px; min-width: 0; overflow-wrap: anywhere; }
+                .sb-chat-product-name { font-size: 14px; line-height: 1.4; }
+                .sb-chat-product-category, .sb-chat-product-stock { font-size: 11px; color: #77696e; }
+                .sb-chat-product-price { font-size: 13px; font-weight: 700; color: #d94960; }
                 .sb-chat-footer { padding: 12px 16px; border-top: 1px solid #f3d9df; display: flex; gap: 8px; background: white; }
-                .sb-chat-input { flex: 1; padding: 10px 16px; border: 1px solid #ddd; border-radius: 999px; outline: none; font-size: 14px; transition: border-color 0.2s; font-family: inherit; }
+                .sb-chat-input { flex: 1; min-width: 0; padding: 10px 16px; border: 1px solid #ddd; border-radius: 999px; outline: none; font-size: 14px; transition: border-color 0.2s; font-family: inherit; }
                 .sb-chat-input:focus { border-color: #d94960; }
                 .sb-chat-send { background: #d94960; color: white; border: none; padding: 8px 16px; border-radius: 999px; cursor: pointer; font-weight: bold; }
                 .sb-chat-send:disabled { background: #e0e0e0; cursor: not-allowed; color: #999; }
+                .sb-chat-login { display: block; margin-top: 8px; color: #d94960; font-weight: 700; }
                 @keyframes slideUpChat { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
             </style>
             
@@ -479,11 +492,11 @@ class SugarChatbox extends HTMLElement {
                         <span>Sugar Bliss Assistant</span>
                         <button class="sb-chat-close" aria-label="Close chat">&times;</button>
                     </div>
-                    <div class="sb-chat-body" id="sb-chat-body">
+                    <div class="sb-chat-body" id="sb-chat-body" role="log" aria-live="polite" aria-relevant="additions text">
                         <div class="sb-msg assistant">Hi! How can I help you find the perfect cake today?</div>
                     </div>
                     <form class="sb-chat-footer" id="sb-chat-form">
-                        <input type="text" class="sb-chat-input" id="sb-chat-input" placeholder="Ask me anything..." required autocomplete="off">
+                        <input type="text" class="sb-chat-input" id="sb-chat-input" placeholder="Ask me anything..." aria-label="Message to Sugar Bliss Assistant" maxlength="1200" required autocomplete="off">
                         <button type="submit" class="sb-chat-send">Send</button>
                     </form>
                 </div>
@@ -513,63 +526,198 @@ class SugarChatbox extends HTMLElement {
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
             const text = input.value.trim();
-            if (!text) return;
+            if (!text || this.isSending) return;
 
-            // 1. Hiển thị tin nhắn User
+            const token = localStorage.getItem('sugarBlissToken');
+            if (!token) {
+                this.showLoginMessage(bodyEl);
+                return;
+            }
+
             this.addMessage(text, 'user', bodyEl);
             input.value = '';
+            this.isSending = true;
+            input.disabled = true;
             sendBtn.disabled = true;
-            
-            // 2. Hiển thị trạng thái đang xử lý
-            const loadingId = this.addMessage("...", 'assistant', bodyEl, true);
+            form.setAttribute('aria-busy', 'true');
+            const loadingMsg = this.addMessage('...', 'assistant', bodyEl);
 
             try {
-                const token = localStorage.getItem("sugarBlissToken") || '';
-                const headers = { 'Content-Type': 'application/json' };
-                if (token) headers['Authorization'] = `Bearer ${token}`;
-
                 const response = await fetch(`${this.API_BASE_URL}/api/chatbox/message`, {
                     method: 'POST',
-                    headers: headers,
+                    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+                    signal: AbortSignal.timeout(65000),
                     body: JSON.stringify({
                         message: text,
                         history: this.history
                     })
                 });
-                
-                const data = await response.json();
-                
-                const loadingMsg = this.querySelector(`#${loadingId}`);
-                if (loadingMsg) loadingMsg.remove();
-                
-                if (response.ok && data.reply) {
-                    this.addMessage(data.reply, 'assistant', bodyEl);
-                    this.history.push({ role: 'user', content: text });
-                    this.history.push({ role: 'assistant', content: data.reply });
+                const data = await response.json().catch(() => ({}));
+                const reply = typeof data.reply === 'string' ? data.reply.trim() : '';
+
+                if (response.ok && reply) {
+                    this.addAssistantReply(reply, data.products, bodyEl);
+                    this.history = [
+                        ...this.history,
+                        { role: 'user', content: text },
+                        { role: 'assistant', content: reply.slice(0, 1200) },
+                    ].slice(-12);
                 } else {
-                    this.addMessage("I'm sorry, I'm having trouble connecting right now.", 'assistant', bodyEl);
+                    this.showErrorMessage(response.status, data.code, bodyEl);
+                    input.value = text;
                 }
             } catch (error) {
-                const loadingMsg = this.querySelector(`#${loadingId}`);
-                if (loadingMsg) loadingMsg.remove();
-                this.addMessage("Connection error. Please try again.", 'assistant', bodyEl);
+                const message = ['AbortError', 'TimeoutError'].includes(error.name)
+                    ? 'The AI request timed out. Please try again.'
+                    : 'Unable to reach Sugar Bliss. Check your connection and try again.';
+                this.addMessage(message, 'assistant', bodyEl);
+                input.value = text;
             } finally {
+                loadingMsg.remove();
+                this.isSending = false;
+                input.disabled = false;
                 sendBtn.disabled = false;
+                form.setAttribute('aria-busy', 'false');
                 input.focus();
             }
         });
     }
 
-    addMessage(text, role, container, isLoading = false) {
+    addAssistantReply(reply, products, container) {
+        const catalog = new Map();
+        if (Array.isArray(products)) {
+            products.forEach((product) => {
+                const id = String(product?.id || '').toLowerCase();
+                if (/^[a-f\d]{24}$/.test(id)) catalog.set(`/products/${id}`, { ...product, id });
+            });
+        }
+
+        if (!catalog.size) return this.addMessage(reply, 'assistant', container);
+
+        const copy = reply.replace(/\[[^\]\n]*\]\((\/products\/[a-f\d]{24})\)|<?(\/products\/[a-f\d]{24})(?![a-z\d_/-])>?/gi,
+            (match, markdownPath, plainPath) => catalog.has((markdownPath || plainPath).toLowerCase()) ? '' : match)
+            .replace(/\(\s*\)/g, '')
+            .replace(/^[ \t]*[-*][ \t]*$/gm, '')
+            .replace(/\n{3,}/g, '\n\n')
+            .trim();
+        const msg = this.addMessage('', 'assistant has-products', container);
+        if (copy) {
+            const text = document.createElement('p');
+            text.className = 'sb-chat-reply-copy';
+            text.textContent = copy;
+            msg.appendChild(text);
+        }
+
+        const cards = document.createElement('div');
+        cards.className = 'sb-chat-products';
+        catalog.forEach((product) => cards.appendChild(this.createProductCard(product)));
+        msg.appendChild(cards);
+        container.scrollTop = container.scrollHeight;
+        return msg;
+    }
+
+    createProductCard(product) {
+        const name = String(product.name || 'Sugar Bliss product');
+        const card = document.createElement('a');
+        card.className = 'sb-chat-product-card';
+        card.href = `/products/${product.id}`;
+        card.setAttribute('aria-label', `View ${name} details`);
+
+        const media = document.createElement('span');
+        media.className = 'sb-chat-product-media';
+        const imageUrl = this.resolveChatProductImage(product.image);
+        if (imageUrl) {
+            const image = document.createElement('img');
+            image.src = imageUrl;
+            image.alt = name;
+            image.loading = 'lazy';
+            image.addEventListener('error', () => {
+                image.remove();
+                media.textContent = name.charAt(0).toUpperCase();
+            }, { once: true });
+            media.appendChild(image);
+        } else {
+            media.textContent = name.charAt(0).toUpperCase();
+        }
+
+        const details = document.createElement('span');
+        details.className = 'sb-chat-product-copy';
+        const title = document.createElement('strong');
+        title.className = 'sb-chat-product-name';
+        title.textContent = name;
+        const category = document.createElement('span');
+        category.className = 'sb-chat-product-category';
+        category.textContent = String(product.category || '');
+        const price = document.createElement('span');
+        price.className = 'sb-chat-product-price';
+        price.textContent = Number.isFinite(Number(product.price))
+            ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(Number(product.price))
+            : 'Contact for price';
+        details.appendChild(title);
+        if (category.textContent) details.appendChild(category);
+        details.appendChild(price);
+        if (product.inStock === false) {
+            const stock = document.createElement('span');
+            stock.className = 'sb-chat-product-stock';
+            stock.textContent = 'Out of stock';
+            details.appendChild(stock);
+        }
+        card.appendChild(media);
+        card.appendChild(details);
+        return card;
+    }
+
+    resolveChatProductImage(image) {
+        const value = String(image || '').trim();
+        if (!value) return '';
+
+        try {
+            const base = value.startsWith('/uploads/') ? this.API_BASE_URL : window.location.origin;
+            const url = new URL(value, base);
+            return ['http:', 'https:'].includes(url.protocol) && !url.username && !url.password ? url.href : '';
+        } catch {
+            return '';
+        }
+    }
+
+    showLoginMessage(container) {
+        const msg = this.addMessage('Please log in to chat with Sugar Bliss Assistant.', 'assistant', container);
+        const link = document.createElement('a');
+        link.className = 'sb-chat-login';
+        link.href = '/login';
+        link.textContent = 'Log in';
+        msg.appendChild(link);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    showErrorMessage(status, code, container) {
+        if (status === 401) {
+            this.showLoginMessage(container);
+            return;
+        }
+
+        let message = 'The AI service is temporarily unavailable. Please try again later.';
+        if (code === 'AI_AUTHENTICATION_ERROR') {
+            message = 'The AI service could not authenticate. Please contact Sugar Bliss.';
+        } else if (status === 429) {
+            message = 'Too many chat requests. Please wait a moment before trying again.';
+        } else if (status === 504) {
+            message = 'The AI request timed out. Please try again.';
+        } else if (status === 403) {
+            message = 'This account cannot use chat. Please contact Sugar Bliss.';
+        } else if (status === 400) {
+            message = 'Unable to send this message. Please shorten it and try again.';
+        }
+        this.addMessage(message, 'assistant', container);
+    }
+
+    addMessage(text, role, container) {
         const msg = document.createElement('div');
         msg.className = `sb-msg ${role}`;
         msg.textContent = text;
-        const msgId = 'msg-' + Date.now();
-        if (isLoading) msg.id = msgId;
-        
         container.appendChild(msg);
         container.scrollTop = container.scrollHeight; 
-        return msgId;
+        return msg;
     }
 }
 

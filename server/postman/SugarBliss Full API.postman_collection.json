@@ -2839,7 +2839,11 @@
                   "  pm.expect(pm.response.code).to.be.oneOf([200]);",
                   "});",
                   "const data = pm.response.json();",
-                  "pm.test('Returns an AI reply', function () { pm.expect(data.reply).to.be.a('string').and.not.empty; });"
+                  "pm.test('Returns an AI reply', function () { pm.expect(data.reply).to.be.a('string').and.not.empty; });",
+                  "pm.test('Returns catalog-backed product cards', function () {",
+                  "  pm.expect(data.products).to.be.an('array');",
+                  "  data.products.forEach(function (product) { pm.expect(product.id).to.match(/^[a-f0-9]{24}$/); pm.expect(product.name).to.be.a('string'); pm.expect(product.price).to.be.a('number'); pm.expect(product.image).to.be.a('string'); pm.expect(product.detailPath).to.eql('/products/' + product.id); });",
+                  "});"
                 ]
               }
             }
@@ -2872,7 +2876,7 @@
                 "message"
               ]
             },
-            "description": "Requires GEMINI_API_KEY in server/.env. The Gemini key is never sent from Postman or the browser."
+            "description": "Requires GEMINI_API_KEY in server/.env. Returns { reply, model, products }. Each products item contains id, name, price, image (first catalog image), category, inStock, and detailPath for a clickable chat card. Only active catalog products linked in the reply are included, with duplicates removed. The Gemini key is never sent from Postman or the browser."
           },
           "response": []
         }

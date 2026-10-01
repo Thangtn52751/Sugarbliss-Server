@@ -86,7 +86,6 @@ class SugarHeader extends HTMLElement {
             </header>
         `;
 
-        // Render the core header first so optional enhancements can never hide it.
         try {
             this.ensureSearchStyles();
             this.initializeProductSearch();
@@ -444,10 +443,149 @@ class SugarFooter extends HTMLElement {
     }
 }
 
+// ==========================================
+// THÀNH PHẦN AI CHATBOT MỚI
+// ==========================================
+class SugarChatbox extends HTMLElement {
+    connectedCallback() {
+        this.history = []; // Khởi tạo mảng lưu trữ ngữ cảnh chat
+        this.API_BASE_URL = window.SugarBlissApi?.baseUrl || `${window.location.protocol}//${window.location.hostname}:3000`;
+
+        // CSS và HTML giao diện Chatbot
+        this.innerHTML = `
+            <style>
+                .sb-chat-wrapper { position: fixed; bottom: 24px; right: 24px; z-index: 9999; font-family: inherit; }
+                .sb-chat-toggle { width: 56px; height: 56px; border-radius: 50%; background: #d94960; color: white; border: none; cursor: pointer; box-shadow: 0 4px 15px rgba(217,73,96,0.3); display: flex; align-items: center; justify-content: center; transition: transform 0.2s; }
+                .sb-chat-toggle:hover { transform: scale(1.05); }
+                .sb-chat-window { display: none; width: 350px; height: 500px; background: white; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); flex-direction: column; overflow: hidden; position: absolute; bottom: 76px; right: 0; border: 1px solid #f3d9df; }
+                .sb-chat-window.active { display: flex; animation: slideUpChat 0.3s ease; }
+                .sb-chat-header { background: #d94960; color: white; padding: 16px 20px; font-weight: 800; font-size: 16px; display: flex; justify-content: space-between; align-items: center; }
+                .sb-chat-close { background: none; border: none; color: white; font-size: 24px; line-height: 1; cursor: pointer; }
+                .sb-chat-body { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: #fffafb; scroll-behavior: smooth; }
+                .sb-msg { max-width: 85%; padding: 12px 16px; font-size: 14px; line-height: 1.5; word-wrap: break-word; }
+                .sb-msg.user { align-self: flex-end; background: #d94960; color: white; border-radius: 16px 16px 2px 16px; }
+                .sb-msg.assistant { align-self: flex-start; background: #ffffff; color: #2c2528; border: 1px solid #f3d9df; border-radius: 16px 16px 16px 2px; }
+                .sb-chat-footer { padding: 12px 16px; border-top: 1px solid #f3d9df; display: flex; gap: 8px; background: white; }
+                .sb-chat-input { flex: 1; padding: 10px 16px; border: 1px solid #ddd; border-radius: 999px; outline: none; font-size: 14px; transition: border-color 0.2s; font-family: inherit; }
+                .sb-chat-input:focus { border-color: #d94960; }
+                .sb-chat-send { background: #d94960; color: white; border: none; padding: 8px 16px; border-radius: 999px; cursor: pointer; font-weight: bold; }
+                .sb-chat-send:disabled { background: #e0e0e0; cursor: not-allowed; color: #999; }
+                @keyframes slideUpChat { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+            </style>
+            
+            <div class="sb-chat-wrapper">
+                <div class="sb-chat-window">
+                    <div class="sb-chat-header">
+                        <span>Sugar Bliss Assistant</span>
+                        <button class="sb-chat-close" aria-label="Close chat">&times;</button>
+                    </div>
+                    <div class="sb-chat-body" id="sb-chat-body">
+                        <div class="sb-msg assistant">Hi! How can I help you find the perfect cake today?</div>
+                    </div>
+                    <form class="sb-chat-footer" id="sb-chat-form">
+                        <input type="text" class="sb-chat-input" id="sb-chat-input" placeholder="Ask me anything..." required autocomplete="off">
+                        <button type="submit" class="sb-chat-send">Send</button>
+                    </form>
+                </div>
+                <button class="sb-chat-toggle" aria-label="Open AI Assistant">
+                    <svg width="28" height="28" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 2C6.48 2 2 5.92 2 10.75c0 2.8 1.54 5.3 3.96 6.87-.27 1.63-.97 3.32-1.02 3.45-.06.18-.02.39.1.53.13.14.33.19.51.13 3.12-1.01 5.34-2.5 6.42-3.32.65.11 1.33.17 2.03.17 5.52 0 10-3.92 10-8.75S17.52 2 12 2z"/>
+                    </svg>
+                </button>
+            </div>
+        `;
+
+        this.bindEvents();
+    }
+
+    bindEvents() {
+        const toggleBtn = this.querySelector('.sb-chat-toggle');
+        const closeBtn = this.querySelector('.sb-chat-close');
+        const windowEl = this.querySelector('.sb-chat-window');
+        const form = this.querySelector('#sb-chat-form');
+        const input = this.querySelector('#sb-chat-input');
+        const bodyEl = this.querySelector('#sb-chat-body');
+        const sendBtn = this.querySelector('.sb-chat-send');
+
+        toggleBtn.addEventListener('click', () => windowEl.classList.add('active'));
+        closeBtn.addEventListener('click', () => windowEl.classList.remove('active'));
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const text = input.value.trim();
+            if (!text) return;
+
+            // 1. Hiển thị tin nhắn User
+            this.addMessage(text, 'user', bodyEl);
+            input.value = '';
+            sendBtn.disabled = true;
+            
+            // 2. Hiển thị trạng thái đang xử lý
+            const loadingId = this.addMessage("...", 'assistant', bodyEl, true);
+
+            try {
+                const token = localStorage.getItem("sugarBlissToken") || '';
+                const headers = { 'Content-Type': 'application/json' };
+                if (token) headers['Authorization'] = `Bearer ${token}`;
+
+                const response = await fetch(`${this.API_BASE_URL}/api/chatbox/message`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify({
+                        message: text,
+                        history: this.history
+                    })
+                });
+                
+                const data = await response.json();
+                
+                const loadingMsg = this.querySelector(`#${loadingId}`);
+                if (loadingMsg) loadingMsg.remove();
+                
+                if (response.ok && data.reply) {
+                    this.addMessage(data.reply, 'assistant', bodyEl);
+                    this.history.push({ role: 'user', content: text });
+                    this.history.push({ role: 'assistant', content: data.reply });
+                } else {
+                    this.addMessage("I'm sorry, I'm having trouble connecting right now.", 'assistant', bodyEl);
+                }
+            } catch (error) {
+                const loadingMsg = this.querySelector(`#${loadingId}`);
+                if (loadingMsg) loadingMsg.remove();
+                this.addMessage("Connection error. Please try again.", 'assistant', bodyEl);
+            } finally {
+                sendBtn.disabled = false;
+                input.focus();
+            }
+        });
+    }
+
+    addMessage(text, role, container, isLoading = false) {
+        const msg = document.createElement('div');
+        msg.className = `sb-msg ${role}`;
+        msg.textContent = text;
+        const msgId = 'msg-' + Date.now();
+        if (isLoading) msg.id = msgId;
+        
+        container.appendChild(msg);
+        container.scrollTop = container.scrollHeight; 
+        return msgId;
+    }
+}
+
 if (!customElements.get("sugar-header")) {
     customElements.define("sugar-header", SugarHeader);
 }
 
 if (!customElements.get("sugar-footer")) {
     customElements.define("sugar-footer", SugarFooter);
+}
+if (!customElements.get("sugar-chatbox")) {
+    customElements.define("sugar-chatbox", SugarChatbox);
+    
+    document.addEventListener("DOMContentLoaded", () => {
+        if (!document.querySelector('sugar-chatbox')) {
+            document.body.appendChild(document.createElement("sugar-chatbox"));
+        }
+    });
 }

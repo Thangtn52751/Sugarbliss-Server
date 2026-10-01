@@ -437,7 +437,6 @@ class SugarFooter extends HTMLElement {
             </footer>
         `;
 
-        // Dich footer + cap nhat khi doi ngon ngu
         if (window.SugarI18n) {
             window.SugarI18n.apply(this);
             window.addEventListener("sugarbliss:lang-changed", () => window.SugarI18n.apply(this));

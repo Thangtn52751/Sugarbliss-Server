@@ -103,6 +103,10 @@
       "value": "cake"
     },
     {
+      "key": "dashboardRange",
+      "value": "30d"
+    },
+    {
       "key": "specialOrderId",
       "value": ""
     },
@@ -161,6 +165,7 @@
                   "  const data = pm.response.json();",
                   "  pm.expect(data.endpoints.productSearch).to.include('/api/products/search');",
                   "  pm.expect(data.endpoints.chatbox).to.eql('/api/chatbox/message');",
+                  "  pm.expect(data.endpoints.adminDashboard).to.eql('/api/admin/dashboard/overview');",
                   "});"
                 ]
               }
@@ -747,6 +752,81 @@
                 "api",
                 "users",
                 "reset-password"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Dashboard",
+      "description": "Admin-only aggregate data for dashboard KPIs, sales chart, best sellers, and recent orders.",
+      "item": [
+        {
+          "name": "GET /api/admin/dashboard/overview",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "const data = pm.response.json();",
+                  "pm.test('Returns all dashboard sections', function () {",
+                  "  pm.expect(data.currency).to.eql('VND');",
+                  "  pm.expect(data.kpis).to.have.keys('totalRevenue', 'ordersToday', 'activeCustomers', 'productsListed');",
+                  "  pm.expect(data.salesVolume.points).to.be.an('array');",
+                  "  pm.expect(data.bestSellingProducts).to.be.an('array');",
+                  "  pm.expect(data.recentOrders).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/admin/dashboard/overview?range={{dashboardRange}}&timezoneOffset=420&bestSellerLimit=4&recentOrderLimit=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "dashboard",
+                "overview"
+              ],
+              "query": [
+                {
+                  "key": "range",
+                  "value": "{{dashboardRange}}"
+                },
+                {
+                  "key": "timezoneOffset",
+                  "value": "420"
+                },
+                {
+                  "key": "bestSellerLimit",
+                  "value": "4"
+                },
+                {
+                  "key": "recentOrderLimit",
+                  "value": "5"
+                }
               ]
             }
           },

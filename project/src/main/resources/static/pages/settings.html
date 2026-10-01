@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugar Bliss | Settings</title>
+    <link rel="stylesheet" href="/assets/css/home.css">
+    <link rel="stylesheet" href="/assets/css/settings.css">
+</head>
+<body>
+    <sugar-header active="settings"></sugar-header>
+
+    <main class="settings-page">
+        <header class="settings-hero">
+            <h1 data-i18n="settings.title">Settings</h1>
+            <p data-i18n="settings.subtitle">Manage your account preferences and your Sugar Bliss experience.</p>
+        </header>
+
+        <p class="settings-saved" data-settings-saved hidden data-i18n="settings.saved">Settings saved.</p>
+
+        <!-- Ngon ngu & Hien thi -->
+        <section class="settings-card">
+            <h2 data-i18n="settings.langSection">Language &amp; Display</h2>
+            <div class="settings-row">
+                <div class="settings-row-text">
+                    <strong data-i18n="settings.langLabel">Language</strong>
+                    <span data-i18n="settings.langDesc">Choose the display language for the whole website.</span>
+                </div>
+                <div class="settings-row-control">
+                    <select class="settings-select" data-settings-language>
+                        <option value="vi" data-i18n="settings.langVietnamese">Vietnamese</option>
+                        <option value="en" data-i18n="settings.langEnglish">English</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tai khoan -->
+        <section class="settings-card">
+            <h2 data-i18n="settings.accountSection">Account</h2>
+            <a class="settings-row settings-row-link" href="/profile">
+                <div class="settings-row-text">
+                    <strong data-i18n="settings.editProfile">Edit Profile</strong>
+                    <span data-i18n="settings.editProfileDesc">Update your name, phone number and delivery address.</span>
+                </div>
+                <span class="settings-chevron" aria-hidden="true">&rsaquo;</span>
+            </a>
+            <a class="settings-row settings-row-link" href="/forgot-password">
+                <div class="settings-row-text">
+                    <strong data-i18n="settings.changePassword">Change Password</strong>
+                    <span data-i18n="settings.changePasswordDesc">Reset your password to keep your account secure.</span>
+                </div>
+                <span class="settings-chevron" aria-hidden="true">&rsaquo;</span>
+            </a>
+        </section>
+
+        <!-- Thong bao -->
+        <section class="settings-card">
+            <h2 data-i18n="settings.notifSection">Notifications</h2>
+            <div class="settings-row">
+                <div class="settings-row-text">
+                    <strong data-i18n="settings.notifOrder">Order confirmation emails</strong>
+                    <span data-i18n="settings.notifOrderDesc">Receive an email whenever your order is placed or updated.</span>
+                </div>
+                <label class="settings-switch">
+                    <input type="checkbox" data-settings-notif="order" checked>
+                    <span class="settings-slider" aria-hidden="true"></span>
+                </label>
+            </div>
+            <div class="settings-row">
+                <div class="settings-row-text">
+                    <strong data-i18n="settings.notifPromo">Promotions &amp; offers emails</strong>
+                    <span data-i18n="settings.notifPromoDesc">Get updates about new treats, offers and special events.</span>
+                </div>
+                <label class="settings-switch">
+                    <input type="checkbox" data-settings-notif="promo">
+                    <span class="settings-slider" aria-hidden="true"></span>
+                </label>
+            </div>
+        </section>
+
+        <!-- Khac -->
+        <section class="settings-card">
+            <h2 data-i18n="settings.otherSection">Other</h2>
+            <a class="settings-row settings-row-link" href="/about">
+                <div class="settings-row-text">
+                    <strong data-i18n="settings.aboutUs">About Us</strong>
+                </div>
+                <span class="settings-chevron" aria-hidden="true">&rsaquo;</span>
+            </a>
+            <a class="settings-row settings-row-link" href="/contact">
+                <div class="settings-row-text">
+                    <strong data-i18n="settings.contact">Contact</strong>
+                </div>
+                <span class="settings-chevron" aria-hidden="true">&rsaquo;</span>
+            </a>
+            <button class="settings-logout" type="button" data-settings-logout data-i18n="settings.logout">Logout</button>
+        </section>
+    </main>
+
+    <sugar-footer></sugar-footer>
+    <script src="/assets/js/api-config.js"></script>
+    <script src="/assets/js/i18n.js"></script>
+    <script src="/assets/js/shared-components.js"></script>
+    <script src="/assets/js/header-profile.js"></script>
+    <script src="/assets/js/settings.js"></script>
+</body>
+</html>

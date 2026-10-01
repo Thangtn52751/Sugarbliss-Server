@@ -226,6 +226,59 @@
         "detail.rating": { vi: "Xếp hạng", en: "Rating" },
         "detail.submitReview": { vi: "Gửi đánh giá", en: "Submit Review" },
 
+        // ----- Menu tai khoan (profile dropdown tren header) -----
+        "menu.profile": { vi: "Hồ sơ", en: "Profile" },
+        "menu.orderHistory": { vi: "Lịch sử đơn hàng", en: "Order History" },
+        "menu.yourCart": { vi: "Giỏ hàng", en: "Your Cart" },
+        "menu.settings": { vi: "Cài đặt", en: "Settings" },
+        "menu.logout": { vi: "Đăng xuất", en: "Logout" },
+
+        // ----- Trang Cai dat (Settings) -----
+        "settings.title": { vi: "Cài đặt", en: "Settings" },
+        "settings.subtitle": {
+            vi: "Quản lý tùy chọn tài khoản và trải nghiệm của bạn tại Sugar Bliss.",
+            en: "Manage your account preferences and your Sugar Bliss experience."
+        },
+        "settings.langSection": { vi: "Ngôn ngữ & Hiển thị", en: "Language & Display" },
+        "settings.langLabel": { vi: "Ngôn ngữ", en: "Language" },
+        "settings.langDesc": {
+            vi: "Chọn ngôn ngữ hiển thị cho toàn bộ trang web.",
+            en: "Choose the display language for the whole website."
+        },
+        "settings.langVietnamese": { vi: "Tiếng Việt", en: "Vietnamese" },
+        "settings.langEnglish": { vi: "Tiếng Anh", en: "English" },
+
+        "settings.accountSection": { vi: "Tài khoản", en: "Account" },
+        "settings.editProfile": { vi: "Chỉnh sửa hồ sơ", en: "Edit Profile" },
+        "settings.editProfileDesc": {
+            vi: "Cập nhật tên, số điện thoại và địa chỉ giao hàng.",
+            en: "Update your name, phone number and delivery address."
+        },
+        "settings.changePassword": { vi: "Đổi mật khẩu", en: "Change Password" },
+        "settings.changePasswordDesc": {
+            vi: "Đặt lại mật khẩu để bảo vệ tài khoản của bạn.",
+            en: "Reset your password to keep your account secure."
+        },
+
+        "settings.notifSection": { vi: "Thông báo", en: "Notifications" },
+        "settings.notifOrder": { vi: "Email xác nhận đơn hàng", en: "Order confirmation emails" },
+        "settings.notifOrderDesc": {
+            vi: "Nhận email mỗi khi đơn hàng của bạn được tạo hoặc cập nhật.",
+            en: "Receive an email whenever your order is placed or updated."
+        },
+        "settings.notifPromo": { vi: "Email ưu đãi & khuyến mãi", en: "Promotions & offers emails" },
+        "settings.notifPromoDesc": {
+            vi: "Nhận thông tin về bánh mới, ưu đãi và sự kiện đặc biệt.",
+            en: "Get updates about new treats, offers and special events."
+        },
+
+        "settings.otherSection": { vi: "Khác", en: "Other" },
+        "settings.aboutUs": { vi: "Về chúng tôi", en: "About Us" },
+        "settings.contact": { vi: "Liên hệ", en: "Contact" },
+        "settings.logout": { vi: "Đăng xuất", en: "Logout" },
+        "settings.saved": { vi: "Đã lưu cài đặt.", en: "Settings saved." },
+        "settings.manage": { vi: "Quản lý", en: "Manage" },
+
         // ----- Nhan chung -----
         "common.langLabel": { vi: "VI", en: "EN" }
     };

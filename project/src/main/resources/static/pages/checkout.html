@@ -58,10 +58,19 @@
                     </div>
                     <aside class="checkout-card checkout-summary">
                         <h2>Order summary</h2>
+                        <div class="checkout-voucher">
+                            <label class="checkout-voucher-label" for="checkout-voucher-input" data-i18n="voucher.label">Discount code</label>
+                            <div class="checkout-voucher-row">
+                                <input id="checkout-voucher-input" type="text" data-voucher-input autocomplete="off" placeholder="SUGAR10" data-i18n-attr="placeholder:voucher.placeholder">
+                                <button type="button" class="checkout-voucher-apply" data-voucher-apply data-i18n="voucher.apply">Apply</button>
+                            </div>
+                            <p class="checkout-voucher-status" data-voucher-status role="status" aria-live="polite" hidden></p>
+                        </div>
                         <dl class="checkout-totals">
-                            <div><dt>Subtotal</dt><dd data-checkout-subtotal>—</dd></div>
-                            <div><dt>Delivery</dt><dd data-checkout-fee>Select an address</dd></div>
-                            <div class="checkout-total"><dt>Total</dt><dd><strong data-checkout-total>—</strong><small>VND</small></dd></div>
+                            <div><dt data-i18n="voucher.subtotal">Subtotal</dt><dd data-checkout-subtotal>—</dd></div>
+                            <div class="checkout-discount-row" data-discount-row hidden><dt data-i18n="voucher.discount">Discount</dt><dd data-checkout-discount>—</dd></div>
+                            <div><dt data-i18n="voucher.delivery">Delivery</dt><dd data-checkout-fee>Select an address</dd></div>
+                            <div class="checkout-total"><dt data-i18n="voucher.total">Total</dt><dd><strong data-checkout-total>—</strong><small>VND</small></dd></div>
                         </dl>
                         <button class="checkout-button checkout-button-secondary" type="button" data-get-quote hidden>Retry delivery fee</button>
                         <p class="checkout-quote-status" data-quote-status role="status" aria-live="polite">Search for and select your delivery address.</p>

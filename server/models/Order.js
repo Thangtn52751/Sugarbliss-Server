@@ -67,6 +67,17 @@ const orderSchema = new mongoose.Schema({
         min: 0,
         default: 0,
     },
+    // Giam gia tu voucher (VND). voucherCode luu ma da ap dung (neu co).
+    discount: {
+        type: Number,
+        min: 0,
+        default: 0,
+    },
+    voucherCode: {
+        type: String,
+        trim: true,
+        default: '',
+    },
     shippingProvider: { type: String, default: '' },
     shippingQuote: { type: mongoose.Schema.Types.ObjectId, ref: 'ShippingQuote' },
     shippingOrderId: { type: String },

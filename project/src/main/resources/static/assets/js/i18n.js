@@ -226,6 +226,15 @@
         "detail.rating": { vi: "Xếp hạng", en: "Rating" },
         "detail.submitReview": { vi: "Gửi đánh giá", en: "Submit Review" },
 
+        // ----- Voucher / Ma giam gia (trang Checkout) -----
+        "voucher.label": { vi: "Mã giảm giá", en: "Discount code" },
+        "voucher.placeholder": { vi: "Nhập mã (vd SUGAR10)", en: "Enter code (e.g. SUGAR10)" },
+        "voucher.apply": { vi: "Áp dụng", en: "Apply" },
+        "voucher.subtotal": { vi: "Tạm tính", en: "Subtotal" },
+        "voucher.discount": { vi: "Giảm giá", en: "Discount" },
+        "voucher.delivery": { vi: "Phí giao hàng", en: "Delivery" },
+        "voucher.total": { vi: "Tổng cộng", en: "Total" },
+
         // ----- Nhan chung -----
         "common.langLabel": { vi: "VI", en: "EN" }
     };

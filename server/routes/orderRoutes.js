@@ -12,6 +12,8 @@ const lalamove = require('../services/lalamove');
 const shipping = require('../services/shipping');
 const geocoding = require('../services/geocoding');
 const { getOrderStatusView } = require('../utils/orderStatus');
+const { evaluateVoucher } = require('../services/voucherService');
+const Voucher = require('../models/Voucher');
 
 const router = express.Router();
 
@@ -35,6 +37,8 @@ const orderResponse = (order) => {
         deliveryStatusTerminal: displayStatus.terminal,
         subtotal: order.subtotal,
         shippingFee: order.shippingFee,
+        discount: order.discount || 0,
+        voucherCode: order.voucherCode || '',
         total: order.total,
         items: order.items,
         deliveryMethod: order.deliveryMethod || DELIVERY_METHODS.standard.code,
@@ -271,6 +275,18 @@ router.post('/', asyncHandler(async (req, res) => {
         }));
         const subtotal = itemSnapshots.reduce((total, item) => total + item.lineTotal, 0);
         const shippingFee = quote ? quote.fee : deliveryOption.fee;
+
+        // Ap voucher (neu co): LUON tinh lai o server, khong tin client
+        let discount = 0;
+        let voucherCode = '';
+        let appliedVoucherId = null;
+        if (req.body.voucherCode) {
+            const evaluated = await evaluateVoucher(req.body.voucherCode, subtotal);
+            discount = evaluated.discount;
+            voucherCode = evaluated.voucher.code;
+            appliedVoucherId = evaluated.voucher._id;
+        }
+
         const productName = itemSnapshots.length === 1
             ? itemSnapshots[0].name
             : `${itemSnapshots[0].name} + ${itemSnapshots.length - 1} more`;
@@ -288,7 +304,9 @@ router.post('/', asyncHandler(async (req, res) => {
             productName,
             subtotal,
             shippingFee,
-            total: subtotal + shippingFee,
+            discount,
+            voucherCode,
+            total: Math.max(0, subtotal - discount) + shippingFee,
             status: 'In Progress',
             orderedOn: new Date(),
             items: itemSnapshots,
@@ -306,6 +324,13 @@ router.post('/', asyncHandler(async (req, res) => {
                 shippingStatus: 'CREATING', shippingRequestId: crypto.randomUUID(),
             } : {}),
         });
+
+        // Tang luot dung voucher sau khi don da tao thanh cong
+        if (appliedVoucherId) {
+            await Voucher.updateOne({ _id: appliedVoucherId }, { $inc: { usedCount: 1 } }).catch(() => {
+                console.error(`Could not increment voucher usage for order ${order._id}`);
+            });
+        }
     } catch (error) {
         if (stockReserved) await releaseStock(orderItems);
         if (quote) await ShippingQuote.updateOne({ _id: quote._id, claimedOrder: newOrderId }, { $set: { claimedOrder: null } });

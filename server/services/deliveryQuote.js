@@ -1,6 +1,7 @@
 const ShippingQuote = require('../models/ShippingQuote');
 const geocoding = require('./geocoding');
 const lalamove = require('./lalamove');
+const zalopay = require('./zalopay');
 
 function normalizeCustomerInput(input = {}) {
     if (!input || typeof input !== 'object' || Array.isArray(input)) {
@@ -16,6 +17,8 @@ function normalizeCustomerInput(input = {}) {
 }
 
 async function create(userId, input) {
+    const paymentMethod = zalopay.validateMethod(input?.paymentMethod || 'COD');
+    const cashOnDelivery = paymentMethod === 'COD';
     const customer = normalizeCustomerInput(input?.shippingAddress || input);
     const location = await geocoding.geocode(customer.address);
     const recipient = lalamove.normalizeAddress({
@@ -23,11 +26,11 @@ async function create(userId, input) {
         address: location.address,
         coordinates: location.coordinates,
     });
-    const quotation = await lalamove.getQuotation(recipient, { cashOnDelivery: true });
+    const quotation = await lalamove.getQuotation(recipient, { cashOnDelivery });
     const quote = await ShippingQuote.create({
         ...quotation,
         recipient,
-        cashOnDelivery: true,
+        cashOnDelivery,
         user: userId,
     });
 
@@ -39,6 +42,7 @@ async function create(userId, input) {
         currency: 'VND',
         expiresAt: quote.expiresAt,
         provider: 'Lalamove',
+        cashOnDelivery,
     };
 }
 

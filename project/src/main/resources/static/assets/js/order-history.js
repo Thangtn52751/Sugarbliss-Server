@@ -141,11 +141,14 @@ function renderOrderCard(order) {
                     <div><span>Delivery number</span><p>${escapeHtml(order.shippingOrderId || "Awaiting confirmation")}</p></div>
                 ` : ""}
             </div>
+            ${order.payment?.error ? `<p class="delivery-issue" role="status">${escapeHtml(order.payment.error)}</p>` : ""}
             ${order.shippingError ? `<p class="delivery-issue" role="status">${escapeHtml(order.shippingError)}</p>` : ""}
 
             <footer class="order-card-actions">
                 <button class="order-text-button" type="button" data-view-order="${safeId}" aria-expanded="false">View order details</button>
                 <button class="order-text-button" type="button" data-download-order="${safeId}">Download invoice</button>
+                ${canSyncPayment(order) ? `<a class="order-text-button" href="/checkout?order=${encodeURIComponent(orderId)}">Continue payment</a>
+                    <button class="order-text-button" type="button" data-refresh-payment="${safeId}">Refresh payment</button>` : ""}
                 ${canSyncDelivery(order) ? `<button class="order-text-button" type="button" data-refresh-shipping="${safeId}">Refresh delivery</button>` : ""}
                 ${renderTrackingLink(order.shippingTrackingUrl)}
                 ${order.status === "In Progress" ? `<button class="order-cancel-button" type="button" data-cancel-order="${safeId}">Cancel Order</button>` : ""}
@@ -182,8 +185,11 @@ function handleOrderAction(event) {
     const downloadButton = event.target.closest("[data-download-order]");
     const cancelButton = event.target.closest("[data-cancel-order]");
     const refreshButton = event.target.closest("[data-refresh-shipping]");
+    const paymentButton = event.target.closest("[data-refresh-payment]");
 
-    if (refreshButton) {
+    if (paymentButton) {
+        refreshPayment(paymentButton.dataset.refreshPayment, paymentButton);
+    } else if (refreshButton) {
         refreshDelivery(refreshButton.dataset.refreshShipping, refreshButton);
     } else if (detailButton) {
         toggleOrderDetails(detailButton);
@@ -330,14 +336,48 @@ async function requestDeliveryUpdate(orderId) {
     return data;
 }
 
+async function requestPaymentUpdate(order) {
+    const id = encodeURIComponent(order.id || order._id);
+    const options = { headers: { Authorization: `Bearer ${localStorage.getItem('sugarBlissToken')}` } };
+    for (const path of [`/api/payments/${order.paymentMethod === 'Visa' ? 'visa/' : ''}${id}/status`, `/api/orders/${id}`]) {
+        const response = await fetch(`${ORDER_API_BASE_URL}${path}`, options);
+        const data = await response.json();
+        if (!response.ok) {
+            const error = new Error(data.message || 'Cannot refresh payment.');
+            error.status = response.status;
+            throw error;
+        }
+        if (path.startsWith('/api/orders/')) return data;
+    }
+}
+
+async function refreshPayment(orderId, button) {
+    const order = allOrders.find((item) => String(item.id || item._id) === String(orderId));
+    if (!order || !canSyncPayment(order)) return;
+    button.disabled = true;
+    try {
+        mergeDeliveryUpdates([await requestPaymentUpdate(order)]);
+        renderOrderHistory();
+        scheduleDeliverySync();
+    } catch (error) {
+        if (error.status === 401) { clearSessionAndLogin(); return; }
+        alert(error.message);
+        button.disabled = false;
+    }
+}
+
+function canSyncPayment(order) {
+    return order.paymentProvider === 'zalopay' && order.paymentStatus === 'Pending' && order.status === 'In Progress';
+}
+
 function canSyncDelivery(order) {
     return order.shippingProvider === "lalamove" && Boolean(order.shippingOrderId) &&
-        order.status !== "Cancelled" && !TERMINAL_DELIVERY_STATUSES.has(order.shippingStatus);
+        !['Cancelled', 'Failed'].includes(order.status) && !TERMINAL_DELIVERY_STATUSES.has(order.shippingStatus);
 }
 
 function visibleSyncableOrders() {
     const start = (currentOrderPage - 1) * ORDERS_PER_PAGE;
-    return filteredOrders.slice(start, start + ORDERS_PER_PAGE).filter(canSyncDelivery);
+    return filteredOrders.slice(start, start + ORDERS_PER_PAGE).filter((order) => canSyncPayment(order) || canSyncDelivery(order));
 }
 
 function mergeDeliveryUpdates(updates) {
@@ -361,7 +401,7 @@ async function syncVisibleDeliveries() {
     try {
         for (const order of orders) {
             try {
-                updates.push(await requestDeliveryUpdate(String(order.id || order._id)));
+                updates.push(await (canSyncPayment(order) ? requestPaymentUpdate(order) : requestDeliveryUpdate(String(order.id || order._id))));
             } catch (error) {
                 if (error.status === 401) { clearSessionAndLogin(); return; }
             }
@@ -392,6 +432,7 @@ function changeOrderPage(change) {
 
 function getOrderDisplayStatus(order) {
     if (order.displayStatus) return order.displayStatus;
+    if (order.status === 'Failed' || order.paymentStatus === 'Failed') return 'Failed';
     if (order.shippingProvider === "lalamove") return formatShippingStatus(order.shippingStatus);
     return order.status || "In Progress";
 }
@@ -399,7 +440,7 @@ function getOrderDisplayStatus(order) {
 function getStatusClass(order) {
     const status = getOrderDisplayStatus(order);
     const tone = order.displayStatusTone || (status === "Delivered" ? "delivered"
-        : status.includes("Cancel") ? "cancelled" : "progress");
+        : status.includes("Cancel") || status === 'Failed' ? "cancelled" : "progress");
     return tone === "delivered" ? "is-delivered" : tone === "cancelled" ? "is-cancelled" : "is-progress";
 }
 

@@ -15,6 +15,8 @@ const chatboxRoutes = require('./routes/chatboxRoutes');
 const voucherRoutes = require('./routes/voucherRoutes');
 const adminDashboardRoutes = require('./routes/adminDashboardRoutes');
 const requestLogger = require('./middleware/requestLogger');
+const paymentRoutes = require('./routes/paymentRoutes');
+const payments = require('./services/payments');
 
 const app = express();
 
@@ -31,6 +33,7 @@ app.get('/', (req, res) => {
             products: '/api/products',
             users: '/api/users',
             orders: '/api/orders',
+            payments: '/api/payments',
             specialOrders: '/api/special-orders',
             contact: '/api/contact',
             delivery: '/api/delivery',
@@ -45,6 +48,7 @@ app.get('/', (req, res) => {
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/payments', paymentRoutes);
 app.use('/api/special-orders', specialOrderRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/shipping', shippingRoutes);
@@ -81,6 +85,7 @@ const startServer = async () => {
     try {
         await connectDB();
         console.log('MongoDB connected successfully!');
+        payments.startReconciliation();
 
         app.listen(PORT, () => {
             console.log(`Server running at http://localhost:${PORT}`);

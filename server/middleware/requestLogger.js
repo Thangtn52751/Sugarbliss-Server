@@ -46,7 +46,7 @@ const requestLogger = (req, res, next) => {
         const query = Object.keys(req.query || {}).length
             ? ` query=${JSON.stringify(sanitizeValue(req.query))}`
             : '';
-        const body = Object.keys(req.body || {}).length
+        const body = requestPath === '/api/payments/zalopay/callback' ? ' body=[hidden payment callback]' : Object.keys(req.body || {}).length
             ? ` body=${JSON.stringify(sanitizeValue(req.body))}`
             : '';
 

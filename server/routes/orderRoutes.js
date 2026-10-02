@@ -14,6 +14,8 @@ const geocoding = require('../services/geocoding');
 const { getOrderStatusView } = require('../utils/orderStatus');
 const { evaluateVoucher } = require('../services/voucherService');
 const Voucher = require('../models/Voucher');
+const zalopay = require('../services/zalopay');
+const payments = require('../services/payments');
 
 const router = express.Router();
 
@@ -45,6 +47,8 @@ const orderResponse = (order) => {
         shippingAddress: order.shippingAddress,
         paymentMethod: order.paymentMethod,
         paymentStatus: order.paymentStatus,
+        paymentProvider: order.paymentProvider || '',
+        payment: payments.view(order),
         shippingProvider: order.shippingProvider,
         shippingOrderId: order.shippingOrderId,
         shippingStatus: order.shippingStatus,
@@ -208,19 +212,31 @@ router.get('/:id', asyncHandler(async (req, res) => {
 router.post('/', asyncHandler(async (req, res) => {
     const requestedMethod = String(req.body.deliveryMethod || DELIVERY_METHODS.standard.code).trim().toLowerCase();
     const isLalamove = DELIVERY_METHODS[requestedMethod]?.provider === 'lalamove';
-    const paymentMethod = req.body.paymentMethod || 'COD';
-    if (paymentMethod !== 'COD') throw lalamove.fail('Only cash on delivery (COD) is available at checkout.');
+    const paymentMethod = zalopay.validateMethod(req.body.paymentMethod || 'COD');
+    const online = zalopay.ONLINE_METHODS.includes(paymentMethod);
+    const checkoutKey = online ? String(req.body.checkoutKey || '') : '';
+    if (online) {
+        if (!/^[a-f\d]{8}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{4}-[a-f\d]{12}$/i.test(checkoutKey)) throw zalopay.fail('A checkoutKey UUID is required for online checkout.');
+        const saved = await Order.findOne({ user: req.user._id, checkoutKey });
+        if (saved) {
+            if (saved.paymentMethod !== paymentMethod) throw zalopay.fail('This checkout request already uses another payment method.', 409);
+            return res.json(orderResponse(saved));
+        }
+    }
     let quote;
     const newOrderId = new mongoose.Types.ObjectId();
     if (isLalamove) {
         if (!mongoose.isValidObjectId(req.body.shippingQuoteId)) throw lalamove.fail('Get a delivery quote before checkout.');
         const existing = await Order.findOne({ shippingQuote: req.body.shippingQuoteId, user: req.user._id });
-        if (existing) return res.json(orderResponse(existing));
+        if (existing) {
+            if (existing.paymentMethod !== paymentMethod) throw zalopay.fail('This delivery quote is already attached to an order using another payment method.', 409);
+            return res.json(orderResponse(existing));
+        }
         lalamove.assertConfigured();
         quote = await ShippingQuote.findOne({ _id: req.body.shippingQuoteId, user: req.user._id,
             expiresAt: { $gt: new Date() }, claimedOrder: null });
         if (!quote) throw lalamove.fail('Delivery quote expired or is already being used. Get a new quote or check order history.', 409);
-        if (!quote.cashOnDelivery) throw lalamove.fail('Get a new COD delivery quote before checkout.', 409);
+        if (quote.cashOnDelivery !== !online) throw lalamove.fail(`Get a new ${online ? 'prepaid' : 'COD'} delivery quote before checkout.`, 409);
     }
     const { items: requestedItems, fromCart } = await getRequestedItems(req);
     const deliveryMethod = String(req.body.deliveryMethod || DELIVERY_METHODS.standard.code).trim().toLowerCase();
@@ -250,7 +266,7 @@ router.post('/', asyncHandler(async (req, res) => {
         quantity: item.quantity,
     }));
     const goodsTotal = orderItems.reduce((total, item) => total + item.product.price * item.quantity, 0);
-    if (quote?.specialRequests?.includes('PURCHASE_SERVICE_1') && goodsTotal >= 500000) {
+    if (!online && quote?.specialRequests?.includes('PURCHASE_SERVICE_1') && goodsTotal >= 500000) {
         throw lalamove.fail('This COD delivery service supports goods below 500,000 VND. Reduce your cart or choose store pickup.');
     }
 
@@ -286,6 +302,7 @@ router.post('/', asyncHandler(async (req, res) => {
             voucherCode = evaluated.voucher.code;
             appliedVoucherId = evaluated.voucher._id;
         }
+        if (online && Math.max(0, subtotal - discount) + shippingFee <= 0) throw zalopay.fail('Choose COD for a zero-total order.');
 
         const productName = itemSnapshots.length === 1
             ? itemSnapshots[0].name
@@ -314,6 +331,8 @@ router.post('/', asyncHandler(async (req, res) => {
             shippingAddress,
             paymentMethod,
             paymentStatus: 'Pending',
+            ...(online ? { checkoutKey, paymentProvider: 'zalopay',
+                paymentExpiresAt: new Date(Date.now() + zalopay.SESSION_SECONDS * 1000) } : {}),
             delivery_address: shippingAddress.address || '',
             delivery_latitude: shippingAddress.coordinates?.lat || '',
             delivery_longitude: shippingAddress.coordinates?.lng || '',
@@ -321,7 +340,7 @@ router.post('/', asyncHandler(async (req, res) => {
             delivery_provider: quote ? 'Lalamove' : '',
             ...(quote ? {
                 shippingProvider: 'lalamove', shippingQuote: quote._id,
-                shippingStatus: 'CREATING', shippingRequestId: crypto.randomUUID(),
+                shippingStatus: online ? 'WAITING_FOR_PAYMENT' : 'CREATING', shippingRequestId: crypto.randomUUID(),
             } : {}),
         });
 
@@ -334,6 +353,10 @@ router.post('/', asyncHandler(async (req, res) => {
     } catch (error) {
         if (stockReserved) await releaseStock(orderItems);
         if (quote) await ShippingQuote.updateOne({ _id: quote._id, claimedOrder: newOrderId }, { $set: { claimedOrder: null } });
+        if (online && error.code === 11000) {
+            const saved = await Order.findOne({ user: req.user._id, checkoutKey });
+            if (saved) return res.json(orderResponse(saved));
+        }
         throw error;
     }
 
@@ -342,7 +365,7 @@ router.post('/', asyncHandler(async (req, res) => {
             console.error(`Could not clear cart after saved order ${order._id}`);
         });
     }
-    if (quote) {
+    if (quote && !online) {
         try {
             order = await shipping.dispatch(order, quote) || order;
         } catch {
@@ -374,6 +397,10 @@ router.patch('/:id/cancel', asyncHandler(async (req, res) => {
         throw new Error('Only orders in progress can be cancelled.');
     }
 
+    if (existingOrder.paymentProvider === 'zalopay' && (existingOrder.paymentStatus === 'Paid' || existingOrder.paymentTransactionId)) {
+        throw zalopay.fail('Online payment must be reconciled before cancellation. Paid orders require a refund through the store.', 409, 'PAYMENT_CANCELLATION_REQUIRES_REVIEW');
+    }
+
     if (existingOrder.shippingProvider === 'lalamove') {
         if (['CREATING', 'UNKNOWN'].includes(existingOrder.shippingStatus)) {
             throw lalamove.fail('Delivery confirmation is pending. Contact the store before cancelling.', 409);
@@ -388,6 +415,7 @@ router.patch('/:id/cancel', asyncHandler(async (req, res) => {
             _id: existingOrder._id,
             user: req.user._id,
             status: 'In Progress',
+            ...(existingOrder.paymentProvider === 'zalopay' ? { paymentStatus: 'Pending', paymentTransactionId: { $exists: false } } : {}),
         },
         { $set: { status: 'Cancelled', ...(existingOrder.shippingProvider === 'lalamove'
             ? { shippingStatus: 'CANCELED', shippingError: '' } : {}) } },

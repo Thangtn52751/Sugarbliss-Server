@@ -97,8 +97,8 @@ const createDateWindow = (now, rangeConfig, timezoneOffset) => {
 
 const eligibleOrderMatch = (start, end) => ({
     orderedOn: { $gte: start, $lt: end },
-    status: { $ne: 'Cancelled' },
-    paymentStatus: { $ne: 'Refunded' },
+    status: { $nin: ['Cancelled', 'Failed'] },
+    paymentStatus: { $nin: ['Refunded', 'Failed'] },
 });
 
 const createOrderOverviewPipeline = (window, timezone, bestSellerLimit) => [

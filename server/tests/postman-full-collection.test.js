@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
+const vm = require('node:vm');
 
 const serverRoot = path.join(__dirname, '..');
 const collectionPath = path.join(serverRoot, 'postman', 'SugarBliss Full API.postman_collection.json');
@@ -93,4 +94,37 @@ test('collection ships without API keys, JWTs, or provider secrets', () => {
 
     assert.equal(/AIza[0-9A-Za-z_-]{20,}/.test(serialized), false);
     assert.equal(/(?:pk|sk)_test_[0-9A-Za-z]+/.test(serialized), false);
+});
+
+test('Visa Postman flow uses hosted payments with an isolated, retry-stable checkout key', () => {
+    const collection = JSON.parse(fs.readFileSync(collectionPath, 'utf8'));
+    const folder = collection.item.find((item) => item.name === 'Visa Card Checkout (Sandbox)');
+    assert.ok(folder);
+    assert.equal(folder.item.length, 5);
+    const create = folder.item.find((item) => item.request.method === 'POST' && item.request.url.raw === '{{baseUrl}}/api/orders');
+    const body = JSON.parse(create.request.body.raw);
+    assert.equal(body.paymentMethod, 'Visa');
+    assert.equal(body.deliveryMethod, 'pickup');
+    assert.equal(body.checkoutKey, '{{visaCheckoutKey}}');
+    assert.equal(body.amount, undefined);
+    assert.ok(folder.item.some((item) => item.request.method === 'POST' && item.request.url.raw === '{{baseUrl}}/api/payments/visa/{{visaOrderId}}/checkout'));
+    assert.ok(folder.item.some((item) => item.request.method === 'GET' && item.request.url.raw === '{{baseUrl}}/api/payments/visa/{{visaOrderId}}/status'));
+    assert.doesNotMatch(JSON.stringify(folder), /"(?:cardNumber|cvv|expiry|key1|key2)"/i);
+    const variables = new Map();
+    let generated = 0;
+    const pm = {
+        collectionVariables: { get: (key) => variables.get(key), set: (key, value) => variables.set(key, value) },
+        variables: { replaceIn: () => { generated++; return 'checkout-fixture'; } },
+    };
+    const script = create.event.find((entry) => entry.listen === 'prerequest').script.exec.join('\n');
+    vm.runInNewContext(script, { pm });
+    vm.runInNewContext(script, { pm });
+    assert.equal(generated, 1);
+    assert.equal(variables.get('visaCheckoutKey'), 'checkout-fixture');
+    for (const variable of ['visaCheckoutKey', 'visaOrderId', 'visaPaymentUrl']) {
+        assert.equal(collection.variable.find((entry) => entry.key === variable).value, '');
+    }
+    for (const item of folder.item) {
+        for (const entry of item.event || []) new vm.Script(entry.script.exec.join('\n'));
+    }
 });

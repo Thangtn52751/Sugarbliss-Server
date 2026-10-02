@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "f74fbb98-8892-4b39-97fb-7981a1324001",
     "name": "SugarBliss Full API",
-    "description": "Complete collection generated from the SugarBliss Express server routes.\nSet authToken for customer APIs and adminToken for admin-only APIs.\nRun Health and Authentication first; requests save IDs for later folders.\nGemini and Lalamove credentials stay in server/.env and are never stored here.",
+    "description": "Complete collection generated from the SugarBliss Express server routes.\nSet authToken for customer APIs and adminToken for admin-only APIs.\nRun Health and Authentication first; requests save IDs for later folders.\nGemini, Lalamove and ZaloPay credentials stay in server/.env and are never stored here.\nZaloPay wallet and Visa checkout are sandbox-only; see server/docs/PAYMENTS_SANDBOX.md.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -133,6 +133,49 @@
     {
       "key": "lalamoveOrderId",
       "value": ""
+    },
+    {
+      "key": "paymentMethod",
+      "value": "Visa"
+    },
+    {
+      "key": "onlineOrderId",
+      "value": ""
+    },
+    {
+      "key": "visaOrderId",
+      "value": ""
+    },
+    {
+      "key": "visaCheckoutKey",
+      "value": "",
+      "description": "UUID created once per Visa test order. Keep unchanged on retries."
+    },
+    {
+      "key": "visaPaymentUrl",
+      "value": "",
+      "description": "Sandbox hosted card link from the saved session. Do not export populated links."
+    },
+    {
+      "key": "checkoutKey",
+      "value": "",
+      "description": "UUID initialized once per online checkout. Keep on retries."
+    },
+    {
+      "key": "paymentUrl",
+      "value": ""
+    },
+    {
+      "key": "zalopayCallbackData",
+      "value": ""
+    },
+    {
+      "key": "zalopayCallbackMac",
+      "value": ""
+    },
+    {
+      "key": "voucherCode",
+      "value": "SUGAR10"
     },
     {
       "key": "lalamoveApiKey",
@@ -2818,6 +2861,359 @@
               ]
             },
             "description": "Manual recovery only after confirming the matching delivery in the Lalamove sandbox portal."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Payments (ZaloPay + Visa Sandbox)",
+      "description": "See server/docs/PAYMENTS_SANDBOX.md. Wallet and Visa use one ZaloPay sandbox app; keys stay in server/.env. Run these requests in order after login and selecting a real product.",
+      "item": [
+        {
+          "name": "GET /api/payments/methods",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/methods"
+            },
+            "description": "Lists availability. Configure keys on server only."
+          },
+          "response": []
+        },
+        {
+          "name": "1. Get prepaid Lalamove quote",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/delivery/quote"
+            },
+            "description": "Use ZaloPay or Visa. Online payment requires a new prepaid quote, not a COD quote.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"recipientName\": \"Nguyen Van A\",\n  \"phone\": \"0901234567\",\n  \"address\": \"{{deliveryAddress}}\",\n  \"paymentMethod\": \"{{paymentMethod}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const data = pm.response.json(); if (data.id) pm.collectionVariables.set('shippingQuoteId', data.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2. Create unpaid online order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders"
+            },
+            "description": "Reset checkoutKey to empty ONLY for a new order, not after a timeout. Stock is reserved, delivery waits for Paid. Pickup: omit quote, use deliveryMethod=pickup and shippingAddress.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 1,\n  \"deliveryMethod\": \"standard\",\n  \"shippingQuoteId\": \"{{shippingQuoteId}}\",\n  \"paymentMethod\": \"{{paymentMethod}}\",\n  \"checkoutKey\": \"{{checkoutKey}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('checkoutKey')) pm.collectionVariables.set('checkoutKey', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const data = pm.response.json(); if (data.id) pm.collectionVariables.set('onlineOrderId', data.id);",
+                  "pm.test('Awaiting payment', () => pm.expect(data.paymentStatus).to.eql('Pending'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. Open hosted sandbox payment",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/{{onlineOrderId}}/checkout"
+            },
+            "description": "Open the returned paymentUrl in your browser. Use a sandbox wallet/test card, never a real card. Amount comes from MongoDB, no card details go to SugarBliss."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const data = pm.response.json(); if (data.url) pm.collectionVariables.set('paymentUrl', data.url);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4. Query verified payment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/{{onlineOrderId}}/status"
+            },
+            "description": "Server queries sandbox payment truth. Paid dispatches Lalamove once. Confirmed unpaid expiry becomes Failed and restores stock once. Closing a browser or network errors do not force failure."
+          },
+          "response": []
+        },
+        {
+          "name": "5. Read updated order",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{onlineOrderId}}"
+            },
+            "description": "Returns payment and shipping status."
+          },
+          "response": []
+        },
+        {
+          "name": "ZaloPay callback (provider-only)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/zalopay/callback"
+            },
+            "description": "Only original gateway data signed with KEY2 is accepted. Empty placeholders deliberately fail verification. Prefer real provider callbacks. HTTP 200; return_code 1=success, 2=invalid, 0=retryable.",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": 1,\n  \"data\": \"{{zalopayCallbackData}}\",\n  \"mac\": \"{{zalopayCallbackMac}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Visa Card Checkout (Sandbox)",
+      "description": "Standalone Visa/international-card test through the ZaloPay hosted sandbox. Store pickup avoids Lalamove/geocoding configuration; use the general Payments folder for delivery. Login and set productId first. Run manually in order: this creates a real unpaid SugarBliss order and reserves stock. Do not enter real card details or put API keys in Postman. The sandbox app must support international_card. See server/docs/PAYMENTS_SANDBOX.md.",
+      "item": [
+        {
+          "name": "1. Check Visa availability",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/methods"
+            },
+            "description": "Configuration check, not a live card-processing test. The merchant app also needs international-card payment enabled."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const visa = pm.response.json().find(method => method.code === 'Visa');",
+                  "pm.test('Visa sandbox configured', () => { pm.expect(visa).to.exist; pm.expect(visa.available).to.eql(true); pm.expect(visa.gateway).to.eql('ZaloPay'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2. Create unpaid Visa pickup order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders"
+            },
+            "description": "Reset visaCheckoutKey only for a genuinely new order, never after a timeout. Repeating this request returns the same owned order. For standard delivery obtain a prepaid Visa quote using the general Payments folder.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 1,\n  \"deliveryMethod\": \"pickup\",\n  \"paymentMethod\": \"Visa\",\n  \"checkoutKey\": \"{{visaCheckoutKey}}\",\n  \"shippingAddress\": {\n    \"recipientName\": \"Nguyen Van A\",\n    \"phone\": \"0901234567\",\n    \"address\": \"Store Pickup\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (!pm.collectionVariables.get('visaCheckoutKey')) pm.collectionVariables.set('visaCheckoutKey', pm.variables.replaceIn('{{$guid}}'));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const data = pm.response.json(); if (data.id && data.paymentMethod === 'Visa') pm.collectionVariables.set('visaOrderId', data.id);",
+                  "pm.test('Visa order persisted', () => { pm.expect(data.paymentMethod).to.eql('Visa'); pm.expect(data.paymentProvider).to.eql('zalopay'); pm.expect(data.paymentStatus).to.be.oneOf(['Pending', 'Paid']); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. Open hosted Visa card form",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/visa/{{visaOrderId}}/checkout"
+            },
+            "description": "Open visaPaymentUrl in your browser and enter only official sandbox card details on the ZaloPay site. No PAN, CVV or expiry is sent to SugarBliss. Ready sessions are reused. If the gateway shows maintenance, wait and retry the same link while unexpired; do not create another order."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const data = pm.response.json(); pm.collectionVariables.set('visaPaymentUrl', data.url || '');",
+                  "pm.test('Visa sandbox session', () => { pm.expect(data.method).to.eql('Visa'); pm.expect(data.provider).to.eql('zalopay'); pm.expect(data.environment).to.eql('sandbox'); });",
+                  "pm.test('Safe sandbox URL', () => { if (data.url) pm.expect(data.url).to.match(/^https:\\/\\/(qcgateway|sbgateway|sbpayment)\\.zalopay\\.vn\\//); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4. Query verified Visa payment",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/payments/visa/{{visaOrderId}}/status"
+            },
+            "description": "Queries ZaloPay on the server. Closing the card form or returning with status=1 does not mark an order Paid. The verified amount must equal the saved order total. An abandoned unpaid order becomes Failed after its payment window expires and the server verifies it. Failed orders cannot restart payment; use a new order/key."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Success', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const data = pm.response.json(); pm.test('Visa payment queried', () => pm.expect(data.method).to.eql('Visa'));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5. Read Visa order",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders/{{visaOrderId}}"
+            },
+            "description": "Read the saved payment status. Pickup has no Lalamove dispatch; standard online orders dispatch once after verified payment."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Checkout Vouchers",
+      "item": [
+        {
+          "name": "POST /api/vouchers/validate",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/vouchers/validate"
+            },
+            "description": "Preview an existing active voucher. Send voucherCode with POST /api/orders to apply; server recomputes the final amount.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{voucherCode}}\",\n  \"subtotal\": 275000\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
           },
           "response": []
         }

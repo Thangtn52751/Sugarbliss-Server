@@ -107,6 +107,12 @@ test('builds the complete admin dashboard response from real model queries', asy
     const result = await getDashboardOverview({ range: '30d' }, now);
 
     assert.ok(aggregatePipeline.some((stage) => stage.$facet));
+    const facets = aggregatePipeline.find((stage) => stage.$facet).$facet;
+    for (const name of ['currentRevenue', 'previousRevenue', 'dailySales', 'bestSellingProducts']) {
+        const match = facets[name].find((stage) => stage.$match).$match;
+        assert.deepEqual(match.status, { $nin: ['Cancelled', 'Failed'] });
+        assert.deepEqual(match.paymentStatus, { $nin: ['Refunded', 'Failed'] });
+    }
     assert.equal(result.currency, 'VND');
     assert.equal(result.period.timezone, 'UTC+07:00');
     assert.equal(result.kpis.totalRevenue.value, 1100000);

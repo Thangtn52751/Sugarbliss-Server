@@ -34,3 +34,12 @@ test('keeps non-Lalamove purchase statuses unchanged', () => {
         code: 'Cancelled', label: 'Cancelled', tone: 'cancelled', terminal: true,
     });
 });
+
+test('Failed payments take precedence over delivery status without changing pending or paid orders', () => {
+    const expected = { code: 'Failed', label: 'Failed', tone: 'cancelled', terminal: true };
+    assert.deepEqual(getOrderStatusView({ status: 'Failed' }), expected);
+    assert.deepEqual(getOrderStatusView({ status: 'Failed', paymentStatus: 'Paid', shippingProvider: 'lalamove', shippingStatus: 'WAITING_FOR_PAYMENT' }), expected);
+    assert.deepEqual(getOrderStatusView({ status: 'In Progress', paymentStatus: 'Failed', shippingProvider: 'lalamove', shippingStatus: 'CREATING' }), expected);
+    assert.equal(getOrderStatusView({ status: 'In Progress', paymentMethod: 'Visa', paymentStatus: 'Pending' }).label, 'Awaiting Payment');
+    assert.equal(getOrderStatusView({ status: 'In Progress', paymentMethod: 'Visa', paymentStatus: 'Paid', shippingProvider: 'lalamove', shippingStatus: 'ON_GOING' }).label, 'Driver Assigned');
+});

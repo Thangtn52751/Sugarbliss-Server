@@ -14,10 +14,16 @@ const LALAMOVE_STATUS_VIEWS = Object.freeze({
 function purchaseStatusView(status) {
     if (status === 'Delivered') return { code: status, label: status, tone: 'delivered', terminal: true };
     if (status === 'Cancelled') return { code: status, label: status, tone: 'cancelled', terminal: true };
+    if (status === 'Failed') return { code: status, label: status, tone: 'cancelled', terminal: true };
     return { code: status || 'In Progress', label: status || 'In Progress', tone: 'progress', terminal: false };
 }
 
 function getOrderStatusView(order = {}) {
+    if (order.status === 'Cancelled') return purchaseStatusView(order.status);
+    if (order.status === 'Failed' || order.paymentStatus === 'Failed') return purchaseStatusView('Failed');
+    if (['ZaloPay', 'Visa'].includes(order.paymentMethod) && order.paymentStatus === 'Pending') {
+        return { code: 'WAITING_FOR_PAYMENT', label: 'Awaiting Payment', tone: 'progress', terminal: false };
+    }
     if (String(order.shippingProvider || '').toLowerCase() === 'lalamove') {
         const code = String(order.shippingStatus || 'CREATING').toUpperCase();
         const view = LALAMOVE_STATUS_VIEWS[code];

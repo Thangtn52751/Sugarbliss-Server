@@ -16,7 +16,7 @@ async function applyProviderUpdate(orderId, data, eventAt = new Date(), { initia
     // A failed delivery is not a cancelled purchase; stock/payment stay unchanged.
     return Order.findOneAndUpdate({
         _id: orderId,
-        status: { $ne: 'Cancelled' },
+        status: { $nin: ['Cancelled', 'Failed'] },
         // A create response is only a starting snapshot. Never overwrite a webhook
         // that reached the database while the provider ID was being linked.
         shippingStatus: initial ? 'CREATING' : { $ne: 'COMPLETED' },

@@ -241,7 +241,7 @@ function renderOrders(orders) {
 
 function getOrderStatusClass(order) {
     const tone = order.displayStatusTone || (order.status === "Delivered" ? "delivered"
-        : order.status === "Cancelled" ? "cancelled" : "progress");
+        : ['Cancelled', 'Failed'].includes(order.status) ? "cancelled" : "progress");
     return tone === "delivered" ? "is-delivered" : tone === "cancelled" ? "is-cancelled" : "is-progress";
 }
 

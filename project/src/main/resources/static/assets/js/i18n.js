@@ -32,22 +32,58 @@
         "footer.visitUs": { vi: "Ghé thăm chúng tôi", en: "Visit Us" },
 
         // ----- Trang About Us -----
+        "about.heroEyebrow": { vi: "Tiệm bánh Sugar Bliss", en: "Sugar Bliss Bakery" },
+        "about.heroTitle": { vi: "Ngọt ngào từ trái tim", en: "Sweetness from the heart" },
+        "about.heroSubtitle": { vi: "Mỗi chiếc bánh là một câu chuyện yêu thương.", en: "Every cake tells a story of love." },
         "about.title": { vi: "Về chúng tôi", en: "About Us" },
         "about.intro": {
-            vi: "Sugar Bliss là tiệm bánh ngọt mang đến những chiếc bánh tươi ngon, được làm thủ công mỗi ngày từ những nguyên liệu chọn lọc. Chúng tôi tin rằng mỗi chiếc bánh đều có thể mang lại niềm vui và sự ngọt ngào cho cuộc sống.",
-            en: "Lorem ipsum dolor sit amet consectetur. Sagittis quis molestie id. Cras quis tempus elit tellus lacinia nibh commodo senectus id semper. Nulla ornare ut purus pellentesque magna convallis a cras."
+            vi: "Sugar Bliss là tiệm bánh ngọt mang đến những chiếc bánh tươi ngon, được làm thủ công mỗi ngày từ nguyên liệu chọn lọc. Chúng tôi tin rằng mỗi chiếc bánh đều có thể mang lại niềm vui và sự ngọt ngào cho cuộc sống.",
+            en: "Sugar Bliss is a bakery that brings you fresh, delicious cakes handcrafted every day from carefully selected ingredients. We believe every cake can bring a little joy and sweetness to life."
         },
+        "about.storyTag": { vi: "Câu chuyện của chúng tôi", en: "Our Story" },
+        "about.storyTitle": { vi: "Bắt đầu từ một căn bếp nhỏ", en: "It started in a small kitchen" },
+        "about.storyText": {
+            vi: "Sugar Bliss ra đời từ niềm đam mê làm bánh của những người yêu thích sự ngọt ngào. Từ căn bếp nhỏ với vài chiếc khuôn bánh, chúng tôi dần chinh phục trái tim khách hàng bằng hương vị tươi mới và sự tận tâm. Đến hôm nay, Sugar Bliss tự hào đồng hành cùng hàng nghìn khoảnh khắc đáng nhớ của khách hàng.",
+            en: "Sugar Bliss was born from a passion for baking shared by people who love all things sweet. From a small kitchen with just a few baking tins, we gradually won our customers' hearts with fresh flavors and genuine care. Today, Sugar Bliss is proud to be part of thousands of memorable moments."
+        },
+        "about.statCakes": { vi: "chiếc bánh đã trao gửi", en: "cakes delivered" },
+        "about.statCustomers": { vi: "khách hàng hài lòng", en: "happy customers" },
+        "about.statRating": { vi: "đánh giá trung bình", en: "average rating" },
+        "about.statIngredients": { vi: "nguyên liệu chọn lọc", en: "selected ingredients" },
+        "about.valuesTitle": { vi: "Vì sao chọn Sugar Bliss?", en: "Why choose Sugar Bliss?" },
+        "about.value1Title": { vi: "Tươi mới mỗi ngày", en: "Fresh every day" },
+        "about.value1Text": {
+            vi: "Bánh được làm thủ công mỗi ngày, không chất bảo quản, luôn thơm ngon như mới ra lò.",
+            en: "Cakes are handcrafted daily with no preservatives, always as fresh as straight from the oven."
+        },
+        "about.value2Title": { vi: "Tận tâm từng chi tiết", en: "Care in every detail" },
+        "about.value2Text": {
+            vi: "Nhận làm bánh theo yêu cầu, thiết kế riêng theo chủ đề và sở thích của bạn.",
+            en: "We take custom orders, designed around your theme and personal taste."
+        },
+        "about.value3Title": { vi: "Giao đúng hẹn", en: "Delivered on time" },
+        "about.value3Text": {
+            vi: "Bánh đến tay bạn vẹn nguyên, đúng giờ, sẵn sàng cho mọi khoảnh khắc đặc biệt.",
+            en: "Your cake arrives intact and on time, ready for every special moment."
+        },
+        "about.missionTag": { vi: "Sứ mệnh", en: "Mission" },
         "about.missionTitle": { vi: "Sứ mệnh của chúng tôi", en: "Our Mission" },
         "about.missionText": {
             vi: "Sứ mệnh của chúng tôi là mang đến những chiếc bánh chất lượng cao, an toàn và đẹp mắt, giúp mọi khoảnh khắc của bạn thêm trọn vẹn. Chúng tôi luôn đặt sự hài lòng của khách hàng lên hàng đầu.",
-            en: "Lorem ipsum dolor sit amet consectetur. Sagittis quis lorem neque fermentum sit. Nullam habitant orci varius turpis vel nisl suspendisse. Sit et odio lacus sit hendrerit cras enim rhoncus."
+            en: "Our mission is to deliver high-quality, safe and beautiful cakes that make every moment of yours complete. Customer satisfaction always comes first."
         },
+        "about.promiseTag": { vi: "Cam kết", en: "Promise" },
         "about.promiseTitle": { vi: "Cam kết của chúng tôi", en: "Our Promise" },
         "about.promiseText": {
             vi: "Chúng tôi cam kết sử dụng nguyên liệu tươi mới, quy trình chế biến sạch sẽ và giao hàng đúng hẹn. Sự tin tưởng của bạn là động lực để chúng tôi không ngừng hoàn thiện.",
-            en: "Lorem ipsum dolor sit amet consectetur. Sagittis quis lorem neque fermentum sit. Nullam habitant orci varius turpis vel nisl suspendisse. Sit et odio lacus sit hendrerit cras enim rhoncus."
+            en: "We are committed to using fresh ingredients, a clean preparation process and on-time delivery. Your trust drives us to keep improving every day."
         },
-        "about.ctaTitle": { vi: "Bạn muốn biết thêm về chúng tôi?", en: "Want To Know More About Us?" },
+        "about.ctaTitle": { vi: "Sẵn sàng nếm thử vị ngọt của Sugar Bliss?", en: "Ready to taste the sweetness of Sugar Bliss?" },
+        "about.ctaSubtitle": {
+            vi: "Khám phá thực đơn hoặc liên hệ để được tư vấn làm bánh theo yêu cầu.",
+            en: "Explore our menu or reach out for custom cake advice."
+        },
+        "about.ctaMenu": { vi: "Xem thực đơn", en: "View Menu" },
         "about.ctaButton": { vi: "Liên hệ ngay", en: "Contact Us" },
 
         // ----- Trang chu (Home) -----

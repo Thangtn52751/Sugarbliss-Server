@@ -78,6 +78,7 @@ const orderSchema = new mongoose.Schema({
         trim: true,
         default: '',
     },
+    voucher: { type: mongoose.Schema.Types.ObjectId, ref: 'Voucher' },
     shippingProvider: { type: String, default: '' },
     shippingQuote: { type: mongoose.Schema.Types.ObjectId, ref: 'ShippingQuote' },
     shippingOrderId: { type: String },

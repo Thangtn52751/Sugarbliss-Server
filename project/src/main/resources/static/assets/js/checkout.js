@@ -7,7 +7,7 @@
         pending: null, busy: false, quoting: false, quoteVersion: 0, quoteTimer: null, storageKey: "",
         selectedAddress: "", suggestions: [], addressSearchTimer: null, addressSearchController: null,
         contactQuoteTimer: null, quoteError: false, quoteQueued: false,
-        voucher: null, voucherBusy: false, paymentMethod: 'COD', paymentMethods: [], paymentPollTimer: null };
+        voucher: null, voucherBusy: false, voucherVersion: 0, ownedVouchers: [], paymentMethod: 'COD', paymentMethods: [], paymentPollTimer: null };
     const $ = (selector) => document.querySelector(selector);
     const money = (value) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(Number(value) || 0);
     const escape = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char]);
@@ -44,6 +44,14 @@
         $("[data-get-quote]").addEventListener("click", requestQuoteForCurrentAddress);
         $("[data-place-order]").addEventListener("click", placeOrder);
         $("[data-voucher-apply]")?.addEventListener("click", applyVoucher);
+        $("[data-voucher-remove]")?.addEventListener("click", removeVoucher);
+        $("[data-voucher-input]")?.addEventListener("input", handleVoucherInput);
+        $("[data-voucher-owned]")?.addEventListener("change", (event) => {
+            if (!event.target.value || state.busy || state.pending) return;
+            $("[data-voucher-input]").value = event.target.value;
+            handleVoucherInput();
+            applyVoucher();
+        });
         $("[data-voucher-input]")?.addEventListener("keydown", (event) => {
             if (event.key === "Enter") { event.preventDefault(); applyVoucher(); }
         });
@@ -123,6 +131,7 @@
             restorePending();
             fillAddress(state.pending?.address || { recipientName: user.name, phone: user.phone, address: user.address });
             renderReview();
+            loadOwnedVouchers();
             if (state.pending) {
                 renderFailure("A previous checkout is awaiting confirmation. Check the same order request to recover its result.", true);
             } else if (!state.items.length) {
@@ -142,6 +151,7 @@
             state.method = pending.body.deliveryMethod;
             state.paymentMethod = pending.body.paymentMethod || 'COD';
             state.items = pending.items || state.items;
+            state.voucher = pending.voucher || null;
         } catch { /* A malformed old draft does not prevent a fresh checkout. */ }
     }
 
@@ -228,10 +238,49 @@
         el.classList.toggle("is-error", kind === "error");
     }
 
+    async function loadOwnedVouchers() {
+        try {
+            const result = await request('/api/vouchers/mine');
+            state.ownedVouchers = result.vouchers || [];
+            const select = $('[data-voucher-owned]');
+            if (!select) return;
+            select.innerHTML = '<option value="">Choose a voucher</option>' + state.ownedVouchers.map((voucher) => {
+                const unavailable = !voucher.active || !voucher.expiresAt || (voucher.startsAt && Date.parse(voucher.startsAt) > Date.now()) ||
+                    (voucher.expiresAt && Date.parse(voucher.expiresAt) <= Date.now()) || subtotal() < voucher.minOrder ||
+                    (voucher.usageLimit > 0 && voucher.usedCount >= voucher.usageLimit);
+                const amount = voucher.type === 'percent' ? `${voucher.value}%` : money(voucher.value);
+                return `<option value="${escape(voucher.code)}" ${unavailable ? 'disabled' : ''}>${escape(voucher.code)} - ${escape(amount)}</option>`;
+            }).join('');
+            $('[data-voucher-count]').textContent = String(result.voucherCount || 0);
+            updateSummary();
+        } catch (error) { voucherStatus(error.message || 'Unable to load your vouchers.', 'error'); }
+    }
+
+    function handleVoucherInput() {
+        if (state.busy || state.pending) return;
+        state.voucherVersion += 1;
+        if (state.voucher && $('[data-voucher-input]').value.trim().toUpperCase() === state.voucher.code) return;
+        state.voucher = null;
+        voucherStatus('', null);
+        updateSummary();
+    }
+
+    function removeVoucher() {
+        if (state.busy || state.pending) return;
+        state.voucherVersion += 1;
+        state.voucher = null;
+        $('[data-voucher-input]').value = '';
+        if ($('[data-voucher-owned]')) $('[data-voucher-owned]').value = '';
+        voucherStatus('', null);
+        updateSummary();
+    }
+
     async function applyVoucher() {
         const input = $("[data-voucher-input]");
         const code = (input?.value || "").trim();
-        if (state.voucherBusy) return;
+        if (state.voucherBusy || state.busy || state.pending) return;
+        const version = ++state.voucherVersion;
+        const amount = subtotal();
 
         // Bo trong -> go voucher dang ap
         if (!code) {
@@ -246,24 +295,29 @@
         }
 
         state.voucherBusy = true;
-        $("[data-voucher-apply]").disabled = true;
+        state.voucher = null;
         voucherStatus("Checking...", null);
+        updateSummary();
 
         try {
             const result = await request("/api/vouchers/validate", {
                 method: "POST",
-                body: JSON.stringify({ code, subtotal: subtotal() }),
+                body: JSON.stringify({ code, subtotal: amount }),
             });
-            state.voucher = { code: result.code, type: result.type, value: result.value, discount: result.discount };
-            voucherStatus(`${result.code}: - ${money(result.discount)}`, "success");
+            if (version !== state.voucherVersion || amount !== subtotal()) return;
+            state.voucher = { code: result.code, type: result.type, value: result.value, discount: result.discount, expiresAt: result.expiresAt };
+            input.value = result.code;
+            const expiry = result.expiresAt ? ` | Valid until ${new Intl.DateTimeFormat('vi-VN', { dateStyle: 'short', timeStyle: 'short' }).format(new Date(result.expiresAt))}` : '';
+            voucherStatus(`${result.code}: - ${money(result.discount)}${expiry}`, "success");
             updateSummary();
         } catch (error) {
+            if (version !== state.voucherVersion) return;
             state.voucher = null;
             voucherStatus(error.message || "This voucher cannot be applied.", "error");
             updateSummary();
         } finally {
             state.voucherBusy = false;
-            $("[data-voucher-apply]").disabled = false;
+            updateSummary();
         }
     }
 
@@ -294,7 +348,7 @@
         $("[data-get-quote]").disabled = state.busy || state.quoting || Boolean(state.pending) || method()?.available === false;
         $("[data-get-quote]").textContent = state.quoting ? "Calculating delivery fee..."
             : state.quoteError ? "Retry delivery fee" : "Calculate delivery fee";
-        $("[data-place-order]").disabled = state.busy || state.quoting || !state.items.length || method()?.available === false ||
+        $("[data-place-order]").disabled = state.busy || state.quoting || state.voucherBusy || !state.items.length || method()?.available === false ||
             state.paymentMethods.find((option) => option.code === state.paymentMethod)?.available !== true ||
             (needsQuote() && (!state.selectedAddress || !quoteValid()));
         $("[data-place-order]").textContent = state.busy ? "Placing your order..." : `${state.paymentMethod === 'COD' ? 'Place order' : 'Continue to payment'}${fee === null ? "" : ` · ${money(total)}`}`;
@@ -306,6 +360,14 @@
             quoteMessage("This delivery method is currently unavailable. Please return to your cart to choose another method.", true);
         }
         $("[data-address-form] fieldset").disabled = state.busy || Boolean(state.pending);
+        const voucherLocked = state.busy || Boolean(state.pending);
+        if ($('[data-voucher-input]')) $('[data-voucher-input]').disabled = voucherLocked;
+        if ($('[data-voucher-apply]')) $('[data-voucher-apply]').disabled = voucherLocked || state.voucherBusy;
+        if ($('[data-voucher-remove]')) {
+            $('[data-voucher-remove]').hidden = !state.voucher;
+            $('[data-voucher-remove]').disabled = voucherLocked;
+        }
+        if ($('[data-voucher-owned]')) $('[data-voucher-owned]').disabled = voucherLocked || state.voucherBusy;
         document.querySelectorAll("[data-edit-cart]").forEach((link) => link.setAttribute("aria-disabled", String(state.busy || Boolean(state.pending))));
     }
 
@@ -548,7 +610,7 @@
     }
 
     async function placeOrder() {
-        if (state.busy || state.quoting) return;
+        if (state.busy || state.quoting || state.voucherBusy) return;
         if (!state.pending) {
             if (!state.items.length || method()?.available === false || !$("[data-address-form]").reportValidity()) return;
             if (state.paymentMethods.find((option) => option.code === state.paymentMethod)?.available !== true) return;
@@ -563,7 +625,7 @@
                 $('[data-quote-status]').hidden = false;
                 return;
             }
-            state.pending = { attempted: true, quote: state.quote, address, items: state.items,
+            state.pending = { attempted: true, quote: state.quote, address, items: state.items, voucher: state.voucher,
                 body: { deliveryMethod: state.method, paymentMethod: state.paymentMethod,
                     ...(state.paymentMethod !== 'COD' ? { checkoutKey: window.crypto.randomUUID() } : {}),
                     ...(state.voucher ? { voucherCode: state.voucher.code } : {}),
@@ -597,7 +659,16 @@
                 state.pending = null;
                 persistPending();
             }
-            renderFailure(error.message, Boolean(error.uncertain));
+            if (String(error.data?.code || '').startsWith('VOUCHER_')) {
+                state.pending = null;
+                persistPending();
+                state.voucher = null;
+                renderReview();
+                voucherStatus(error.message, 'error');
+                loadOwnedVouchers();
+            } else {
+                renderFailure(error.message, Boolean(error.uncertain));
+            }
         } finally {
             state.busy = false;
             updateSummary();
@@ -773,7 +844,7 @@
             <span class="checkout-badge">${icon("clock")}${uncertain ? "Confirmation needed" : "Checkout incomplete"}</span>
             <h1>${uncertain ? "We're checking your order." : "We couldn't place your order."}</h1><p>${escape(message)}</p>
         </div></section><div class="checkout-layout"><section class="checkout-card"><div class="checkout-card-heading"><h2>Your order review</h2><span class="checkout-badge">${escape(paymentLabel(state.pending?.body.paymentMethod || state.paymentMethod))}</span></div>
-            ${renderItems(state.items)}<div class="checkout-order-footer">${addressDetails(address)}${totals({ subtotal: subtotal(), shippingFee: fee, total: subtotal() + fee })}</div></section>
+            ${renderItems(state.items)}<div class="checkout-order-footer">${addressDetails(address)}${totals({ subtotal: subtotal(), discount: discountAmount(), shippingFee: fee, total: Math.max(0, subtotal() - discountAmount()) + fee })}</div></section>
             <aside class="checkout-stack"><section class="checkout-card checkout-error-card"><h2>${uncertain ? "Check your order" : "Let's try again"}</h2><p class="checkout-error-copy">${uncertain ? "The confirmation was interrupted. Check this checkout request or your order history before starting another order." : "Review your address and delivery fee, then try placing your order again."}</p>
                 ${recoverable ? '<button class="checkout-button checkout-button-primary" type="button" data-retry-order>Check this order again</button>' : !uncertain ? '<button class="checkout-button checkout-button-primary" type="button" data-return-review>Return to checkout</button>' : ""}
                 <a class="checkout-button checkout-button-secondary" href="/orders">View order history</a><p class="checkout-payment-note">${icon("wallet")}${escape(paymentLabel(state.pending?.body.paymentMethod || state.paymentMethod))}</p></section>

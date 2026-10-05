@@ -40,6 +40,7 @@ const userSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Product',
     }],
+    vouchers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Voucher' }],
     cart: [{
         product: {
             type: mongoose.Schema.Types.ObjectId,
@@ -63,6 +64,11 @@ const userSchema = new mongoose.Schema({
     },
 }, {
     timestamps: true,
+    toJSON: { virtuals: true },
+});
+
+userSchema.virtual('voucherCount').get(function voucherCount() {
+    return (this.vouchers || []).filter(Boolean).length;
 });
 
 userSchema.pre('save', async function hashPassword(next) {

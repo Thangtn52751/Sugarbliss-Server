@@ -68,6 +68,9 @@ async function checkout({ search = '?delivery=pickup', methods = options, handle
                 '/api/orders/delivery-methods': [{ code: 'standard', label: 'Standard Delivery', available: true, requiresQuote: true },
                     { code: 'pickup', label: 'Store Pickup', available: true, fee: 0 }],
                 '/api/payments/methods': methods,
+                '/api/vouchers/mine': { voucherCount: 1, vouchers: [{ code: 'SUGAR10', type: 'percent', value: 10,
+                    minOrder: 0, maxDiscount: 0, active: true, usageLimit: 0, usedCount: 0, expiresAt: new Date(Date.now() + 86400000).toISOString() }] },
+                '/api/vouchers/validate': { code: 'SUGAR10', type: 'percent', value: 10, discount: 10000, finalSubtotal: 90000, discountScope: 'products' },
                 '/api/delivery/quote': { id: 'quote-id', address: address.address, fee: 34000, expiresAt: new Date(Date.now() + 300000).toISOString() },
                 '/api/orders': savedOrder({ paymentMethod: request.body?.paymentMethod || 'COD' }),
                 [`/api/orders/${orderId}`]: savedOrder(),
@@ -86,12 +89,118 @@ async function checkout({ search = '?delivery=pickup', methods = options, handle
         leave: () => windowListeners.get('pagehide')?.(),
         select: (value) => get('[data-payment-options]').listeners.change({ target: { name: 'paymentMethod', value } }),
         place: () => get('[data-place-order]').listeners.click(),
+        apply: (code = 'SUGAR10') => { get('[data-voucher-input]').value = code; return get('[data-voucher-apply]').listeners.click(); },
+        removeVoucher: () => get('[data-voucher-remove]').listeners.click(),
         action: (selector, dataset = {}) => get('[data-checkout-result]').listeners.click({ target: {
             closest: (value) => value === selector ? { dataset } : null,
         } }),
         result: () => get('[data-checkout-result]').innerHTML,
     };
 }
+
+test('checkout displays owned vouchers and validates the selected code', async () => {
+    const view = await checkout();
+    assert.equal(view.get('[data-voucher-count]').textContent, '1');
+    assert.match(view.get('[data-voucher-owned]').innerHTML, /SUGAR10/);
+    view.get('[data-voucher-owned]').listeners.change({ target: { value: 'SUGAR10' } });
+    await settle();
+    assert.equal(view.get('[data-discount-row]').hidden, false);
+    assert.match(view.get('[data-checkout-total]').textContent, /90\.000/);
+    assert.equal(view.requests.filter((request) => request.path === '/api/vouchers/validate').length, 1);
+});
+
+test('voucher changes product subtotal only; quoted shipping remains fully payable', async () => {
+    const view = await checkout({ search: '?delivery=standard' });
+    await view.apply(' sugar10 ');
+    assert.match(view.get('[data-checkout-discount]').textContent, /10\.000/);
+    assert.match(view.get('[data-checkout-fee]').textContent, /34\.000/);
+    assert.match(view.get('[data-checkout-total]').textContent, /124\.000/);
+    await view.place();
+    const body = view.requests.find((request) => request.path === '/api/orders').body;
+    assert.equal(body.voucherCode, 'SUGAR10');
+    assert.equal(body.discount, undefined);
+    assert.equal(body.total, undefined);
+    assert.equal(body.shippingFee, undefined);
+});
+
+test('a 100 percent product discount does not make shipping free', async () => {
+    const view = await checkout({ search: '?delivery=standard', handler: async (request) => request.path === '/api/vouchers/validate'
+        ? { ok: true, status: 200, json: async () => ({ code: 'FREECAKE', discount: 100000 }) } : null });
+    await view.apply('FREECAKE');
+    assert.match(view.get('[data-checkout-total]').textContent, /34\.000/);
+    assert.match(view.get('[data-checkout-fee]').textContent, /34\.000/);
+});
+
+test('an applied voucher displays its validity deadline at checkout', async () => {
+    const view = await checkout({ handler: async (request) => request.path === '/api/vouchers/validate'
+        ? { ok: true, status: 200, json: async () => ({ code: 'SUGAR10', discount: 10000, expiresAt: new Date(Date.now() + 86400000).toISOString() }) } : null });
+    await view.apply();
+    assert.match(view.get('[data-voucher-status]').textContent, /Valid until/);
+});
+
+test('remove voucher restores the undiscounted total and does not send a code to the order API', async () => {
+    const view = await checkout();
+    await view.apply();
+    assert.equal(view.get('[data-voucher-remove]').hidden, false);
+    view.removeVoucher();
+    assert.equal(view.get('[data-discount-row]').hidden, true);
+    assert.equal(view.get('[data-voucher-remove]').hidden, true);
+    assert.match(view.get('[data-checkout-total]').textContent, /100\.000/);
+    await view.place();
+    assert.equal(view.requests.find((request) => request.path === '/api/orders').body.voucherCode, undefined);
+});
+
+test('Place order cannot run while voucher validation is still pending', async () => {
+    let resolve;
+    const view = await checkout({ handler: async (request) => request.path === '/api/vouchers/validate'
+        ? new Promise((done) => { resolve = done; }) : null });
+    const pending = view.apply();
+    assert.equal(view.get('[data-place-order]').disabled, true);
+    await view.place();
+    assert.equal(view.requests.some((request) => request.path === '/api/orders'), false);
+    resolve({ ok: true, status: 200, json: async () => ({ code: 'SUGAR10', discount: 10000 }) });
+    await pending;
+    assert.equal(view.get('[data-place-order]').disabled, false);
+});
+
+test('editing a voucher input invalidates the old discount and ignores an in-flight result', async () => {
+    let resolve;
+    const view = await checkout({ handler: async (request) => request.path === '/api/vouchers/validate'
+        ? new Promise((done) => { resolve = done; }) : null });
+    const pending = view.apply();
+    view.get('[data-voucher-input]').value = 'OTHER';
+    view.get('[data-voucher-input]').listeners.input();
+    resolve({ ok: true, status: 200, json: async () => ({ code: 'SUGAR10', discount: 10000 }) });
+    await pending;
+    assert.equal(view.get('[data-discount-row]').hidden, true);
+    assert.match(view.get('[data-checkout-total]').textContent, /100\.000/);
+});
+
+test('expired voucher at order creation returns to checkout and removes the stale discount', async () => {
+    const view = await checkout({ handler: async (request) => request.path === '/api/orders'
+        ? { ok: false, status: 400, json: async () => ({ message: 'This voucher has expired.', code: 'VOUCHER_EXPIRED' }) } : null });
+    await view.apply();
+    await view.place();
+    assert.equal(view.get('[data-checkout-review]').hidden, false);
+    assert.equal(view.get('[data-discount-row]').hidden, true);
+    assert.equal(view.get('[data-voucher-status]').textContent, 'This voucher has expired.');
+    assert.equal(view.storage.size, 0);
+});
+
+test('an uncertain order confirmation retains the discount and locks voucher changes', async () => {
+    const view = await checkout({ search: '?delivery=standard', handler: async (request) => {
+        if (request.path === '/api/orders') throw new Error('Fixture lost response');
+    } });
+    await view.apply();
+    await view.place();
+    assert.match(view.result(), /124\.000/);
+    assert.match(view.result(), /10\.000/);
+    assert.equal(view.get('[data-voucher-input]').disabled, true);
+    view.removeVoucher();
+    const pending = [...view.storage.values()].map(JSON.parse)[0];
+    assert.equal(pending.voucher.code, 'SUGAR10');
+    assert.equal(pending.body.voucherCode, 'SUGAR10');
+});
 
 test('online choices are disabled without keys and cannot replace COD', async () => {
     const view = await checkout({ methods: options.map((option) => ({ ...option, available: option.code === 'COD' })) });

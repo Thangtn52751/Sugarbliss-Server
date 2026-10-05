@@ -178,6 +178,18 @@
       "value": "SUGAR10"
     },
     {
+      "key": "voucherId",
+      "value": ""
+    },
+    {
+      "key": "voucherRecipientId",
+      "value": ""
+    },
+    {
+      "key": "voucherExpiresAt",
+      "value": ""
+    },
+    {
       "key": "lalamoveApiKey",
       "value": "",
       "description": "Local-only sandbox key used to sign a webhook sample."
@@ -249,7 +261,8 @@
                   "});",
                   "const data = pm.response.json();",
                   "if (data.token) pm.collectionVariables.set('authToken', data.token);",
-                  "if (data._id) pm.collectionVariables.set('userId', data._id);"
+                  "if (data._id) pm.collectionVariables.set('userId', data._id);",
+                  "pm.test('Voucher ownership returned', function () { pm.expect(data.vouchers).to.be.an('array'); pm.expect(data.voucherCount).to.eql(data.vouchers.length); });"
                 ]
               }
             }
@@ -284,7 +297,8 @@
                 "users",
                 "register"
               ]
-            }
+            },
+            "description": "New accounts automatically receive currently active, dated autoAssignOnRegister vouchers. Returns vouchers and voucherCount. Ownership is assigned by the server, not registration input. Existing accounts are not retroactively granted a welcome voucher."
           },
           "response": []
         },
@@ -3192,6 +3206,94 @@
       "name": "Checkout Vouchers",
       "item": [
         {
+          "name": "GET /api/vouchers/mine",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/vouchers/mine" },
+            "description": "Returns the authenticated user's owned vouchers and voucherCount. Deleted vouchers are excluded."
+          },
+          "response": []
+        },
+        {
+          "name": "Admin - GET /api/vouchers",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/vouchers" },
+            "description": "Admin-only voucher list. There is intentionally no update endpoint."
+          },
+          "response": []
+        },
+        {
+          "name": "Admin - GET /api/vouchers/recipients",
+          "request": {
+            "method": "GET",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/vouchers/recipients?q=" },
+            "description": "Search active recipients by name/email. Returns IDs, names, emails and each user's voucherCount; no passwords or tokens. Set voucherRecipientId to a selected user ID."
+          },
+          "response": []
+        },
+        {
+          "name": "Admin - POST /api/vouchers",
+          "event": [{ "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
+            "if (!pm.collectionVariables.get('voucherExpiresAt')) pm.collectionVariables.set('voucherExpiresAt', new Date(Date.now() + 7 * 86400000).toISOString());"
+          ] } }, { "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Voucher created', function () { pm.expect(pm.response.code).to.eql(201); });",
+            "if (pm.response.code === 201) { const data = pm.response.json(); pm.collectionVariables.set('voucherId', data.id); pm.collectionVariables.set('voucherCode', data.code); }"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/vouchers" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{voucherCode}}\",\n  \"description\": \"10% off products\",\n  \"type\": \"percent\",\n  \"value\": 10,\n  \"minOrder\": 100000,\n  \"maxDiscount\": 50000,\n  \"usageLimit\": 100,\n  \"startsAt\": null,\n  \"expiresAt\": \"{{voucherExpiresAt}}\",\n  \"active\": true,\n  \"userIds\": [\"{{voucherRecipientId}}\"]\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Admin creates a percent or fixed VND voucher and assigns it only to selected active userIds by default. Optional autoAssignOnRegister:true also grants eligible future registrations and permits empty/omitted userIds. Never implicitly assigns all existing accounts. Code must be unique, including deleted codes. Discount never applies to delivery. usedCount and usageOrders cannot be set by the caller."
+          },
+          "response": []
+        },
+        {
+          "name": "Admin - POST /api/vouchers (new account welcome offer)",
+          "event": [{ "listen": "prerequest", "script": { "type": "text/javascript", "exec": [
+            "pm.variables.set('welcomeCode', 'WELCOME50K_TEST_' + Date.now());",
+            "pm.variables.set('welcomeExpiresAt', new Date(Date.now() + 30 * 86400000).toISOString());"
+          ] } }, { "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Future account campaign created', function () { pm.expect(pm.response.code).to.eql(201); const data = pm.response.json(); pm.expect(data.autoAssignOnRegister).to.eql(true); pm.expect(data.assignedUserCount).to.eql(0); });",
+            "if (pm.response.code === 201) { const data = pm.response.json(); pm.collectionVariables.set('voucherId', data.id); pm.collectionVariables.set('voucherCode', data.code); }"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/vouchers" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"code\": \"{{welcomeCode}}\",\n  \"description\": \"Welcome: 50,000 VND off products from 200,000 VND\",\n  \"type\": \"fixed\",\n  \"value\": 50000,\n  \"minOrder\": 200000,\n  \"usageLimit\": 0,\n  \"expiresAt\": \"{{welcomeExpiresAt}}\",\n  \"active\": true,\n  \"autoAssignOnRegister\": true,\n  \"userIds\": []\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Creates an additional test campaign, not the seeded WELCOME50K code. Register a new email afterward and check GET /api/vouchers/mine. No current account is assigned this offer. Delete voucherId afterward to stop future grants and remove this test campaign's ownership. Campaign expiry is shared across recipients, not 30 days per signup."
+          },
+          "response": []
+        },
+        {
+          "name": "Admin - DELETE /api/vouchers/:id",
+          "request": {
+            "method": "DELETE",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/vouchers/{{voucherId}}" },
+            "description": "Admin-only delete. Deactivates and archives the voucher, removes it from every user's ownership and voucherCount. Retains past order discount snapshots; retries are safe."
+          },
+          "response": []
+        },
+        {
           "name": "POST /api/vouchers/validate",
           "request": {
             "method": "POST",
@@ -3204,7 +3306,7 @@
             "url": {
               "raw": "{{baseUrl}}/api/vouchers/validate"
             },
-            "description": "Preview an existing active voucher. Send voucherCode with POST /api/orders to apply; server recomputes the final amount.",
+            "description": "Preview a voucher assigned to the authenticated account. subtotal must be a positive integer VND product subtotal, excluding shipping. Returns discountScope=products and finalSubtotal. Does not reserve usage; POST /api/orders recalculates prices, atomically reserves a use and checks ownership. Validation errors have VOUCHER_* codes.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"code\": \"{{voucherCode}}\",\n  \"subtotal\": 275000\n}",

@@ -16,6 +16,7 @@ const SAMPLE_VOUCHERS = [
         minOrder: 100000,
         maxDiscount: 50000,
         active: true,
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     },
     {
         code: 'WELCOME50K',
@@ -24,6 +25,7 @@ const SAMPLE_VOUCHERS = [
         value: 50000,
         minOrder: 200000,
         active: true,
+        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
     },
 ];
 
@@ -40,10 +42,11 @@ async function run() {
     console.log('Connected. Seeding vouchers...');
 
     for (const data of SAMPLE_VOUCHERS) {
-        // Khong de upsert reset usedCount cua voucher da ton tai
+        const { expiresAt, ...values } = data;
+        // Do not reset usage or extend an existing voucher's validity on a repeat seed.
         const result = await Voucher.updateOne(
             { code: data.code },
-            { $set: data, $setOnInsert: { usedCount: 0 } },
+            { $set: values, $setOnInsert: { usedCount: 0, expiresAt } },
             { upsert: true },
         );
         const action = result.upsertedCount ? 'created' : 'updated';

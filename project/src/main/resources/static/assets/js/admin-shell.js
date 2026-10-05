@@ -21,6 +21,7 @@
             const items = [
                 { key: "dashboard", label: "Dashboard", icon: "ic_dashboard.png" },
                 { key: "products", label: "Products", icon: "ic_product.png" },
+                { key: "vouchers", label: "Vouchers", icon: "ic_money.png" },
                 { key: "orders", label: "Orders", icon: "ic_orders.png" },
                 { key: "customers", label: "Customers", icon: "ic_costumer.png" },
                 { key: "special-orders", label: "Special Orders", icon: "ic_specialorder.png" },

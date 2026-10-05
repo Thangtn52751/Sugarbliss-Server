@@ -9,6 +9,7 @@ const upload = require('../config/upload');
 const generateToken = require('../utils/generateToken');
 const { protect } = require('../middleware/authMiddleware');
 const { getOrderStatusView } = require('../utils/orderStatus');
+const { getRegistrationVoucherIds } = require('../services/voucherService');
 
 const router = express.Router();
 const otpStore = new Map();
@@ -28,6 +29,8 @@ const userResponse = (user) => ({
     dateOfBirth: user.dateOfBirth,
     avatar: user.avatar,
     role: user.role,
+    vouchers: user.vouchers || [],
+    voucherCount: user.voucherCount || 0,
     token: generateToken(user._id),
 });
 
@@ -343,6 +346,7 @@ router.post('/register', upload.single('avatar'), asyncHandler(async (req, res) 
     }
 
     const isFirstUser = await User.countDocuments() === 0;
+    const vouchers = await getRegistrationVoucherIds();
 
     const user = await User.create({
         name,
@@ -353,6 +357,7 @@ router.post('/register', upload.single('avatar'), asyncHandler(async (req, res) 
         dateOfBirth,
         avatar: req.file ? `/uploads/avatars/${req.file.filename}` : '',
         role: isFirstUser ? 'admin' : 'customer',
+        vouchers,
     });
 
     res.status(201).json(userResponse(user));

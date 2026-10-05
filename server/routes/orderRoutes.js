@@ -12,8 +12,7 @@ const lalamove = require('../services/lalamove');
 const shipping = require('../services/shipping');
 const geocoding = require('../services/geocoding');
 const { getOrderStatusView } = require('../utils/orderStatus');
-const { evaluateVoucher } = require('../services/voucherService');
-const Voucher = require('../models/Voucher');
+const { reserveVoucher, releaseVoucher } = require('../services/voucherService');
 const zalopay = require('../services/zalopay');
 const payments = require('../services/payments');
 
@@ -272,6 +271,7 @@ router.post('/', asyncHandler(async (req, res) => {
 
     let order;
     let stockReserved = false;
+    let appliedVoucherId = null;
     if (quote) {
         const claimed = await ShippingQuote.findOneAndUpdate({ _id: quote._id, claimedOrder: null,
             expiresAt: { $gt: new Date() } }, { $set: { claimedOrder: newOrderId } });
@@ -295,9 +295,8 @@ router.post('/', asyncHandler(async (req, res) => {
         // Ap voucher (neu co): LUON tinh lai o server, khong tin client
         let discount = 0;
         let voucherCode = '';
-        let appliedVoucherId = null;
-        if (req.body.voucherCode) {
-            const evaluated = await evaluateVoucher(req.body.voucherCode, subtotal);
+        if (req.body.voucherCode !== undefined && req.body.voucherCode !== '') {
+            const evaluated = await reserveVoucher(req.body.voucherCode, subtotal, newOrderId, req.user._id);
             discount = evaluated.discount;
             voucherCode = evaluated.voucher.code;
             appliedVoucherId = evaluated.voucher._id;
@@ -323,6 +322,7 @@ router.post('/', asyncHandler(async (req, res) => {
             shippingFee,
             discount,
             voucherCode,
+            ...(appliedVoucherId ? { voucher: appliedVoucherId } : {}),
             total: Math.max(0, subtotal - discount) + shippingFee,
             status: 'In Progress',
             orderedOn: new Date(),
@@ -343,16 +343,13 @@ router.post('/', asyncHandler(async (req, res) => {
                 shippingStatus: online ? 'WAITING_FOR_PAYMENT' : 'CREATING', shippingRequestId: crypto.randomUUID(),
             } : {}),
         });
-
-        // Tang luot dung voucher sau khi don da tao thanh cong
-        if (appliedVoucherId) {
-            await Voucher.updateOne({ _id: appliedVoucherId }, { $inc: { usedCount: 1 } }).catch(() => {
-                console.error(`Could not increment voucher usage for order ${order._id}`);
-            });
-        }
     } catch (error) {
-        if (stockReserved) await releaseStock(orderItems);
-        if (quote) await ShippingQuote.updateOne({ _id: quote._id, claimedOrder: newOrderId }, { $set: { claimedOrder: null } });
+        // Attempt all compensations even if a collection is temporarily unavailable.
+        await Promise.all([
+            releaseVoucher(appliedVoucherId, newOrderId),
+            ...(stockReserved ? [releaseStock(orderItems)] : []),
+            ...(quote ? [ShippingQuote.updateOne({ _id: quote._id, claimedOrder: newOrderId }, { $set: { claimedOrder: null } })] : []),
+        ]);
         if (online && error.code === 11000) {
             const saved = await Order.findOne({ user: req.user._id, checkoutKey });
             if (saved) return res.json(orderResponse(saved));
@@ -431,6 +428,7 @@ router.patch('/:id/cancel', asyncHandler(async (req, res) => {
         product: { _id: item.product },
         quantity: item.quantity,
     })));
+    await releaseVoucher(order.voucher, order._id);
 
     res.json(orderResponse(order));
 }));

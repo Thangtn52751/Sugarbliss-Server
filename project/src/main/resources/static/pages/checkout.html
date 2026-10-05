@@ -63,9 +63,12 @@
                         <div class="checkout-voucher">
                             <label class="checkout-voucher-label" for="checkout-voucher-input" data-i18n="voucher.label">Discount code</label>
                             <div class="checkout-voucher-row">
-                                <input id="checkout-voucher-input" type="text" data-voucher-input autocomplete="off" placeholder="SUGAR10" data-i18n-attr="placeholder:voucher.placeholder">
+                                <input id="checkout-voucher-input" type="text" data-voucher-input autocomplete="off" maxlength="40" placeholder="Enter code" data-i18n-attr="placeholder:voucher.placeholder">
                                 <button type="button" class="checkout-voucher-apply" data-voucher-apply data-i18n="voucher.apply">Apply</button>
+                                <button type="button" class="checkout-voucher-remove" data-voucher-remove title="Remove voucher" aria-label="Remove voucher" data-i18n-attr="title:voucher.remove,aria-label:voucher.remove" hidden>&times;</button>
                             </div>
+                            <label class="checkout-voucher-owned" for="checkout-owned-vouchers"><span data-i18n="voucher.owned">My vouchers</span> (<span data-voucher-count>0</span>)</label>
+                            <select id="checkout-owned-vouchers" data-voucher-owned aria-label="My vouchers"><option value="">Choose a voucher</option></select>
                             <p class="checkout-voucher-status" data-voucher-status role="status" aria-live="polite" hidden></p>
                         </div>
                         <dl class="checkout-totals">
@@ -89,6 +92,6 @@
     <script src="/assets/js/api-config.js"></script>
     <script src="/assets/js/shared-components.js"></script>
     <script src="/assets/js/header-profile.js"></script>
-    <script src="/assets/js/checkout.js?v=6"></script>
+    <script src="/assets/js/checkout.js?v=7"></script>
 </body>
 </html>

@@ -17,6 +17,15 @@
 
     // Tu dien dich. Them key moi o day khi mo rong sang trang khac.
     const dictionary = {
+        "voucher.label": { vi: "Mã giảm giá", en: "Discount code" },
+        "voucher.placeholder": { vi: "Nhập mã", en: "Enter code" },
+        "voucher.apply": { vi: "Áp dụng", en: "Apply" },
+        "voucher.remove": { vi: "Bỏ voucher", en: "Remove voucher" },
+        "voucher.owned": { vi: "Voucher của tôi", en: "My vouchers" },
+        "voucher.subtotal": { vi: "Tiền sản phẩm", en: "Subtotal" },
+        "voucher.discount": { vi: "Giảm giá sản phẩm", en: "Product discount" },
+        "voucher.delivery": { vi: "Phí giao hàng", en: "Delivery" },
+        "voucher.total": { vi: "Tổng cộng", en: "Total" },
         // ----- Header / Navigation -----
         "nav.home": { vi: "Trang chủ", en: "Home" },
         "nav.about": { vi: "Về chúng tôi", en: "About Us" },

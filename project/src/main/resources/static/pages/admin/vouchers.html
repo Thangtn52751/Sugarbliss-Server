@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugar Bliss | Admin Vouchers</title>
+    <link rel="stylesheet" href="/assets/css/admin.css">
+    <link rel="stylesheet" href="/assets/css/admin-vouchers.css">
+    <script src="/assets/js/api-config.js" defer></script>
+    <script src="/assets/js/admin-shell.js?v=2" defer></script>
+    <script src="/assets/js/admin-vouchers.js" defer></script>
+</head>
+<body class="admin-page">
+    <sugar-admin-sidebar active="vouchers"></sugar-admin-sidebar>
+    <main class="admin-main" aria-label="Vouchers">
+        <div class="admin-access-state" data-admin-access-state role="status">Loading...</div>
+        <div class="admin-content" data-admin-content hidden>
+            <header class="admin-page-header">
+                <h1>Vouchers</h1>
+                <button class="voucher-primary" type="button" data-add-voucher><span aria-hidden="true">+</span> Add voucher</button>
+            </header>
+            <div class="voucher-toolbar">
+                <label class="voucher-search"><span class="sr-only">Search vouchers</span><input type="search" data-voucher-search placeholder="Search code or description"></label>
+                <label><span class="sr-only">Voucher status</span><select data-voucher-filter><option value="">All statuses</option><option>Active</option><option>Upcoming</option><option>Expired</option><option>Exhausted</option><option>Inactive</option></select></label>
+                <span data-voucher-summary role="status">Loading...</span>
+            </div>
+            <p class="voucher-feedback" data-admin-voucher-status role="status" hidden></p>
+            <button type="button" class="voucher-secondary" data-voucher-retry hidden>Retry</button>
+            <div class="admin-table-scroll voucher-table-wrap">
+                <table class="voucher-table">
+                    <thead><tr><th>Code</th><th>Product discount</th><th>Minimum order</th><th>Usage</th><th>Validity</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead>
+                    <tbody data-voucher-rows><tr><td colspan="7">Loading vouchers...</td></tr></tbody>
+                </table>
+            </div>
+            <footer class="voucher-pagination"><span data-voucher-page-label></span><div><button type="button" data-voucher-prev title="Previous page" aria-label="Previous page">&larr;</button><button type="button" data-voucher-next title="Next page" aria-label="Next page">&rarr;</button></div></footer>
+        </div>
+    </main>
+    <dialog class="voucher-dialog" data-voucher-dialog aria-labelledby="voucher-dialog-title">
+        <header><h2 id="voucher-dialog-title">Add voucher</h2><button type="button" data-close-voucher title="Close" aria-label="Close">&times;</button></header>
+        <form data-voucher-form>
+            <fieldset class="voucher-fields">
+                <label>Code<input name="code" required maxlength="40" pattern="[A-Za-z0-9][A-Za-z0-9_-]{0,39}" autocomplete="off" placeholder="SUGAR10"></label>
+                <label>Description<input name="description" maxlength="500"></label>
+                <div class="voucher-form-row">
+                    <label>Discount type<select name="type"><option value="percent">Percentage (%)</option><option value="fixed">Fixed amount (VND)</option></select></label>
+                    <label><span data-value-label>Percentage</span><input name="value" type="number" min="0.01" max="100" step="0.01" required></label>
+                </div>
+                <div class="voucher-form-row">
+                    <label>Minimum product subtotal (VND)<input name="minOrder" type="number" min="0" step="1" value="0" required></label>
+                    <label data-max-discount-label>Maximum discount (VND)<input name="maxDiscount" type="number" min="0" step="1" value="0" required></label>
+                </div>
+                <div class="voucher-form-row">
+                    <label>Starts at<input name="startsAt" type="datetime-local"></label>
+                    <label>Expires at<input name="expiresAt" type="datetime-local" required></label>
+                </div>
+                <div class="voucher-form-row voucher-options">
+                    <label>Total usage limit<input name="usageLimit" type="number" min="0" step="1" value="0" required></label>
+                    <label class="voucher-checkbox"><input name="active" type="checkbox" checked> Active</label>
+                </div>
+                <legend class="sr-only">Voucher details</legend>
+                <label class="voucher-checkbox"><input name="autoAssignOnRegister" type="checkbox">Automatically assign to new accounts</label>
+                <div class="voucher-recipient-heading"><h3>Recipients</h3><span data-selected-count>0 selected</span></div>
+                <div data-recipient-picker>
+                    <label class="sr-only" for="voucher-recipient-search">Search user name or email</label>
+                    <input id="voucher-recipient-search" type="search" data-recipient-search placeholder="Search user name or email">
+                    <div class="voucher-recipients" data-recipient-list role="group" aria-label="Voucher recipients"></div>
+                </div>
+            </fieldset>
+            <p class="voucher-feedback" data-voucher-form-error role="alert" hidden></p>
+            <footer><button type="button" class="voucher-secondary" data-cancel-voucher>Cancel</button><button type="submit" class="voucher-primary" data-save-voucher>Create voucher</button></footer>
+        </form>
+    </dialog>
+</body>
+</html>

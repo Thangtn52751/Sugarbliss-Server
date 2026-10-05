@@ -6,6 +6,7 @@ const ShippingQuote = require('../models/ShippingQuote');
 const zalopay = require('./zalopay');
 const lalamove = require('./lalamove');
 const shipping = require('./shipping');
+const { releaseVoucher } = require('./voucherService');
 
 const view = (order) => ({
     orderId: order._id, method: order.paymentMethod, status: order.paymentStatus,
@@ -132,6 +133,7 @@ async function failOrder(order, { message, expired = false, expectedState } = {}
             await Product.updateOne({ _id: item.product }, { $inc: { stock: item.quantity } });
             await Product.updateOne({ _id: item.product, status: 'out-of-stock' }, { $set: { status: 'active' } });
         }
+        await releaseVoucher(failed.voucher, failed._id);
     }
     return failed || Order.findById(order._id);
 }

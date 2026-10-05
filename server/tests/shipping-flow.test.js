@@ -7,6 +7,7 @@ const Order = require('../models/Order');
 const Quote = require('../models/ShippingQuote');
 const Product = require('../models/Product');
 const User = require('../models/User');
+const Voucher = require('../models/Voucher');
 const lalamove = require('../services/lalamove');
 const shipping = require('../services/shipping');
 const geocoding = require('../services/geocoding');
@@ -17,7 +18,7 @@ const auth = require('../middleware/authMiddleware');
 const userId = new mongoose.Types.ObjectId();
 const otherUserId = new mongoose.Types.ObjectId();
 const productId = new mongoose.Types.ObjectId();
-let orders, quotes, stock, providerCreates, providerCancels, server, base;
+let orders, quotes, vouchers, stock, providerCreates, providerCancels, server, base;
 const originalAuth = { ...auth };
 // Authentication itself is out of scope; these doubles preserve the route boundary.
 auth.protect = (req, res, next) => {
@@ -35,20 +36,22 @@ Object.assign(auth, originalAuth);
 
 function matches(doc, filter) {
     return Object.entries(filter).every(([key, expected]) => {
+        if (key === '$and') return expected.every((part) => matches(doc, part));
+        if (key === '$or') return expected.some((part) => matches(doc, part));
         const actual = doc[key];
         if (expected && typeof expected === 'object' && !(expected instanceof mongoose.Types.ObjectId) && !(expected instanceof Date)) {
             return Object.entries(expected).every(([op, value]) => {
                 if (op === '$gt') return actual > value;
                 if (op === '$lt') return actual < value;
                 if (op === '$lte') return actual <= value;
-                if (op === '$ne') return String(actual) !== String(value);
+                if (op === '$ne') return Array.isArray(actual) ? actual.every((item) => String(item) !== String(value)) : String(actual) !== String(value);
                 if (op === '$in') return value.some((entry) => String(actual) === String(entry));
                 if (op === '$nin') return value.every((entry) => String(actual) !== String(entry));
                 if (op === '$exists') return (actual !== undefined) === value;
                 throw new Error(`Unhandled test filter ${op}`);
             });
         }
-        return expected === null ? actual == null : String(actual) === String(expected);
+        return Array.isArray(actual) ? actual.some((item) => String(item) === String(expected)) : expected === null ? actual == null : String(actual) === String(expected);
     });
 }
 function mockModel(model, collection) {
@@ -57,7 +60,13 @@ function mockModel(model, collection) {
     const update = async (filter, changes) => {
         const doc = collection.find((item) => matches(item, filter));
         if (!doc) return null;
-        Object.assign(doc, changes.$set || changes);
+        if (changes.$set) Object.assign(doc, changes.$set);
+        else if (!Object.keys(changes).some((key) => key.startsWith('$'))) Object.assign(doc, changes);
+        for (const [key, value] of Object.entries(changes.$inc || {})) doc[key] += value;
+        for (const [key, value] of Object.entries(changes.$addToSet || {})) {
+            if (!doc[key].some((item) => String(item) === String(value))) doc[key].push(value);
+        }
+        for (const [key, value] of Object.entries(changes.$pull || {})) doc[key] = doc[key].filter((item) => String(item) !== String(value));
         for (const key of Object.keys(changes.$unset || {})) doc.set(key, undefined);
         return doc;
     };
@@ -106,8 +115,9 @@ before(async () => {
 });
 after(() => new Promise((resolve) => server.close(resolve)));
 beforeEach(() => {
-    orders = []; quotes = []; stock = 10; providerCreates = 0; providerCancels = 0;
-    mockModel(Order, orders); mockModel(Quote, quotes);
+    orders = []; quotes = []; vouchers = []; stock = 10; providerCreates = 0; providerCancels = 0;
+    mockModel(Order, orders); mockModel(Quote, quotes); mockModel(Voucher, vouchers);
+    mock.method(User, 'exists', async (filter) => String(filter._id) === String(userId) ? { _id: userId } : null);
     mock.method(User, 'findById', async () => ({ name: 'Test Buyer', phone: '0901234567', address: 'Profile address' }));
     mock.method(Product, 'find', async () => [{ _id: productId, name: 'Cake', price: 100000, images: [] }]);
     mock.method(Product, 'findOneAndUpdate', async (filter, change) => {
@@ -168,6 +178,117 @@ const statusCases = [
     ['ASSIGNING_DRIVER', 'In Progress'], ['ON_GOING', 'In Progress'], ['PICKED_UP', 'In Progress'],
     ['COMPLETED', 'Delivered'], ['CANCELED', 'In Progress'], ['REJECTED', 'In Progress'], ['EXPIRED', 'In Progress'],
 ];
+
+function savedVoucher(extra = {}) {
+    const voucher = new Voucher({ code: 'SUGAR10', type: 'percent', value: 10,
+        expiresAt: new Date(Date.now() + 86400000), ...extra });
+    vouchers.push(voucher);
+    return voucher;
+}
+
+test('order discounts only products and ignores client prices, totals and discount amounts', async () => {
+    const voucher = savedVoucher();
+    const result = await checkout(savedQuote(), { voucherCode: ' sugar10 ', subtotal: 1, discount: 999999, total: 0 });
+    assert.equal(result.status, 201);
+    assert.equal(result.data.subtotal, 200000);
+    assert.equal(result.data.discount, 20000);
+    assert.equal(result.data.shippingFee, 34000);
+    assert.equal(result.data.total, 214000);
+    assert.equal(result.data.voucherCode, 'SUGAR10');
+    assert.equal(voucher.usedCount, 1);
+    assert.equal(String(orders[0].voucher), String(voucher._id));
+});
+
+test('a full product discount still leaves the entire shipping fee payable', async () => {
+    savedVoucher({ type: 'fixed', value: 500000 });
+    const result = await checkout(savedQuote(), { voucherCode: 'SUGAR10' });
+    assert.equal(result.status, 201);
+    assert.equal(result.data.discount, 200000);
+    assert.equal(result.data.total, 34000);
+    assert.equal(result.data.shippingFee, 34000);
+});
+
+test('unowned or expired vouchers roll back inventory and delivery quote ownership', async () => {
+    const voucher = savedVoucher();
+    const otherQuote = savedQuote({ user: otherUserId });
+    const quote = savedQuote();
+    assert.equal((await checkout(otherQuote, { voucherCode: voucher.code }, 'other')).status, 403);
+    assert.equal(stock, 10);
+    assert.equal(otherQuote.claimedOrder, null);
+    voucher.expiresAt = new Date(0);
+    assert.equal((await checkout(quote, { voucherCode: voucher.code })).status, 400);
+    assert.equal(stock, 10);
+    assert.equal(voucher.usedCount, 0);
+    assert.equal(orders.length, 0);
+});
+
+test('a failed order save returns the voucher use as well as reserved stock', async () => {
+    const voucher = savedVoucher({ usageLimit: 1 });
+    const quote = savedQuote();
+    mock.method(Order, 'create', async () => { throw new Error('Fixture save failure'); });
+    assert.equal((await checkout(quote, { voucherCode: voucher.code })).status, 500);
+    assert.equal(stock, 10);
+    assert.equal(voucher.usedCount, 0);
+    assert.equal(voucher.usageOrders.length, 0);
+    assert.equal(quote.claimedOrder, null);
+});
+
+test('repeating online checkout keeps the saved discount and consumes one voucher use', async () => {
+    const voucher = savedVoucher({ usageLimit: 1 });
+    const quote = savedQuote({ cashOnDelivery: false });
+    const body = { voucherCode: voucher.code, paymentMethod: 'Visa', checkoutKey: crypto.randomUUID() };
+    const first = await checkout(quote, body);
+    assert.equal(first.status, 201);
+    const repeated = await checkout(quote, { ...body, voucherCode: 'INVALID' });
+    assert.equal(repeated.status, 200);
+    assert.equal(repeated.data.id, first.data.id);
+    assert.equal(repeated.data.discount, 20000);
+    assert.equal(voucher.usedCount, 1);
+    assert.equal(stock, 8);
+});
+
+test('cancelling a COD voucher order returns its use once without changing its price snapshot', async () => {
+    const voucher = savedVoucher({ usageLimit: 1 });
+    const result = await checkout(savedQuote(), { voucherCode: voucher.code });
+    assert.equal(result.status, 201);
+    assert.equal((await call(`/api/orders/${result.data.id}/cancel`, 'PATCH')).status, 200);
+    assert.equal((await call(`/api/orders/${result.data.id}/cancel`, 'PATCH')).status, 400);
+    assert.equal(voucher.usedCount, 0);
+    assert.equal(stock, 10);
+    assert.equal(orders[0].discount, 20000);
+    assert.equal(orders[0].total, 214000);
+});
+
+test('failed online payment returns voucher capacity; a late success does not reclaim it or dispatch', async () => {
+    const voucher = savedVoucher({ usageLimit: 1 });
+    const result = await checkout(savedQuote({ cashOnDelivery: false }), { voucherCode: voucher.code, paymentMethod: 'Visa', checkoutKey: crypto.randomUUID() });
+    assert.equal(result.status, 201);
+    assert.equal((await call(`/api/payments/visa/${result.data.id}/checkout`)).status, 200);
+    orders[0].paymentExpiresAt = new Date(0);
+    mock.method(zalopay, 'querySession', async () => ({ return_code: 2, sub_return_code: -54 }));
+    assert.equal((await call(`/api/payments/visa/${result.data.id}/status`, 'GET')).status, 200);
+    assert.equal(orders[0].status, 'Failed');
+    assert.equal(voucher.usedCount, 0);
+    await payments.confirmPaid(orders[0], { amount: 214000, zp_trans_id: '190000001' });
+    assert.equal(orders[0].paymentStatus, 'Paid');
+    assert.equal(orders[0].status, 'Failed');
+    assert.equal(voucher.usedCount, 0);
+    assert.equal(providerCreates, 0);
+});
+
+test('deleting a voucher cannot change a saved order discount, payable amount or verified payment', async () => {
+    const voucher = savedVoucher();
+    const result = await checkout(savedQuote({ cashOnDelivery: false }), { voucherCode: voucher.code, paymentMethod: 'Visa', checkoutKey: crypto.randomUUID() });
+    assert.equal(result.status, 201);
+    voucher.active = false;
+    voucher.deletedAt = new Date();
+    await payments.confirmPaid(orders[0], { amount: 214000, zp_trans_id: '190000001' });
+    const read = await call(`/api/orders/${result.data.id}`, 'GET');
+    assert.equal(read.data.discount, 20000);
+    assert.equal(read.data.total, 214000);
+    assert.equal(read.data.voucherCode, 'SUGAR10');
+    assert.equal(read.data.paymentStatus, 'Paid');
+});
 
 for (const [deliveryStatus, purchaseStatus] of statusCases) {
     test(`signed webhook ${deliveryStatus}: purchase=${purchaseStatus}, no payment or inventory mutation`, async () => {

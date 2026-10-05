@@ -1,3 +1,5 @@
+@import url('/assets/css/fonts.css');
+
 * {
     box-sizing: border-box;
 }
@@ -10,7 +12,7 @@ body {
     margin: 0;
     color: #2c2528;
     background: #fffafb;
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: var(--font-body);
 }
 
 .site-header {
@@ -155,8 +157,9 @@ body {
 
 .main-nav a {
     color: #272124;
-    font-size: 16px;
-    font-weight: 500;
+    font-size: 17.5px;
+    font-weight: 600;
+    letter-spacing: 0.2px;
     text-decoration: none;
 }
 

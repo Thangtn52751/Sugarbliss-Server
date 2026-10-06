@@ -7,7 +7,7 @@ const Product = require('../models/Product');
 const Order = require('../models/Order');
 const upload = require('../config/upload');
 const generateToken = require('../utils/generateToken');
-const { protect } = require('../middleware/authMiddleware');
+const { protect, admin } = require('../middleware/authMiddleware');
 const { getOrderStatusView } = require('../utils/orderStatus');
 const { getRegistrationVoucherIds } = require('../services/voucherService');
 
@@ -568,6 +568,143 @@ router.patch('/me/avatar', protect, upload.single('avatar'), asyncHandler(async 
 
     const updatedUser = await user.save();
     res.json(updatedUser);
+}));
+
+const adminCustomerResponse = (user, stats = {}) => ({
+    id: user._id,
+    name: user.name,
+    email: user.email,
+    phone: user.phone || '',
+    address: user.address || '',
+    avatar: user.avatar || '',
+    role: user.role,
+    isActive: user.isActive !== false,
+    joinedOn: user.createdAt,
+    voucherCount: (user.vouchers || []).filter(Boolean).length,
+    orderCount: stats.orderCount || 0,
+    totalSpent: stats.totalSpent || 0,
+    lastOrderedOn: stats.lastOrderedOn || null,
+});
+
+// List customers for the admin portal with search, status filter and order stats.
+router.get('/admin/customers', protect, admin, asyncHandler(async (req, res) => {
+    const search = String(req.query.search || '').trim();
+    const status = String(req.query.status || '').trim().toLowerCase();
+    const role = String(req.query.role || '').trim().toLowerCase();
+
+    const query = {};
+    if (search) {
+        const safe = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const pattern = new RegExp(safe, 'i');
+        query.$or = [{ name: pattern }, { email: pattern }, { phone: pattern }];
+    }
+    if (status === 'active') query.isActive = true;
+    if (status === 'disabled') query.isActive = false;
+    if (role === 'admin' || role === 'customer') query.role = role;
+
+    const users = await User.find(query)
+        .select('name email phone address avatar role isActive vouchers createdAt')
+        .sort({ createdAt: -1 })
+        .lean({ virtuals: false });
+
+    const ids = users.map((user) => user._id);
+    const orderStats = await Order.aggregate([
+        { $match: { user: { $in: ids } } },
+        {
+            $group: {
+                _id: '$user',
+                orderCount: { $sum: 1 },
+                totalSpent: { $sum: '$total' },
+                lastOrderedOn: { $max: '$orderedOn' },
+            },
+        },
+    ]);
+    const statsByUser = new Map(orderStats.map((stat) => [String(stat._id), stat]));
+
+    const customers = users.map((user) => adminCustomerResponse(user, statsByUser.get(String(user._id)) || {}));
+
+    const [totalCustomers, activeCustomers, adminCount] = await Promise.all([
+        User.countDocuments({}),
+        User.countDocuments({ isActive: true }),
+        User.countDocuments({ role: 'admin' }),
+    ]);
+
+    res.set('Cache-Control', 'private, no-store');
+    res.json({
+        customers,
+        summary: {
+            total: totalCustomers,
+            active: activeCustomers,
+            disabled: totalCustomers - activeCustomers,
+            admins: adminCount,
+        },
+    });
+}));
+
+// Detail of a single customer plus their recent orders.
+router.get('/admin/customers/:id', protect, admin, asyncHandler(async (req, res) => {
+    const user = await User.findById(req.params.id).select('-password');
+
+    if (!user) {
+        res.status(404);
+        throw new Error('Customer not found.');
+    }
+
+    const [orders, orderStats] = await Promise.all([
+        Order.find({ user: user._id }).sort({ orderedOn: -1, createdAt: -1 }).limit(5),
+        Order.aggregate([
+            { $match: { user: user._id } },
+            {
+                $group: {
+                    _id: '$user',
+                    orderCount: { $sum: 1 },
+                    totalSpent: { $sum: '$total' },
+                    lastOrderedOn: { $max: '$orderedOn' },
+                },
+            },
+        ]),
+    ]);
+
+    res.set('Cache-Control', 'private, no-store');
+    res.json({
+        customer: adminCustomerResponse(user, orderStats[0] || {}),
+        recentOrders: orders.map(orderResponse),
+    });
+}));
+
+// Enable or disable a customer account.
+router.patch('/admin/customers/:id/status', protect, admin, asyncHandler(async (req, res) => {
+    const isActive = req.body.isActive;
+
+    if (typeof isActive !== 'boolean') {
+        res.status(400);
+        throw new Error('isActive must be true or false.');
+    }
+
+    const user = await User.findById(req.params.id);
+
+    if (!user) {
+        res.status(404);
+        throw new Error('Customer not found.');
+    }
+
+    if (user._id.equals(req.user._id)) {
+        res.status(400);
+        throw new Error('You cannot change the status of your own account.');
+    }
+
+    if (user.role === 'admin') {
+        res.status(400);
+        throw new Error('Administrator accounts cannot be disabled here.');
+    }
+
+    user.isActive = isActive;
+    await user.save();
+
+    res.json({
+        message: isActive ? 'Account enabled.' : 'Account disabled.',
+        customer: adminCustomerResponse(user),
+    });
 }));
 
 module.exports = router;

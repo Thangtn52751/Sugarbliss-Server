@@ -119,6 +119,11 @@ const orderSchema = new mongoose.Schema({
         enum: Object.keys(DELIVERY_METHODS),
         default: DELIVERY_METHODS.standard.code,
     },
+    pickupStatus: {
+        type: String,
+        enum: ['', 'PREPARING', 'READY_FOR_PICKUP', 'COLLECTED'],
+        default: '',
+    },
     shippingAddress: {
         coordinates: { lat: String, lng: String },
         recipientName: {

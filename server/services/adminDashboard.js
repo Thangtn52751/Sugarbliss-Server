@@ -365,7 +365,7 @@ const getDashboardOverview = async (query = {}, now = new Date()) => {
     const activeCustomerFilter = { role: 'customer', isActive: true };
 
     const recentOrderQuery = Order.find({})
-        .select('orderNumber user productName items total status orderedOn createdAt shippingProvider shippingStatus')
+        .select('orderNumber user productName items total status orderedOn createdAt shippingProvider shippingStatus deliveryMethod pickupStatus delivery_provider shippingOrderId lalamove_order_id paymentMethod paymentStatus')
         .sort({ orderedOn: -1, createdAt: -1 })
         .limit(options.recentOrderLimit)
         .populate('user', 'name email')

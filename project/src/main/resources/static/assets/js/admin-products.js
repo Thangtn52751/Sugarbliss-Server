@@ -18,6 +18,74 @@ document.addEventListener('DOMContentLoaded', async () => {
     const btnOpenAdd = document.getElementById('btn-open-add-modal');
     const btnCloseModal = document.getElementById('btn-close-modal');
     const btnCancelModal = document.getElementById('btn-cancel-modal');
+    const imageInput = document.getElementById('prod-image');
+    const imagePreviews = document.getElementById('product-image-previews');
+    const clearImages = document.getElementById('btn-clear-product-images');
+    const saveButton = productForm.querySelector('.btn-save');
+    let existingImages = [];
+    let previewUrls = [];
+    let saving = false;
+
+    function formError(message, id = 'product-form-error') {
+        const node = document.getElementById(id);
+        node.textContent = message;
+        node.hidden = !message;
+    }
+
+    function releasePreviewUrls() {
+        previewUrls.forEach((url) => URL.revokeObjectURL(url));
+        previewUrls = [];
+    }
+
+    function renderImagePreviews() {
+        releasePreviewUrls();
+        const files = Array.from(imageInput.files || []);
+        const images = files.length ? files.map((file) => {
+            const url = URL.createObjectURL(file);
+            previewUrls.push(url);
+            return { url, label: file.name };
+        }) : existingImages.map((image, index) => ({ url: window.SugarBlissAdmin.assetUrl(image), label: `Image ${index + 1}` }));
+        imagePreviews.innerHTML = images.map(({ url, label }) => `<figure class="product-image-preview"><img src="${escapeHtml(url)}" alt="${escapeHtml(label)}"><figcaption title="${escapeHtml(label)}">${escapeHtml(label)}</figcaption></figure>`).join('');
+        imagePreviews.hidden = !images.length;
+        clearImages.hidden = !files.length && !imageInput.validity.customError;
+    }
+
+    function resetImages(images = []) {
+        existingImages = images;
+        imageInput.value = '';
+        imageInput.setCustomValidity('');
+        imageInput.required = !images.length;
+        formError('', 'product-image-error');
+        renderImagePreviews();
+    }
+
+    imageInput.addEventListener('change', () => {
+        const files = Array.from(imageInput.files || []);
+        let error = '';
+        if (files.length > 10) error = 'Select at most 10 product images.';
+        else if (files.some((file) => !['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type))) error = 'Select JPG, PNG, WebP or GIF images.';
+        else if (files.some((file) => file.size > 5 * 1024 * 1024)) error = 'Each image must be 5 MB or smaller.';
+        else if (files.some((file) => file.size === 0)) error = 'Images cannot be empty.';
+        if (error) imageInput.value = '';
+        imageInput.setCustomValidity(error);
+        formError(error, 'product-image-error');
+        renderImagePreviews();
+    });
+    clearImages.addEventListener('click', () => resetImages(existingImages));
+
+    function closeModal() {
+        if (saving) return;
+        modal.hidden = true;
+        releasePreviewUrls();
+    }
+
+    function setSaving(value) {
+        saving = value;
+        productForm.setAttribute('aria-busy', String(value));
+        productForm.querySelectorAll('input, select, textarea, button').forEach((node) => { node.disabled = value; });
+        btnCloseModal.disabled = value;
+        saveButton.textContent = value ? 'Saving...' : 'Save Product';
+    }
 
     // 1. Tải danh sách sản phẩm (Kết nối GET /api/products & GET /api/products/search)
     async function loadProducts() {
@@ -116,17 +184,23 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // 5. Mở Modal Thêm mới
     btnOpenAdd.addEventListener('click', () => {
+        if (saving) return;
         productForm.reset();
         document.getElementById('prod-id').value = '';
+        resetImages();
+        formError('');
         modalTitle.innerText = "Add New Product";
         modal.hidden = false;
     });
 
     // 6. Mở Modal Chỉnh sửa (Kết nối GET /api/products/:id)
     window.openEditModal = async (id) => {
+        if (saving) return;
         try {
             const data = await window.SugarBlissAdmin.request(`/api/products/${id}`);
+            if (!data) return;
             const product = data.product || data;
+            productForm.reset();
 
             document.getElementById('prod-id').value = product._id || product.id;
             document.getElementById('prod-name').value = product.name || '';
@@ -135,7 +209,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('prod-price').value = product.price || 0;
             document.getElementById('prod-stock').value = product.stock || 0;
             document.getElementById('prod-status').value = product.status || 'active';
-            document.getElementById('prod-image').value = Array.isArray(product.images) ? product.images[0] : (product.image || '');
+            resetImages(Array.isArray(product.images) ? product.images.filter(Boolean) : (product.image ? [product.image] : []));
+            formError('');
 
             modalTitle.innerText = "Edit Product";
             modal.hidden = false;
@@ -147,43 +222,43 @@ document.addEventListener('DOMContentLoaded', async () => {
     // 7. Lưu Form (Kết nối POST /api/products hoặc PUT /api/products/:id)
     productForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        if (saving || !productForm.reportValidity()) return;
         const id = document.getElementById('prod-id').value;
-        const payload = {
-            name: document.getElementById('prod-name').value,
-            description: document.getElementById('prod-description').value,
-            category: document.getElementById('prod-category').value,
-            price: Number(document.getElementById('prod-price').value),
-            stock: Number(document.getElementById('prod-stock').value),
-            status: document.getElementById('prod-status').value,
-            images: [document.getElementById('prod-image').value || '/assets/images/cake1.png']
-        };
+        const payload = new FormData();
+        for (const field of ['name', 'description', 'category', 'price', 'stock', 'status']) {
+            payload.append(field, document.getElementById(`prod-${field}`).value);
+        }
+        Array.from(imageInput.files || []).forEach((file) => payload.append('images', file));
+        setSaving(true);
+        formError('');
 
         try {
             if (id) {
                 // Sửa: PUT /api/products/:id
-                await window.SugarBlissAdmin.request(`/api/products/${id}`, {
+                const result = await window.SugarBlissAdmin.request(`/api/products/${id}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: payload
                 });
+                if (!result) return;
             } else {
                 // Thêm: POST /api/products
-                await window.SugarBlissAdmin.request(`/api/products`, {
+                const result = await window.SugarBlissAdmin.request(`/api/products`, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: payload
                 });
+                if (!result) return;
             }
             modal.hidden = true;
+            releasePreviewUrls();
             loadProducts();
         } catch (error) {
-            alert("Save failed: " + error.message);
-        }
+            formError(error.message);
+        } finally { setSaving(false); }
     });
 
     // Đóng Modal
-    btnCloseModal.addEventListener('click', () => modal.hidden = true);
-    btnCancelModal.addEventListener('click', () => modal.hidden = true);
+    btnCloseModal.addEventListener('click', closeModal);
+    btnCancelModal.addEventListener('click', closeModal);
 
     // 8. Tim kiếm Debounce
     let typingTimer;

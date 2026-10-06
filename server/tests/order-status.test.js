@@ -35,6 +35,15 @@ test('keeps non-Lalamove purchase statuses unchanged', () => {
     });
 });
 
+test('pickup state is shared with customer history and never overrides payment failures or Lalamove', () => {
+    const pickup = { deliveryMethod: 'pickup', status: 'In Progress', paymentMethod: 'COD', paymentStatus: 'Pending' };
+    assert.equal(getOrderStatusView(pickup).label, 'Preparing');
+    assert.equal(getOrderStatusView({ ...pickup, pickupStatus: 'READY_FOR_PICKUP' }).label, 'Ready for Pickup');
+    assert.equal(getOrderStatusView({ ...pickup, status: 'Delivered' }).label, 'Collected');
+    assert.equal(getOrderStatusView({ ...pickup, pickupStatus: 'READY_FOR_PICKUP', paymentStatus: 'Failed' }).label, 'Failed');
+    assert.equal(getOrderStatusView({ ...pickup, shippingProvider: 'lalamove', shippingStatus: 'ON_GOING' }).label, 'Driver Assigned');
+});
+
 test('Failed payments take precedence over delivery status without changing pending or paid orders', () => {
     const expected = { code: 'Failed', label: 'Failed', tone: 'cancelled', terminal: true };
     assert.deepEqual(getOrderStatusView({ status: 'Failed' }), expected);

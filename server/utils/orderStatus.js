@@ -1,3 +1,5 @@
+const DELIVERY_METHODS = require('../config/deliveryMethods');
+
 const LALAMOVE_STATUS_VIEWS = Object.freeze({
     CREATING: Object.freeze({ label: 'Confirming Delivery', tone: 'progress', terminal: false }),
     UNKNOWN: Object.freeze({ label: 'Awaiting Confirmation', tone: 'progress', terminal: false }),
@@ -10,6 +12,17 @@ const LALAMOVE_STATUS_VIEWS = Object.freeze({
     REJECTED: Object.freeze({ label: 'No Driver Available', tone: 'cancelled', terminal: true }),
     EXPIRED: Object.freeze({ label: 'Delivery Expired', tone: 'cancelled', terminal: true }),
 });
+
+function isLalamoveOrder(order = {}) {
+    return [order.shippingProvider, order.delivery_provider].some((value) => String(value || '').toLowerCase() === 'lalamove') ||
+        Boolean(order.shippingOrderId || order.lalamove_order_id) ||
+        (Object.hasOwn(DELIVERY_METHODS, order.deliveryMethod || '') && DELIVERY_METHODS[order.deliveryMethod].provider === 'lalamove');
+}
+
+function getPickupStatus(order = {}) {
+    if (order.status === 'Delivered') return 'COLLECTED';
+    return order.pickupStatus || 'PREPARING';
+}
 
 function purchaseStatusView(status) {
     if (status === 'Delivered') return { code: status, label: status, tone: 'delivered', terminal: true };
@@ -30,7 +43,13 @@ function getOrderStatusView(order = {}) {
         if (view) return { code, ...view };
     }
 
+    if (order.deliveryMethod === 'pickup' && !isLalamoveOrder(order)) {
+        const code = getPickupStatus(order);
+        const labels = { PREPARING: 'Preparing', READY_FOR_PICKUP: 'Ready for Pickup', COLLECTED: 'Collected' };
+        return { code, label: labels[code] || 'Preparing', tone: code === 'COLLECTED' ? 'delivered' : 'progress', terminal: code === 'COLLECTED' };
+    }
+
     return purchaseStatusView(order.status);
 }
 
-module.exports = { getOrderStatusView, LALAMOVE_STATUS_VIEWS };
+module.exports = { getOrderStatusView, isLalamoveOrder, getPickupStatus, LALAMOVE_STATUS_VIEWS };

@@ -44,6 +44,24 @@ test('calculates stable percentage changes when the previous value is zero', () 
     assert.equal(percentageChange(80, 100), -20);
 });
 
+test('recent dashboard orders select pickup and payment fields for the shared fulfillment status', async () => {
+    const query = {
+        select(fields) { for (const key of ['pickupStatus', 'deliveryMethod', 'paymentMethod', 'paymentStatus']) assert.ok(fields.split(' ').includes(key)); return this; },
+        sort() { return this; }, limit() { return this; }, populate() { return this; },
+        async lean() { return [
+            { _id: 'pickup', total: 200000, status: 'In Progress', deliveryMethod: 'pickup', pickupStatus: 'READY_FOR_PICKUP', paymentMethod: 'COD', paymentStatus: 'Pending', items: [] },
+            { _id: 'unpaid', total: 200000, status: 'In Progress', deliveryMethod: 'pickup', paymentMethod: 'Visa', paymentStatus: 'Pending', items: [] },
+        ]; },
+    };
+    mock.method(Order, 'find', () => query);
+    mock.method(Order, 'aggregate', async () => []);
+    mock.method(User, 'countDocuments', async () => 0);
+    mock.method(Product, 'countDocuments', async () => 0);
+    const data = await getDashboardOverview();
+    assert.equal(data.recentOrders[0].status.label, 'Ready for Pickup');
+    assert.equal(data.recentOrders[1].status.label, 'Awaiting Payment');
+});
+
 test('builds the complete admin dashboard response from real model queries', async () => {
     const now = new Date('2026-10-01T05:00:00.000Z');
     let aggregatePipeline;

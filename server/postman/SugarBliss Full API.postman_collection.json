@@ -106,6 +106,8 @@
       "key": "dashboardRange",
       "value": "30d"
     },
+    { "key": "adminOrderId", "value": "", "description": "Order selected for admin detail and Lalamove refresh." },
+    { "key": "adminPickupOrderId", "value": "", "description": "Explicitly select a Store Pickup order for manual fulfillment testing." },
     {
       "key": "specialOrderId",
       "value": ""
@@ -888,6 +890,49 @@
             }
           },
           "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Orders",
+      "description": "Requires adminToken. Lalamove fulfillment is provider-managed; only Store Pickup has manual forward transitions. Do not mutate real customer orders during tests.",
+      "item": [
+        {
+          "name": "GET /api/admin/orders",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Admin list returned', function () { pm.expect(pm.response.code).to.eql(200); const data = pm.response.json(); pm.expect(data.orders).to.be.an('array'); pm.expect(data.total).to.be.a('number'); pm.expect(data.pages).to.be.at.least(1); });",
+            "if (pm.response.code === 200 && pm.response.json().orders[0]) pm.collectionVariables.set('adminOrderId', pm.response.json().orders[0].id);"
+          ] } }],
+          "request": {
+            "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "header": [], "url": { "raw": "{{baseUrl}}/api/admin/orders?page=1&limit=6&search=&status=&month=&timezoneOffset=420" },
+            "description": "Real paginated orders with customer and item snapshots, delivery method, display status and permitted pickupActions. Optional literal search (order number/product, max 100 chars), status (In Progress, Delivered, Cancelled, Failed, Ready for Pickup), month YYYY-MM and timezoneOffset minutes east of UTC. limit 1-100. Default month is all dates."
+          }, "response": []
+        },
+        {
+          "name": "GET /api/admin/orders/:id",
+          "request": {
+            "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "header": [], "url": { "raw": "{{baseUrl}}/api/admin/orders/{{adminOrderId}}" },
+            "description": "Any customer's order detail for admin, with saved item prices, totals, contact, payment status and safe Lalamove tracking link. No gateway URL, checkout key, coordinates or credentials. providerManaged orders always have empty pickupActions."
+          }, "response": []
+        },
+        {
+          "name": "PATCH /api/admin/orders/:id/pickup-status",
+          "request": {
+            "method": "PATCH", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/api/admin/orders/{{adminPickupOrderId}}/pickup-status" },
+            "body": { "mode": "raw", "raw": "{\n  \"pickupStatus\": \"READY_FOR_PICKUP\"\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Explicitly choose a test pickup ID. Forward-only PREPARING -> READY_FOR_PICKUP -> COLLECTED. For the second step, set pickupStatus COLLECTED; pending COD also requires cashReceived:true, marking payment Paid. Online/Bank Transfer must already be Paid. Collected sets purchase status Delivered, displayed Collected. No stock or voucher release. Lalamove/Express, terminal orders, backwards transitions, forged fields or payment races are rejected."
+          }, "response": []
+        },
+        {
+          "name": "POST /api/admin/orders/:id/shipping/refresh",
+          "request": {
+            "method": "POST", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "header": [], "url": { "raw": "{{baseUrl}}/api/admin/orders/{{adminOrderId}}/shipping/refresh" },
+            "description": "Select an existing Lalamove booking. Calls the existing provider status-read service, not a new delivery booking. Uses current webhook ordering/terminal safeguards. No manual status body is accepted or needed. Store Pickup cannot use this endpoint."
+          }, "response": []
         }
       ]
     },

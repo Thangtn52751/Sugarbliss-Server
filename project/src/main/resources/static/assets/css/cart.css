@@ -180,7 +180,8 @@
     text-transform: uppercase;
 }
 
-.delivery-field select {
+.delivery-field select,
+.delivery-field input {
     width: 100%;
     height: 48px;
     border: 1px solid #9f9297;
@@ -189,6 +190,20 @@
     padding: 0 14px;
     color: #493d42;
 }
+
+.lalamove-form[hidden] { display: none; }
+.lalamove-form { display: grid; gap: 14px; margin-top: 16px; }
+.lalamove-form .checkout-note { margin: 0; text-align: left; line-height: 1.6; }
+.delivery-field input { box-sizing: border-box; min-width: 0; }
+.delivery-coordinates { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.delivery-coordinates .delivery-field { min-width: 0; }
+.delivery-secondary-button {
+    padding: 10px 14px; border: 1px solid #d94960; border-radius: 8px;
+    background: #fffafb; color: #b92f48; font: inherit; cursor: pointer;
+}
+.delivery-secondary-button:disabled { opacity: .5; cursor: wait; }
+.delivery-quote-status { margin: 0; color: #75676d; font-size: 13px; line-height: 1.5; }
+.delivery-quote-status.is-error { color: #b3233b; }
 
 .cart-totals {
     display: grid;

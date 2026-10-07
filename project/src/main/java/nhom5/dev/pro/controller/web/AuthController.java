@@ -67,6 +67,11 @@ public class AuthController {
         return "redirect:/pages/cart.html";
     }
 
+    @GetMapping({"/checkout", "/checkout.html"})
+    public String checkout() {
+        return "forward:/pages/checkout.html";
+    }
+
     @GetMapping({"/special-orders", "/special_orders", "/special-orders.html", "/special_orders.html"})
     public String specialOrders() {
         return "redirect:/pages/special_orders.html";
@@ -82,8 +87,13 @@ public class AuthController {
         return "redirect:/pages/profile.html";
     }
 
-    @GetMapping({"/admin", "/admin/special-orders", "/admin-special-orders", "/admin-special-orders.html"})
-    public String adminSpecialOrders() {
-        return "redirect:/pages/admin-special-orders.html";
+    @GetMapping({"/settings", "/settings.html"})
+    public String settings() {
+        return "redirect:/pages/settings.html";
+    }
+
+    @GetMapping({"/admin-special-orders", "/admin-special-orders.html"})
+    public String adminSpecialOrdersAlias() {
+        return "redirect:/admin/special-orders";
     }
 }

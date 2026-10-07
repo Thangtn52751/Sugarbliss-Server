@@ -22,31 +22,32 @@
                 <form class="login-form" action="/api/users/register" method="post" data-auth-form="register">
                     <label class="field">
                         <span class="sr-only">Email</span>
-                        <input type="email" name="email" placeholder="Your Email" autocomplete="email" required>
+                        <input type="email" name="email" placeholder="Your Email" autocomplete="email" data-i18n-attr="placeholder:register.emailPlaceholder" required>
                     </label>
 
                     <label class="field">
                         <span class="sr-only">Password</span>
-                        <input type="password" name="password" placeholder="Your Password" autocomplete="new-password" required>
+                        <input type="password" name="password" placeholder="Your Password" autocomplete="new-password" data-i18n-attr="placeholder:register.passwordPlaceholder" required>
                     </label>
 
                     <label class="field">
                         <span class="sr-only">Confirm password</span>
-                        <input type="password" name="confirmPassword" placeholder="Confirm Your Password" autocomplete="new-password" required>
+                        <input type="password" name="confirmPassword" placeholder="Confirm Your Password" autocomplete="new-password" data-i18n-attr="placeholder:register.confirmPlaceholder" required>
                     </label>
 
-                    <button class="submit-button" type="submit">Submit</button>
+                    <button class="submit-button" type="submit" data-i18n="register.submit">Submit</button>
                 </form>
 
                 <p class="form-message" data-form-message></p>
 
                 <p class="register-text">
-                    Already Have A Account? <a href="/login">Login Now</a>
+                    <span data-i18n="register.haveAccount">Already Have A Account?</span> <a href="/login" data-i18n="register.loginNow">Login Now</a>
                 </p>
             </div>
         </section>
     </main>
     <script src="/assets/js/api-config.js"></script>
+    <script src="/assets/js/i18n.js"></script>
     <script src="/assets/js/auth.js"></script>
 </body>
 </html>

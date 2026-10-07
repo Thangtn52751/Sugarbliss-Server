@@ -1,0 +1,12 @@
+{
+  "shippingAddress": {
+    "recipientName": "Sugar Bliss Hanoi Sandbox Test",
+    "phone": "0901234567",
+    "address": "24 Hai Ba Trung, Hoan Kiem, Ha Noi",
+    "coordinates": {
+      "lat": "21.0244",
+      "lng": "105.8526"
+    },
+    "note": "SANDBOX TEST ONLY - Hanoi sample delivery"
+  }
+}

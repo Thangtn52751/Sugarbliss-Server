@@ -1,0 +1,22 @@
+/* =========================================================
+   Sugar Bliss - Typography (Phuong an B: Tinh te & cao cap)
+   - Tieu de: Playfair Display (serif thanh lich, sang trong)
+   - Noi dung: Nunito Sans (bo tron nhe, de doc)
+   Ca hai font deu ho tro day du tieng Viet.
+   ========================================================= */
+@import url('https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap');
+
+:root {
+    --font-body: 'Nunito Sans', 'Segoe UI', Arial, sans-serif;
+    --font-heading: 'Playfair Display', 'Nunito Sans', 'Segoe UI', serif;
+}
+
+/* Font noi dung cho toan trang */
+body {
+    font-family: var(--font-body);
+}
+
+/* Font tieu de cho cac heading */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+}

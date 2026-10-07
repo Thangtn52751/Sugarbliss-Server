@@ -1,4 +1,6 @@
 
+@import url('/assets/css/fonts.css');
+
 * {
     box-sizing: border-box;
 }
@@ -11,7 +13,7 @@ body {
     margin: 0;
     color: #2c2528;
     background: #fffafb;
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: var(--font-body);
 }
 
 .site-header {
@@ -1438,4 +1440,61 @@ body {
 
 .btn-submit-review:disabled:hover {
     background-color: #e0e0e0;
+}
+/* --- BỔ SUNG ĐÁNH GIÁ (REVIEWS) --- */
+.write-stars {
+    display: flex;
+    gap: 6px;
+    font-size: 26px;
+    margin: 8px 0;
+    cursor: pointer;
+}
+
+.write-stars span {
+    color: #ccc;
+    transition: color 0.2s ease, transform 0.1s ease;
+    user-select: none;
+}
+
+.write-stars span:hover,
+.write-stars span.active {
+    color: #d94960;
+    transform: scale(1.1);
+}
+
+.review-textarea {
+    width: 100%;
+    min-height: 85px;
+    padding: 12px;
+    border: 1px solid #f3d9df;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 13px;
+    resize: vertical;
+    outline: none;
+    margin-top: 10px;
+    margin-bottom: 15px;
+    background: #fff;
+    box-sizing: border-box;
+}
+
+.review-textarea:focus {
+    border-color: #d94960;
+    box-shadow: 0 0 0 3px rgba(217, 73, 96, 0.1);
+}
+
+.btn-delete-review {
+    background: none;
+    border: none;
+    color: #d94960;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+    transition: color 0.2s;
+}
+
+.btn-delete-review:hover {
+    color: #bd384d;
 }

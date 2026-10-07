@@ -1,0 +1,174 @@
+{
+  "info": {
+    "name": "SugarBliss - Lalamove v3 Sandbox",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Direct Lalamove sandbox API calls. Local Postman environment credentials only. No SugarBliss JWT required. Sending Create Order creates a sandbox delivery, not a SugarBliss database purchase."
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "const baseUrl = (pm.variables.get('LALAMOVE_BASE_URL') || '').replace(/\\/$/, '');",
+          "if (baseUrl !== 'https://rest.sandbox.lalamove.com') throw new Error('This collection is sandbox-only; base URL must not include /v3.');",
+          "pm.variables.set('LALAMOVE_BASE_URL', baseUrl);",
+          "const apiKey = pm.environment.get('LALAMOVE_API_KEY');",
+          "const secret = pm.environment.get('LALAMOVE_API_SECRET');",
+          "if (!apiKey?.startsWith('pk_test_') || !secret?.startsWith('sk_test_')) throw new Error('Set sandbox credentials in local environment values.');",
+          "const method = pm.request.method.toUpperCase();",
+          "const url = pm.variables.replaceIn(pm.request.url.toString());",
+          "const path = url.slice(baseUrl.length);",
+          "if (!path.startsWith('/v3/')) throw new Error('Expected /v3/... path.');",
+          "const body = pm.request.body?.mode === 'raw' ? pm.variables.replaceIn(pm.request.body.raw) : '';",
+          "if (pm.request.body?.mode === 'raw') pm.request.body.update(body);",
+          "const timestamp = String(Date.now());",
+          "const rawSignature = `${timestamp}\\r\\n${method}\\r\\n${path}\\r\\n\\r\\n${body}`;",
+          "const encoder = new TextEncoder();",
+          "const key = await crypto.subtle.importKey('raw', encoder.encode(secret), {name: 'HMAC', hash: 'SHA-256'}, false, ['sign']);",
+          "const signed = await crypto.subtle.sign('HMAC', key, encoder.encode(rawSignature));",
+          "const signature = Array.from(new Uint8Array(signed), b => b.toString(16).padStart(2, '0')).join('');",
+          "pm.request.headers.upsert({key: 'Authorization', value: `hmac ${apiKey}:${timestamp}:${signature}`});",
+          "pm.request.headers.upsert({key: 'Market', value: pm.variables.get('LALAMOVE_MARKET') || 'VN'});",
+          "pm.request.headers.upsert({key: 'Request-ID', value: pm.variables.replaceIn('{{$guid}}')});",
+          "pm.request.headers.upsert({key: 'Content-Type', value: 'application/json'});"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Test connection - Cities",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": "{{LALAMOVE_BASE_URL}}/v3/cities"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Authenticated', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Hanoi quotation",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "url": "{{LALAMOVE_BASE_URL}}/v3/quotations",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"data\": {\n    \"serviceType\": \"{{LALAMOVE_SERVICE_TYPE}}\",\n    \"language\": \"vi_VN\",\n    \"stops\": [\n      {\n        \"address\": \"1 Trang Tien, Hoan Kiem, Ha Noi\",\n        \"coordinates\": {\n          \"lat\": \"21.0241\",\n          \"lng\": \"105.8577\"\n        }\n      },\n      {\n        \"address\": \"24 Hai Ba Trung, Hoan Kiem, Ha Noi\",\n        \"coordinates\": {\n          \"lat\": \"21.0244\",\n          \"lng\": \"105.8526\"\n        }\n      }\n    ]\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Quotation created', () => pm.response.to.have.status(201));",
+              "if (pm.response.code === 201) { const d = pm.response.json().data; pm.environment.set('quotationId', d.quotationId); pm.environment.set('pickupStopId', d.stops[0].stopId); pm.environment.set('dropoffStopId', d.stops[1].stopId); }"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Create sandbox delivery",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "POST",
+        "header": [],
+        "url": "{{LALAMOVE_BASE_URL}}/v3/orders",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"data\": {\n    \"quotationId\": \"{{quotationId}}\",\n    \"sender\": {\n      \"stopId\": \"{{pickupStopId}}\",\n      \"name\": \"Sugar Bliss - Hanoi Sandbox\",\n      \"phone\": \"{{TEST_PHONE}}\"\n    },\n    \"recipients\": [\n      {\n        \"stopId\": \"{{dropoffStopId}}\",\n        \"name\": \"Sugar Bliss Sandbox Receiver\",\n        \"phone\": \"{{TEST_PHONE}}\",\n        \"remarks\": \"SANDBOX TEST ONLY\"\n      }\n    ],\n    \"metadata\": {\n      \"sugarBlissOrderNumber\": \"SB-POSTMAN-SANDBOX\"\n    }\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Delivery created', () => pm.response.to.have.status(201));",
+              "if (pm.response.code === 201) pm.environment.set('orderId', pm.response.json().data.orderId);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Read delivery status",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": "{{LALAMOVE_BASE_URL}}/v3/orders/{{orderId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Delivery loaded', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Cancel sandbox delivery",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "DELETE",
+        "header": [],
+        "url": "{{LALAMOVE_BASE_URL}}/v3/orders/{{orderId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('Delivery cancelled', () => pm.response.to.have.status(204));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

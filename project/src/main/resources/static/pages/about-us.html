@@ -11,46 +11,117 @@
     <sugar-header active="about"></sugar-header>
 
     <main class="about-page">
+        <!-- Hero co slogan overlay -->
         <section class="about-hero">
-            <img src="/assets/images/Frame3.png" alt="Sugar Bliss Bakery Counter" >
+            <img src="/assets/images/Frame3.png" alt="Sugar Bliss Bakery Counter">
+            <div class="about-hero-overlay">
+                <p class="about-hero-eyebrow" data-i18n="about.heroEyebrow">Sugar Bliss Bakery</p>
+                <h1 class="about-hero-title" data-i18n="about.heroTitle">Ngọt ngào từ trái tim</h1>
+                <p class="about-hero-subtitle" data-i18n="about.heroSubtitle">Mỗi chiếc bánh là một câu chuyện yêu thương.</p>
+            </div>
         </section>
 
+        <!-- Gioi thieu ngan -->
         <section class="about-intro">
-            <h2>About Us</h2>
-            <p>Lorem ipsum dolor sit amet consectetur. Sagittis quis molestie id. Cras quis tempus elit tellus lacinia nibh commodo senectus id semper. Nulla ornare ut purus pellentesque magna convallis a cras.</p>
+            <h2 data-i18n="about.title">Về chúng tôi</h2>
+            <p data-i18n="about.intro">Sugar Bliss là tiệm bánh ngọt mang đến những chiếc bánh tươi ngon, được làm thủ công mỗi ngày từ nguyên liệu chọn lọc. Chúng tôi tin rằng mỗi chiếc bánh đều có thể mang lại niềm vui và sự ngọt ngào cho cuộc sống.</p>
         </section>
 
+        <!-- Cau chuyen thuong hieu -->
         <section class="about-split">
             <div class="split-text">
-                <h2>Our Mission</h2>
-                <p>Lorem ipsum dolor sit amet consectetur. Sagittis quis lorem neque fermentum sit. Nullam habitant orci varius turpis vel nisl suspendisse. Sit et odio lacus sit hendrerit cras enim rhoncus. Ultricies cras enim rhoncus varius turpis vel nisl suspendisse. Quisque suscipit orci et at. Faucibus amet sed nibh in a quisque suscipit orci et. Venenatis placerat etiam in nunc amet quis amet magna eget non tortor feugiat faucibus.</p>
+                <span class="about-tag" data-i18n="about.storyTag">Câu chuyện của chúng tôi</span>
+                <h2 data-i18n="about.storyTitle">Bắt đầu từ một căn bếp nhỏ</h2>
+                <p data-i18n="about.storyText">Sugar Bliss ra đời từ niềm đam mê làm bánh của những người yêu thích sự ngọt ngào. Từ căn bếp nhỏ với vài chiếc khuôn bánh, chúng tôi dần chinh phục trái tim khách hàng bằng hương vị tươi mới và sự tận tâm. Đến hôm nay, Sugar Bliss tự hào đồng hành cùng hàng nghìn khoảnh khắc đáng nhớ của khách hàng.</p>
             </div>
             <div class="split-image">
-                <img src="/assets/images/Rectangle7.png" alt="Our Mission" >
+                <img src="/assets/images/cakepanda.jpg" alt="Sugar Bliss story">
             </div>
         </section>
 
+        <!-- Dai so lieu -->
+        <section class="about-stats">
+            <div class="stat-item">
+                <strong class="stat-number">5.000+</strong>
+                <span class="stat-label" data-i18n="about.statCakes">chiếc bánh đã trao gửi</span>
+            </div>
+            <div class="stat-item">
+                <strong class="stat-number">1.200+</strong>
+                <span class="stat-label" data-i18n="about.statCustomers">khách hàng hài lòng</span>
+            </div>
+            <div class="stat-item">
+                <strong class="stat-number">4.9/5</strong>
+                <span class="stat-label" data-i18n="about.statRating">đánh giá trung bình</span>
+            </div>
+            <div class="stat-item">
+                <strong class="stat-number">100%</strong>
+                <span class="stat-label" data-i18n="about.statIngredients">nguyên liệu chọn lọc</span>
+            </div>
+        </section>
+
+        <!-- 3 the gia tri cot loi -->
+        <section class="about-values">
+            <h2 class="about-values-title" data-i18n="about.valuesTitle">Vì sao chọn Sugar Bliss?</h2>
+            <div class="value-cards">
+                <article class="value-card">
+                    <span class="value-icon" aria-hidden="true">🧁</span>
+                    <h3 data-i18n="about.value1Title">Tươi mới mỗi ngày</h3>
+                    <p data-i18n="about.value1Text">Bánh được làm thủ công mỗi ngày, không chất bảo quản, luôn thơm ngon như mới ra lò.</p>
+                </article>
+                <article class="value-card">
+                    <span class="value-icon" aria-hidden="true">💝</span>
+                    <h3 data-i18n="about.value2Title">Tận tâm từng chi tiết</h3>
+                    <p data-i18n="about.value2Text">Nhận làm bánh theo yêu cầu, thiết kế riêng theo chủ đề và sở thích của bạn.</p>
+                </article>
+                <article class="value-card">
+                    <span class="value-icon" aria-hidden="true">🚚</span>
+                    <h3 data-i18n="about.value3Title">Giao đúng hẹn</h3>
+                    <p data-i18n="about.value3Text">Bánh đến tay bạn vẹn nguyên, đúng giờ, sẵn sàng cho mọi khoảnh khắc đặc biệt.</p>
+                </article>
+            </div>
+        </section>
+
+        <!-- Su menh -->
+        <section class="about-split">
+            <div class="split-text">
+                <span class="about-tag" data-i18n="about.missionTag">Sứ mệnh</span>
+                <h2 data-i18n="about.missionTitle">Sứ mệnh của chúng tôi</h2>
+                <p data-i18n="about.missionText">Sứ mệnh của chúng tôi là mang đến những chiếc bánh chất lượng cao, an toàn và đẹp mắt, giúp mọi khoảnh khắc của bạn thêm trọn vẹn. Chúng tôi luôn đặt sự hài lòng của khách hàng lên hàng đầu.</p>
+            </div>
+            <div class="split-image">
+                <img src="/assets/images/cake1.png" alt="Our Mission">
+            </div>
+        </section>
+
+        <!-- Cam ket -->
         <section class="about-split reverse">
             <div class="split-image">
-                <img src="/assets/images/Rectangle7.png" alt="Our Promise" >
+                <img src="/assets/images/Rectangle7.png" alt="Our Promise">
             </div>
             <div class="split-text">
-                <h2>Our Promise</h2>
-                <p>Lorem ipsum dolor sit amet consectetur. Sagittis quis lorem neque fermentum sit. Nullam habitant orci varius turpis vel nisl suspendisse. Sit et odio lacus sit hendrerit cras enim rhoncus. Ultricies cras enim rhoncus varius turpis vel nisl suspendisse. Quisque suscipit orci et at. Faucibus amet sed nibh in a quisque suscipit orci et. Venenatis placerat etiam in nunc amet quis amet magna eget non tortor feugiat faucibus.</p>
+                <span class="about-tag" data-i18n="about.promiseTag">Cam kết</span>
+                <h2 data-i18n="about.promiseTitle">Cam kết của chúng tôi</h2>
+                <p data-i18n="about.promiseText">Chúng tôi cam kết sử dụng nguyên liệu tươi mới, quy trình chế biến sạch sẽ và giao hàng đúng hẹn. Sự tin tưởng của bạn là động lực để chúng tôi không ngừng hoàn thiện.</p>
             </div>
         </section>
     </main>
 
+    <!-- CTA kep -->
     <section class="about-cta">
         <div class="cta-content">
-            <h2>Want To Know More About Us?</h2>
-            <a href="/contact" class="btn-contact">Contact Us</a>
+            <h2 data-i18n="about.ctaTitle">Sẵn sàng nếm thử vị ngọt của Sugar Bliss?</h2>
+            <p class="cta-subtitle" data-i18n="about.ctaSubtitle">Khám phá thực đơn hoặc liên hệ để được tư vấn làm bánh theo yêu cầu.</p>
+            <div class="cta-buttons">
+                <a href="/products" class="btn-contact btn-primary" data-i18n="about.ctaMenu">Xem thực đơn</a>
+                <a href="/contact" class="btn-contact btn-outline" data-i18n="about.ctaButton">Liên hệ ngay</a>
+            </div>
         </div>
     </section>
 
     <sugar-footer></sugar-footer>
 
     <script src="/assets/js/api-config.js"></script>
+    <script src="/assets/js/i18n.js"></script>
     <script src="/assets/js/shared-components.js"></script>
     <script src="/assets/js/header-profile.js"></script>
 </body>

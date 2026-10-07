@@ -20,18 +20,18 @@
             </div>
 
             <div class="detail-info">
-                <span class="detail-label">Product Detail</span>
+                <span class="detail-label" data-i18n="detail.label">Product Detail</span>
                 
                 <h1 class="detail-title" id="product-title-price"></h1>
                 
                 <ul class="detail-specs">
-                    <li>⚖️ Weight: <span id="product-weight"></span></li>
-                    <li>📅 Expiration date: <span id="product-exp"></span></li>
-                    <li>🌾 Ingredient: <span id="product-ingredients"></span></li>
+                    <li>⚖️ <span data-i18n="detail.weight">Weight:</span> <span id="product-weight"></span></li>
+                    <li>📅 <span data-i18n="detail.exp">Expiration date:</span> <span id="product-exp"></span></li>
+                    <li>🌾 <span data-i18n="detail.ingredient">Ingredient:</span> <span id="product-ingredients"></span></li>
                 </ul>
 
                 <div class="detail-description">
-                    <h3>Description</h3>
+                    <h3 data-i18n="detail.description">Description</h3>
                     <p id="product-desc"></p>
                 </div>
 
@@ -41,33 +41,41 @@
                         <input type="number" id="qty-input" value="1" min="1" readonly>
                         <button type="button" onclick="updateQty(1)" aria-label="Increase quantity">+</button>
                     </div>
-                    <button class="btn-favourite" id="favorite-detail-button" type="button" aria-pressed="false">&#9825; Favourites</button>
-                    <button class="btn-add-cart" type="button" onclick="addProductToCart(this)">Add To Cart</button>
+                    <button class="btn-favourite" id="favorite-detail-button" type="button" aria-pressed="false" data-i18n="detail.favourites">&#9825; Favourites</button>
+                    <button class="btn-add-cart" type="button" onclick="addProductToCart(this)" data-i18n="detail.addToCart">Add To Cart</button>
                 </div>
             </div>
         </div>
 
         <div class="related-section">
             <div class="related-header">
-                <h2>Product you may like</h2>
+                <h2 data-i18n="detail.relatedTitle">Product you may like</h2>
             </div>
             <div class="related-grid" id="related-products">
             </div>
         </div>
 
+        
         <!-- Khối Customer Reviews -->
         <div class="reviews-section">
-            <h2>Customer Reviews</h2>
+            <h2 data-i18n="detail.reviewsTitle">Customer Reviews</h2>
             <div class="reviews-container">
                 <div class="reviews-summary">
-                    <div class="summary-score">4.8/5.0</div>
-                    <div class="summary-count">Based on 124 reviews</div>
+                    <div class="summary-score" id="summary-score">0.0/5.0</div>
+                    <div class="summary-count" id="summary-count" data-i18n="detail.reviewsBasedOn">Based on 0 reviews</div>
                     <div class="summary-write">
-                        <strong>Write a Review</strong>
-                        <span>Rating</span>
-                        <div class="write-stars">☆ ☆ ☆ ☆ ☆</div>
+                        <strong data-i18n="detail.writeReview">Write a Review</strong>
+                        <span data-i18n="detail.rating">Rating</span>
+                        <div class="write-stars" id="write-stars">
+                            <span data-value="1">★</span>
+                            <span data-value="2">★</span>
+                            <span data-value="3">★</span>
+                            <span data-value="4">★</span>
+                            <span data-value="5">★</span>
+                        </div>
+                        <textarea id="review-comment" class="review-textarea" placeholder="Write your review here..."></textarea>
                     </div>
-                    <button class="btn-submit-review">Submit Review</button>
+                    <button class="btn-submit-review" id="btn-submit-review" data-i18n="detail.submitReview">Submit Review</button>
                 </div>
                 
                 <div class="reviews-list" id="product-reviews-list">
@@ -79,6 +87,7 @@
     <sugar-footer></sugar-footer>
     
     <script src="/assets/js/api-config.js"></script>
+    <script src="/assets/js/i18n.js"></script>
     <script src="/assets/js/shared-components.js"></script>
     <script src="/assets/js/header-profile.js"></script>
     <script src="/assets/js/product-detail.js"></script>

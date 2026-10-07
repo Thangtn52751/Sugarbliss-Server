@@ -1,17 +1,26 @@
 const ORDER_API_BASE_URL = window.SugarBlissApi.baseUrl;
 const ORDERS_PER_PAGE = 4;
+const DELIVERY_SYNC_INTERVAL_MS = 30000;
+const TERMINAL_DELIVERY_STATUSES = new Set(["COMPLETED", "CANCELED", "REJECTED", "EXPIRED", "FAILED"]);
 let allOrders = [];
 let filteredOrders = [];
 let currentOrderPage = 1;
 let currentSearchQuery = "";
 let orderSearchTimer;
 let orderRequestController;
+let deliverySyncTimer;
+let deliverySyncing = false;
 
 document.addEventListener("DOMContentLoaded", () => {
     document.querySelector("[data-order-search]")?.addEventListener("input", handleOrderSearch);
     document.querySelector("[data-order-list]")?.addEventListener("click", handleOrderAction);
     document.querySelector("[data-order-previous]")?.addEventListener("click", () => changeOrderPage(-1));
     document.querySelector("[data-order-next]")?.addEventListener("click", () => changeOrderPage(1));
+    document.addEventListener("visibilitychange", () => {
+        if (document.hidden) window.clearTimeout(deliverySyncTimer);
+        else scheduleDeliverySync(0);
+    });
+    window.addEventListener("pagehide", () => window.clearTimeout(deliverySyncTimer));
     loadOrderHistory();
 });
 
@@ -55,6 +64,7 @@ async function loadOrderHistory(searchQuery = "") {
         filteredOrders = [...allOrders];
         currentOrderPage = 1;
         renderOrderHistory();
+        scheduleDeliverySync(500);
     } catch (error) {
         if (error.name === "AbortError") {
             return;
@@ -106,6 +116,7 @@ function renderOrderCard(order) {
     const orderId = String(order.id || order._id || "");
     const items = Array.isArray(order.items) ? order.items : [];
     const safeId = escapeHtml(orderId);
+    const displayStatus = getOrderDisplayStatus(order);
 
     return `
         <article class="order-card" data-order-card="${safeId}">
@@ -113,7 +124,7 @@ function renderOrderCard(order) {
                 <div class="order-meta"><span>Order placed</span><strong>${escapeHtml(order.orderedOn || "Updating")}</strong></div>
                 <div class="order-meta"><span>Total</span><strong>${formatVnd(order.total)}</strong></div>
                 <div class="order-meta"><span>Order no.</span><strong>${escapeHtml(order.orderNumber || orderId)}</strong></div>
-                <span class="history-status ${getStatusClass(order.status)}">${escapeHtml(order.status || "In Progress")}</span>
+                <span class="history-status ${getStatusClass(order)}">${escapeHtml(displayStatus)}</span>
             </header>
 
             <div class="order-items">
@@ -125,11 +136,21 @@ function renderOrderCard(order) {
                 <div><span>Delivery address</span><p>${escapeHtml(order.shippingAddress?.address || "Not provided")}</p></div>
                 <div><span>Delivery method</span><p>${escapeHtml(formatDeliveryMethod(order.deliveryMethod))}</p></div>
                 <div><span>Payment</span><p>${escapeHtml(order.paymentMethod || "COD")} / ${escapeHtml(order.paymentStatus || "Pending")}</p></div>
+                ${order.shippingProvider === "lalamove" ? `
+                    <div><span>Lalamove delivery</span><p>${escapeHtml(formatShippingStatus(order.shippingStatus))}</p></div>
+                    <div><span>Delivery number</span><p>${escapeHtml(order.shippingOrderId || "Awaiting confirmation")}</p></div>
+                ` : ""}
             </div>
+            ${order.payment?.error ? `<p class="delivery-issue" role="status">${escapeHtml(order.payment.error)}</p>` : ""}
+            ${order.shippingError ? `<p class="delivery-issue" role="status">${escapeHtml(order.shippingError)}</p>` : ""}
 
             <footer class="order-card-actions">
                 <button class="order-text-button" type="button" data-view-order="${safeId}" aria-expanded="false">View order details</button>
                 <button class="order-text-button" type="button" data-download-order="${safeId}">Download invoice</button>
+                ${canSyncPayment(order) ? `<a class="order-text-button" href="/checkout?order=${encodeURIComponent(orderId)}">Continue payment</a>
+                    <button class="order-text-button" type="button" data-refresh-payment="${safeId}">Refresh payment</button>` : ""}
+                ${canSyncDelivery(order) ? `<button class="order-text-button" type="button" data-refresh-shipping="${safeId}">Refresh delivery</button>` : ""}
+                ${renderTrackingLink(order.shippingTrackingUrl)}
                 ${order.status === "In Progress" ? `<button class="order-cancel-button" type="button" data-cancel-order="${safeId}">Cancel Order</button>` : ""}
             </footer>
         </article>
@@ -163,8 +184,14 @@ function handleOrderAction(event) {
     const detailButton = event.target.closest("[data-view-order]");
     const downloadButton = event.target.closest("[data-download-order]");
     const cancelButton = event.target.closest("[data-cancel-order]");
+    const refreshButton = event.target.closest("[data-refresh-shipping]");
+    const paymentButton = event.target.closest("[data-refresh-payment]");
 
-    if (detailButton) {
+    if (paymentButton) {
+        refreshPayment(paymentButton.dataset.refreshPayment, paymentButton);
+    } else if (refreshButton) {
+        refreshDelivery(refreshButton.dataset.refreshShipping, refreshButton);
+    } else if (detailButton) {
         toggleOrderDetails(detailButton);
     } else if (downloadButton) {
         downloadInvoice(downloadButton.dataset.downloadOrder);
@@ -259,10 +286,134 @@ function formatDeliveryMethod(method) {
     const labels = {
         standard: "Standard Delivery",
         express: "Express Delivery",
-        pickup: "Store Pickup"
+        pickup: "Store Pickup",
+        lalamove: "Lalamove (Sandbox)"
     };
 
     return labels[method] || method || labels.standard;
+}
+
+function formatShippingStatus(status) {
+    return ({ CREATING: "Confirming Delivery", UNKNOWN: "Awaiting Confirmation",
+        FAILED: "Booking Failed", ASSIGNING_DRIVER: "Finding a Driver",
+        ON_GOING: "Driver Assigned", PICKED_UP: "On the Way", COMPLETED: "Delivered",
+        CANCELED: "Delivery Canceled", REJECTED: "No Driver Available",
+        EXPIRED: "Delivery Expired" })[status] || status || "Awaiting Confirmation";
+}
+
+function renderTrackingLink(value) {
+    try {
+        const url = new URL(value);
+        if (url.protocol !== "https:" || !["share.lalamove.com", "share.sandbox.lalamove.com"].includes(url.hostname)) return "";
+        return `<a class="order-text-button" href="${escapeHtml(url.href)}" target="_blank" rel="noopener noreferrer">Track delivery</a>`;
+    } catch { return ""; }
+}
+
+async function refreshDelivery(orderId, button) {
+    button.disabled = true;
+    try {
+        mergeDeliveryUpdates([await requestDeliveryUpdate(orderId)]);
+        renderOrderHistory();
+        scheduleDeliverySync();
+    } catch (error) {
+        if (error.status === 401) { clearSessionAndLogin(); return; }
+        alert(error.message);
+        button.disabled = false;
+    }
+}
+
+async function requestDeliveryUpdate(orderId) {
+    const response = await fetch(`${ORDER_API_BASE_URL}/api/orders/${encodeURIComponent(orderId)}/shipping/refresh`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${localStorage.getItem("sugarBlissToken")}` }
+    });
+    const data = await response.json();
+    if (!response.ok) {
+        const error = new Error(data.message || "Cannot refresh delivery.");
+        error.status = response.status;
+        throw error;
+    }
+    return data;
+}
+
+async function requestPaymentUpdate(order) {
+    const id = encodeURIComponent(order.id || order._id);
+    const options = { headers: { Authorization: `Bearer ${localStorage.getItem('sugarBlissToken')}` } };
+    for (const path of [`/api/payments/${order.paymentMethod === 'Visa' ? 'visa/' : ''}${id}/status`, `/api/orders/${id}`]) {
+        const response = await fetch(`${ORDER_API_BASE_URL}${path}`, options);
+        const data = await response.json();
+        if (!response.ok) {
+            const error = new Error(data.message || 'Cannot refresh payment.');
+            error.status = response.status;
+            throw error;
+        }
+        if (path.startsWith('/api/orders/')) return data;
+    }
+}
+
+async function refreshPayment(orderId, button) {
+    const order = allOrders.find((item) => String(item.id || item._id) === String(orderId));
+    if (!order || !canSyncPayment(order)) return;
+    button.disabled = true;
+    try {
+        mergeDeliveryUpdates([await requestPaymentUpdate(order)]);
+        renderOrderHistory();
+        scheduleDeliverySync();
+    } catch (error) {
+        if (error.status === 401) { clearSessionAndLogin(); return; }
+        alert(error.message);
+        button.disabled = false;
+    }
+}
+
+function canSyncPayment(order) {
+    return order.paymentProvider === 'zalopay' && order.paymentStatus === 'Pending' && order.status === 'In Progress';
+}
+
+function canSyncDelivery(order) {
+    return order.shippingProvider === "lalamove" && Boolean(order.shippingOrderId) &&
+        !['Cancelled', 'Failed'].includes(order.status) && !TERMINAL_DELIVERY_STATUSES.has(order.shippingStatus);
+}
+
+function visibleSyncableOrders() {
+    const start = (currentOrderPage - 1) * ORDERS_PER_PAGE;
+    return filteredOrders.slice(start, start + ORDERS_PER_PAGE).filter((order) => canSyncPayment(order) || canSyncDelivery(order));
+}
+
+function mergeDeliveryUpdates(updates) {
+    const byId = new Map(updates.map((order) => [String(order.id || order._id), order]));
+    allOrders = allOrders.map((order) => byId.get(String(order.id || order._id)) || order);
+    filteredOrders = [...allOrders];
+}
+
+function scheduleDeliverySync(delay = DELIVERY_SYNC_INTERVAL_MS) {
+    window.clearTimeout(deliverySyncTimer);
+    if (document.hidden || !localStorage.getItem("sugarBlissToken") || !visibleSyncableOrders().length) return;
+    deliverySyncTimer = window.setTimeout(syncVisibleDeliveries, delay);
+}
+
+async function syncVisibleDeliveries() {
+    if (deliverySyncing || document.hidden) return;
+    const orders = visibleSyncableOrders();
+    if (!orders.length) return;
+    deliverySyncing = true;
+    const updates = [];
+    try {
+        for (const order of orders) {
+            try {
+                updates.push(await (canSyncPayment(order) ? requestPaymentUpdate(order) : requestDeliveryUpdate(String(order.id || order._id))));
+            } catch (error) {
+                if (error.status === 401) { clearSessionAndLogin(); return; }
+            }
+        }
+        if (updates.length) {
+            mergeDeliveryUpdates(updates);
+            renderOrderHistory();
+        }
+    } finally {
+        deliverySyncing = false;
+        scheduleDeliverySync();
+    }
 }
 
 function changeOrderPage(change) {
@@ -275,19 +426,22 @@ function changeOrderPage(change) {
 
     currentOrderPage = nextPage;
     renderOrderHistory();
+    scheduleDeliverySync(500);
     document.querySelector(".order-history-main")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function getStatusClass(status) {
-    if (status === "Delivered") {
-        return "is-delivered";
-    }
+function getOrderDisplayStatus(order) {
+    if (order.displayStatus) return order.displayStatus;
+    if (order.status === 'Failed' || order.paymentStatus === 'Failed') return 'Failed';
+    if (order.shippingProvider === "lalamove") return formatShippingStatus(order.shippingStatus);
+    return order.status || "In Progress";
+}
 
-    if (status === "Cancelled") {
-        return "is-cancelled";
-    }
-
-    return "is-progress";
+function getStatusClass(order) {
+    const status = getOrderDisplayStatus(order);
+    const tone = order.displayStatusTone || (status === "Delivered" ? "delivered"
+        : status.includes("Cancel") || status === 'Failed' ? "cancelled" : "progress");
+    return tone === "delivered" ? "is-delivered" : tone === "cancelled" ? "is-cancelled" : "is-progress";
 }
 
 function resolveOrderImage(image) {
@@ -311,6 +465,7 @@ function formatVnd(value) {
 }
 
 function clearSessionAndLogin() {
+    window.clearTimeout(deliverySyncTimer);
     localStorage.removeItem("sugarBlissToken");
     localStorage.removeItem("sugarBlissUser");
     window.location.href = "/login";

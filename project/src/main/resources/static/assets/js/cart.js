@@ -2,6 +2,7 @@ const CART_API_BASE_URL = window.SugarBlissApi.baseUrl;
 let cartItems = [];
 let deliveryMethods = [];
 let selectedDeliveryMethod = "standard";
+let checkoutBusy = false;
 
 document.addEventListener("DOMContentLoaded", () => {
     document.querySelector("[data-cart-list]")?.addEventListener("click", handleCartAction);
@@ -42,7 +43,7 @@ async function loadCart() {
             throw new Error(deliveryData.message || "Cannot load delivery methods.");
         }
 
-        deliveryMethods = Array.isArray(deliveryData) ? deliveryData : [];
+        deliveryMethods = Array.isArray(deliveryData) ? deliveryData.filter((method) => !method.hidden && method.code !== "lalamove") : [];
         if (!deliveryMethods.some((method) => method.code === selectedDeliveryMethod)) {
             selectedDeliveryMethod = deliveryMethods[0]?.code || "standard";
         }
@@ -72,15 +73,17 @@ function renderCart() {
     const subtotal = cartItems.reduce((sum, item) => {
         return sum + Number(item.product?.price || 0) * Number(item.quantity || 0);
     }, 0);
-    const deliveryFee = Number(getSelectedDeliveryMethod()?.fee) || 0;
+    const method = getSelectedDeliveryMethod();
+    const needsQuote = Boolean(method?.requiresQuote);
+    const deliveryFee = Number(method?.fee) || 0;
 
     document.querySelector("[data-cart-record-count]").textContent = `(${cartItems.length})`;
     document.querySelector("[data-cart-subtotal]").textContent = formatCartPrice(subtotal);
-    document.querySelector("[data-cart-delivery]").textContent = deliveryFee === 0
+    document.querySelector("[data-cart-delivery]").textContent = needsQuote ? "Calculated at checkout" : deliveryFee === 0
         ? "Free"
         : formatCartPrice(deliveryFee);
-    document.querySelector("[data-cart-total]").textContent = formatCartPrice(subtotal + deliveryFee);
-    checkoutButton.disabled = cartItems.length === 0;
+    document.querySelector("[data-cart-total]").textContent = needsQuote ? formatCartPrice(subtotal) + " + delivery" : formatCartPrice(subtotal + deliveryFee);
+    checkoutButton.disabled = checkoutBusy || cartItems.length === 0 || !method || method.available === false;
 
     if (cartItems.length === 0) {
         list.replaceChildren();
@@ -106,7 +109,10 @@ function renderDeliveryMethods() {
     deliveryMethods.forEach((method) => {
         const option = document.createElement("option");
         option.value = method.code;
-        option.textContent = `${method.label} - ${Number(method.fee) === 0 ? "Free" : formatCartPrice(method.fee)}`;
+        option.textContent = `${method.label} - ${method.requiresQuote
+            ? (method.available === false ? "Unavailable" : "Fee at checkout")
+            : Number(method.fee) === 0 ? "Free" : formatCartPrice(method.fee)}`;
+        option.disabled = method.available === false;
         option.selected = method.code === selectedDeliveryMethod;
         select.appendChild(option);
     });
@@ -144,6 +150,7 @@ function renderCartItem(item) {
 }
 
 function handleCartAction(event) {
+    if (checkoutBusy) return;
     const removeButton = event.target.closest("[data-cart-remove]");
     const decreaseButton = event.target.closest("[data-cart-decrease]");
     const increaseButton = event.target.closest("[data-cart-increase]");
@@ -214,37 +221,12 @@ async function removeCartItem(productId, button) {
     }
 }
 
-async function checkoutCart() {
-    const button = document.querySelector("[data-cart-checkout]");
-    const originalText = button.innerHTML;
-
-    button.disabled = true;
-    button.textContent = "Creating order...";
-
-    try {
-        const response = await fetch(`${CART_API_BASE_URL}/api/orders`, {
-            method: "POST",
-            headers: getCartHeaders(true),
-            body: JSON.stringify({ deliveryMethod: selectedDeliveryMethod })
-        });
-        const data = await response.json();
-
-        if (response.status === 401) {
-            clearCartSession();
-            return;
-        }
-
-        if (!response.ok) {
-            throw new Error(data.message || "Cannot create your order.");
-        }
-
-        setCartItems([]);
-        window.location.href = "/orders";
-    } catch (error) {
-        alert(error.message);
-        button.disabled = false;
-        button.innerHTML = originalText;
-    }
+function checkoutCart() {
+    const method = getSelectedDeliveryMethod();
+    if (checkoutBusy || !cartItems.length || !method || method.available === false) return;
+    checkoutBusy = true;
+    document.querySelector("[data-cart-checkout]").disabled = true;
+    window.location.href = `/checkout?delivery=${encodeURIComponent(selectedDeliveryMethod)}`;
 }
 
 function getCartHeaders(includeJson = false) {

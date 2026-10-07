@@ -1,9 +1,9 @@
 const urlParams = new URLSearchParams(window.location.search);
 const currentProductId = urlParams.get('id');
-// Gộp logic khởi tạo API URL an toàn[cite: 17]
+
 const API_BASE_URL = window.SugarBlissApi ? window.SugarBlissApi.baseUrl : 'http://localhost:3000';
-// Giữ lại biến lưu trạng thái yêu thích của team bạn[cite: 17]
 let isCurrentProductFavorite = false;
+let selectedRating = 0;
 
 document.addEventListener('DOMContentLoaded', () => {
     if (!currentProductId) {
@@ -11,18 +11,43 @@ document.addEventListener('DOMContentLoaded', () => {
         return;
     }
     
-    // Gắn sự kiện nút yêu thích ngay khi load[cite: 17]
     const favoriteButton = document.getElementById('favorite-detail-button');
     favoriteButton?.addEventListener('click', toggleFavoriteDetail);
 
-    // Gọi song song các API để nạp trang[cite: 17]
+    const submitReviewBtn = document.getElementById('btn-submit-review');
+    submitReviewBtn?.addEventListener('click', submitReview);
+
+    setupStarRating();
     fetchProductDetail();
     fetchRelatedProducts();
-    loadFavoriteState(); // Tải trạng thái yêu thích từ team của bạn
-    renderReviews(); // Render khối đánh giá mẫu
-    checkReviewEligibility(); // Kiểm tra xem người dùng đã mua hàng chưa
+    loadFavoriteState();
+    checkReviewEligibility();
 });
 
+/* --- CHỌN SAO ĐÁNH GIÁ --- */
+function setupStarRating() {
+    const stars = document.querySelectorAll('#write-stars span');
+    stars.forEach(star => {
+        star.addEventListener('click', () => {
+            selectedRating = parseInt(star.getAttribute('data-value'));
+            updateStarDisplay(selectedRating);
+        });
+    });
+}
+
+function updateStarDisplay(rating) {
+    const stars = document.querySelectorAll('#write-stars span');
+    stars.forEach(star => {
+        const val = parseInt(star.getAttribute('data-value'));
+        if (val <= rating) {
+            star.classList.add('active');
+        } else {
+            star.classList.remove('active');
+        }
+    });
+}
+
+/* --- TẢI YÊU THÍCH --- */
 function updateFavoriteButton(isFavorite) {
     const button = document.getElementById('favorite-detail-button');
     if (!button) return;
@@ -100,6 +125,7 @@ async function toggleFavoriteDetail() {
     }
 }
 
+/* --- XỬ LÝ ẢNH & CHI TIẾT SẢN PHẨM --- */
 function resolveProductImage(image) {
     if (!image) return '';
     return image.startsWith('/') ? `${API_BASE_URL}${image}` : image;
@@ -185,6 +211,10 @@ async function fetchProductDetail() {
         } else {
             document.getElementById('product-ingredients').innerText = "Đang cập nhật";
         }
+
+        const reviews = product.reviews || [];
+        renderReviewsSummary(reviews, product.rating || product.averageRating);
+        renderReviews(reviews);
 
         const container = document.querySelector('.detail-container');
         if (container) container.classList.add('loaded');
@@ -284,7 +314,6 @@ async function addProductToCart(button) {
         
         button.textContent = "Added to Cart";
         
-        // Gọi hàm kiểm tra review lại sau khi mua hàng thành công
         checkReviewEligibility();
         
         window.setTimeout(() => {
@@ -298,6 +327,7 @@ async function addProductToCart(button) {
     }
 }
 
+/* --- XỬ LÝ ĐÁNH GIÁ (REVIEWS API) --- */
 async function checkReviewEligibility() {
     const reviewBtn = document.querySelector('.btn-submit-review');
     if (!reviewBtn) return;
@@ -351,37 +381,154 @@ function disableReviewButton(btn, message) {
     btn.innerText = "Chưa mua hàng";
 }
 
-function renderReviews() {
+/* POST /api/products/:id/reviews */
+async function submitReview() {
+    const token = localStorage.getItem("sugarBlissToken");
+    if (!token) {
+        window.location.href = "/login";
+        return;
+    }
+
+    const commentInput = document.getElementById('review-comment');
+    const comment = commentInput ? commentInput.value.trim() : "";
+
+    if (selectedRating === 0) {
+        alert("Vui lòng chọn số sao đánh giá!");
+        return;
+    }
+    if (!comment) {
+        alert("Vui lòng nhập nội dung đánh giá!");
+        return;
+    }
+
+    const submitBtn = document.getElementById('btn-submit-review');
+    if (submitBtn) submitBtn.disabled = true;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/products/${currentProductId}/reviews`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                rating: selectedRating,
+                comment: comment
+            })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.message || "Gửi đánh giá thất bại.");
+        }
+
+        alert("Cảm ơn bạn đã gửi đánh giá!");
+        if (commentInput) commentInput.value = "";
+        selectedRating = 0;
+        updateStarDisplay(0);
+
+        fetchProductDetail();
+    } catch (error) {
+        alert(error.message);
+    } finally {
+        if (submitBtn) submitBtn.disabled = false;
+    }
+}
+
+/* DELETE /api/products/:id/reviews/:reviewId */
+async function deleteReview(reviewId) {
+    if (!confirm("Bạn có chắc chắn muốn xóa đánh giá này?")) return;
+
+    const token = localStorage.getItem("sugarBlissToken");
+    if (!token) return;
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/products/${currentProductId}/reviews/${reviewId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            const data = await response.json();
+            throw new Error(data.message || "Xóa đánh giá thất bại.");
+        }
+
+        alert("Đã xóa đánh giá thành công!");
+        fetchProductDetail();
+    } catch (error) {
+        alert(error.message);
+    }
+}
+window.deleteReview = deleteReview;
+
+function renderReviewsSummary(reviews = [], avgRating = 0) {
+    const scoreEl = document.getElementById('summary-score');
+    const countEl = document.getElementById('summary-count');
+
+    const count = reviews.length;
+    let calculatedAvg = avgRating;
+
+    if (count > 0 && !avgRating) {
+        const sum = reviews.reduce((acc, r) => acc + (r.rating || 0), 0);
+        calculatedAvg = (sum / count).toFixed(1);
+    } else if (typeof calculatedAvg === 'number') {
+        calculatedAvg = calculatedAvg.toFixed(1);
+    } else if (!calculatedAvg) {
+        calculatedAvg = "0.0";
+    }
+
+    if (scoreEl) scoreEl.innerText = `${calculatedAvg}/5.0`;
+    if (countEl) countEl.innerText = `Based on ${count} reviews`;
+}
+
+function renderReviews(reviews = []) {
     const reviewsList = document.getElementById('product-reviews-list');
     if (!reviewsList) return;
 
-    const mockReviews = [
-        {
-            name: "Jane Doe",
-            initial: "J",
-            rating: "★★★★★",
-            text: "The cheesecake was absolutely divine! Perfectly moist and the flavor was spot on. I'll definitely be ordering again."
-        },
-        {
-            name: "Michael Smith",
-            initial: "M",
-            rating: "★★★★☆",
-            text: "Great service and fresh ingredients. The delivery was a bit late but the product quality made up for it."
-        }
-    ];
+    if (!Array.isArray(reviews) || reviews.length === 0) {
+        reviewsList.innerHTML = '<p style="color: #7c7377; text-align: center; padding: 20px;">Chưa có đánh giá nào cho sản phẩm này.</p>';
+        return;
+    }
 
-    reviewsList.innerHTML = mockReviews.map(review => `
-        <div class="review-card">
-            <div class="review-header">
-                <div class="review-user">
-                    <div class="review-avatar">${review.initial}</div>
-                    <div class="review-name">${review.name}</div>
+    let currentUser = null;
+    try {
+        const userStr = localStorage.getItem("sugarBlissUser");
+        if (userStr) currentUser = JSON.parse(userStr);
+    } catch (e) {
+        console.error("Lỗi đọc dữ liệu người dùng:", e);
+    }
+
+    reviewsList.innerHTML = reviews.map(review => {
+        const reviewId = review._id || review.id;
+        const userName = review.name || review.username || (review.user && (review.user.name || review.user.username)) || "Customer";
+        const userInitial = userName.charAt(0).toUpperCase();
+        const ratingVal = review.rating || 5;
+        const ratingStars = '★'.repeat(ratingVal) + '☆'.repeat(5 - ratingVal);
+        const commentText = review.comment || review.reviewText || "";
+
+        const reviewUserId = review.user?._id || review.user || review.userId;
+        const currentUserId = currentUser?._id || currentUser?.id;
+        const isMyReview = currentUserId && reviewUserId && String(currentUserId) === String(reviewUserId);
+
+        return `
+            <div class="review-card">
+                <div class="review-header">
+                    <div class="review-user">
+                        <div class="review-avatar">${userInitial}</div>
+                        <div class="review-name">${escapeHtml(userName)}</div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 15px;">
+                        <div class="review-stars">${ratingStars}</div>
+                        ${isMyReview ? `<button class="btn-delete-review" onclick="window.deleteReview('${reviewId}')">Xóa</button>` : ''}
+                    </div>
                 </div>
-                <div class="review-stars">${review.rating}</div>
+                <p class="review-text">${escapeHtml(commentText)}</p>
             </div>
-            <p class="review-text">${review.text}</p>
-        </div>
-    `).join('');
+        `;
+    }).join('');
 }
 
 function escapeHtml(value) {

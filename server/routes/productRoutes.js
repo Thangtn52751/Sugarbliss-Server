@@ -3,6 +3,7 @@ const asyncHandler = require('express-async-handler');
 const Product = require('../models/Product');
 const upload = require('../config/upload');
 const { protect, admin } = require('../middleware/authMiddleware');
+const { escapeRegex, searchProducts } = require('../services/productSearch');
 
 const router = express.Router();
 
@@ -100,10 +101,11 @@ router.get('/', asyncHandler(async (req, res) => {
     }
 
     if (search) {
+        const searchPattern = new RegExp(escapeRegex(String(search).trim()), 'i');
         filter.$or = [
-            { name: { $regex: search, $options: 'i' } },
-            { description: { $regex: search, $options: 'i' } },
-            { category: { $regex: search, $options: 'i' } },
+            { name: searchPattern },
+            { description: searchPattern },
+            { category: searchPattern },
         ];
     }
 
@@ -128,6 +130,12 @@ router.get('/', asyncHandler(async (req, res) => {
             pages: Math.ceil(total / perPage),
         },
     });
+}));
+
+router.get('/search', asyncHandler(async (req, res) => {
+    const result = await searchProducts(req.query.q, req.query.limit);
+    res.set('Cache-Control', 'private, no-store');
+    res.json(result);
 }));
 
 router.get('/:id', asyncHandler(async (req, res) => {

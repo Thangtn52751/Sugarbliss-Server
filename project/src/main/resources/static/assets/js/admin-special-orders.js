@@ -1,429 +1,239 @@
-const ADMIN_API_BASE_URL = window.SugarBlissApi.baseUrl;
-const PAGE_SIZE = 6;
-const STATUSES = ["Pending", "Reviewing", "Quoted", "Approved", "Completed", "Cancelled"];
-const DELIVERY_LABELS = {
-    pickup: "Store Pickup",
-    "local-delivery": "Local Delivery",
-    shipping: "Nationwide Shipping"
-};
+(async function initializeSpecialOrders() {
+    "use strict";
 
-let allRequests = [];
-let filteredRequests = [];
-let currentPage = 1;
-let currentStatus = "";
-let currentSearch = "";
-let searchTimer;
-let requestController;
-let openRequestId = "";
-
-document.addEventListener("DOMContentLoaded", () => {
-    if (!requireAdmin()) {
+    const admin = window.SugarBlissAdmin;
+    if (!await admin.ready) {
         return;
     }
 
-    document.querySelector("[data-status-filters]")?.addEventListener("click", handleStatusFilter);
-    document.querySelector("[data-admin-search]")?.addEventListener("input", handleSearch);
-    document.querySelector("[data-admin-list]")?.addEventListener("click", handleListClick);
-    document.querySelector("[data-admin-list]")?.addEventListener("submit", handleSave);
-    document.querySelector("[data-admin-previous]")?.addEventListener("click", () => changePage(-1));
-    document.querySelector("[data-admin-next]")?.addEventListener("click", () => changePage(1));
-    loadSpecialOrders();
-});
-
-function requireAdmin() {
-    const token = localStorage.getItem("sugarBlissToken");
-    const user = readCachedUser();
-
-    if (!token) {
-        window.location.href = "/login";
-        return false;
-    }
-
-    if (user?.role && user.role !== "admin") {
-        window.location.href = "/home";
-        return false;
-    }
-
-    return true;
-}
-
-async function loadSpecialOrders() {
-    const token = localStorage.getItem("sugarBlissToken");
-    const state = document.querySelector("[data-admin-state]");
-
-    if (!token) {
-        window.location.href = "/login";
-        return;
-    }
-
-    state.hidden = false;
-    state.classList.remove("is-error");
-    state.textContent = "Loading special orders...";
-
-    requestController?.abort();
-    requestController = new AbortController();
-
-    try {
-        const params = new URLSearchParams({ page: "1", limit: "100" });
-        if (currentStatus) {
-            params.set("status", currentStatus);
-        }
-
-        const response = await fetch(`${ADMIN_API_BASE_URL}/api/special-orders?${params}`, {
-            headers: { Authorization: `Bearer ${token}` },
-            signal: requestController.signal
-        });
-        const data = await response.json().catch(() => ({}));
-
-        if (response.status === 401) {
-            clearSessionAndLogin();
-            return;
-        }
-
-        if (response.status === 403) {
-            window.location.href = "/home";
-            return;
-        }
-
-        if (!response.ok) {
-            throw new Error(data.message || "Cannot load special orders.");
-        }
-
-        allRequests = Array.isArray(data.specialOrders) ? data.specialOrders : [];
-        applyFilters();
-    } catch (error) {
-        if (error.name === "AbortError") {
-            return;
-        }
-
-        state.hidden = false;
-        state.classList.add("is-error");
-        state.textContent = error.message || "Cannot connect to server.";
-    }
-}
-
-function handleStatusFilter(event) {
-    const button = event.target.closest("[data-status-filter]");
-
-    if (!button) {
-        return;
-    }
-
-    currentStatus = button.dataset.statusFilter || "";
-    currentPage = 1;
-    document.querySelectorAll("[data-status-filter]").forEach((item) => {
-        item.classList.toggle("is-active", item === button);
-    });
-    loadSpecialOrders();
-}
-
-function handleSearch(event) {
-    const query = event.target.value.trim().toLowerCase();
-
-    window.clearTimeout(searchTimer);
-    searchTimer = window.setTimeout(() => {
-        currentSearch = query;
-        currentPage = 1;
-        applyFilters();
-    }, 250);
-}
-
-function applyFilters() {
-    filteredRequests = allRequests.filter((request) => {
-        if (!currentSearch) {
-            return true;
-        }
-
-        const haystack = [
-            request.requestNumber,
-            request.name,
-            request.email,
-            request.phone,
-            request.orderDetails,
-            request.city
-        ].join(" ").toLowerCase();
-
-        return haystack.includes(currentSearch);
-    });
-
-    renderList();
-}
-
-function renderList() {
-    const list = document.querySelector("[data-admin-list]");
-    const state = document.querySelector("[data-admin-state]");
-    const pagination = document.querySelector("[data-admin-pagination]");
-    const pageCount = Math.max(Math.ceil(filteredRequests.length / PAGE_SIZE), 1);
-
-    currentPage = Math.min(currentPage, pageCount);
-
-    if (filteredRequests.length === 0) {
-        list.replaceChildren();
-        state.hidden = false;
-        state.classList.remove("is-error");
-        state.textContent = currentSearch || currentStatus
-            ? "No special orders match this filter."
-            : "No special order requests yet.";
-        pagination.hidden = true;
-        return;
-    }
-
-    const start = (currentPage - 1) * PAGE_SIZE;
-    const pageItems = filteredRequests.slice(start, start + PAGE_SIZE);
-
-    state.hidden = true;
-    list.innerHTML = pageItems.map(renderCard).join("");
-    pagination.hidden = false;
-    document.querySelector("[data-admin-summary]").textContent =
-        `Showing ${start + 1}-${Math.min(start + PAGE_SIZE, filteredRequests.length)} of ${filteredRequests.length} requests`;
-    document.querySelector("[data-admin-page]").textContent = `${currentPage} / ${pageCount}`;
-    document.querySelector("[data-admin-previous]").disabled = currentPage === 1;
-    document.querySelector("[data-admin-next]").disabled = currentPage === pageCount;
-}
-
-function renderCard(request) {
-    const id = String(request._id || "");
-    const isOpen = id === openRequestId;
-    const preview = String(request.orderDetails || "").slice(0, 140);
-    const previewSuffix = String(request.orderDetails || "").length > 140 ? "..." : "";
-
-    return `
-        <article class="admin-card" data-request-card="${escapeHtml(id)}">
-            <header class="admin-card-head">
-                <div class="admin-meta"><span>Request</span><strong>${escapeHtml(request.requestNumber || id)}</strong></div>
-                <div class="admin-meta"><span>Customer</span><strong>${escapeHtml(request.name || "Unknown")}</strong></div>
-                <div class="admin-meta"><span>Submitted</span><strong>${escapeHtml(formatDate(request.createdAt))}</strong></div>
-                <span class="admin-status ${getStatusClass(request.status)}">${escapeHtml(request.status || "Pending")}</span>
-            </header>
-            <div class="admin-card-preview">
-                <p>${escapeHtml(preview)}${previewSuffix}</p>
-            </div>
-            <div class="admin-details" data-request-details ${isOpen ? "" : "hidden"}>
-                ${isOpen ? renderDetails(request) : ""}
-            </div>
-            <footer class="admin-card-actions">
-                <button class="admin-text-button" type="button" data-view-request="${escapeHtml(id)}" aria-expanded="${isOpen}">
-                    ${isOpen ? "Hide details" : "View and update"}
-                </button>
-            </footer>
-        </article>
-    `;
-}
-
-function renderDetails(request) {
-    const id = String(request._id || "");
-    const address = [request.address1, request.address2, request.city, request.zipCode].filter(Boolean).join(", ") || "Not required for pickup";
-
-    return `
-        <div class="admin-details-grid">
-            <div><span>Email</span><p>${escapeHtml(request.email || "—")}</p></div>
-            <div><span>Phone</span><p>${escapeHtml(request.phone || "—")}</p></div>
-            <div><span>Delivery</span><p>${escapeHtml(DELIVERY_LABELS[request.deliveryOption] || request.deliveryOption || "—")}</p></div>
-            <div><span>Updated</span><p>${escapeHtml(formatDate(request.updatedAt))}</p></div>
-            <div class="is-wide"><span>Address</span><p>${escapeHtml(address)}</p></div>
-            <div class="is-wide"><span>Order details</span><p>${escapeHtml(request.orderDetails || "—")}</p></div>
-        </div>
-        <form class="admin-edit" data-update-form="${escapeHtml(id)}">
-            <label>
-                <span>Status</span>
-                <select name="status" required>
-                    ${STATUSES.map((status) => `
-                        <option value="${status}" ${request.status === status ? "selected" : ""}>${status}</option>
-                    `).join("")}
-                </select>
-            </label>
-            <label>
-                <span>Admin note</span>
-                <textarea name="adminNote" maxlength="1000" placeholder="Internal note for the team">${escapeHtml(request.adminNote || "")}</textarea>
-            </label>
-            <div class="admin-edit-actions">
-                <button class="admin-save-button" type="submit">Save changes</button>
-                <p class="admin-edit-message" data-update-message></p>
-            </div>
-        </form>
-    `;
-}
-
-async function handleListClick(event) {
-    const button = event.target.closest("[data-view-request]");
-
-    if (!button) {
-        return;
-    }
-
-    const requestId = button.dataset.viewRequest;
-    openRequestId = openRequestId === requestId ? "" : requestId;
-
-    if (!openRequestId) {
-        renderList();
-        return;
-    }
-
-    const request = await fetchRequestById(requestId);
-    if (request) {
-        const index = allRequests.findIndex((item) => String(item._id) === requestId);
-        if (index >= 0) {
-            allRequests[index] = request;
-        }
-        applyFilters();
-    } else {
-        renderList();
-    }
-}
-
-async function fetchRequestById(id) {
-    const token = localStorage.getItem("sugarBlissToken");
-
-    try {
-        const response = await fetch(`${ADMIN_API_BASE_URL}/api/special-orders/${id}`, {
-            headers: { Authorization: `Bearer ${token}` }
-        });
-        const data = await response.json().catch(() => ({}));
-
-        if (response.status === 401) {
-            clearSessionAndLogin();
-            return null;
-        }
-
-        if (!response.ok) {
-            throw new Error(data.message || "Cannot load request details.");
-        }
-
-        return data;
-    } catch (error) {
-        console.error("Cannot load special order details.", error);
-        return allRequests.find((item) => String(item._id) === id) || null;
-    }
-}
-
-async function handleSave(event) {
-    const form = event.target.closest("[data-update-form]");
-
-    if (!form) {
-        return;
-    }
-
-    event.preventDefault();
-
-    const requestId = form.dataset.updateForm;
-    const token = localStorage.getItem("sugarBlissToken");
-    const submitButton = form.querySelector(".admin-save-button");
-    const message = form.querySelector("[data-update-message]");
-    const formData = new FormData(form);
-    const payload = {
-        status: String(formData.get("status") || "").trim(),
-        adminNote: String(formData.get("adminNote") || "").trim()
+    const PAGE_SIZE = 6;
+    const STATUSES = ["Pending", "Reviewing", "Quoted", "Approved", "Completed", "Cancelled"];
+    const DELIVERY_LABELS = {
+        pickup: "Store Pickup",
+        "local-delivery": "Local Delivery",
+        shipping: "Nationwide Shipping"
     };
 
-    submitButton.disabled = true;
-    submitButton.textContent = "Saving...";
-    message.textContent = "";
-    message.className = "admin-edit-message";
+    const $ = (selector) => document.querySelector(selector);
+    const dialog = $("[data-so-dialog]");
+    const form = $("[data-so-form]");
+    const state = { page: 1, pages: 1, items: [], allItems: [], detail: null, searchTimer: null };
 
-    try {
-        const response = await fetch(`${ADMIN_API_BASE_URL}/api/special-orders/${requestId}`, {
-            method: "PATCH",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${token}`
-            },
-            body: JSON.stringify(payload)
-        });
-        const data = await response.json().catch(() => ({}));
+    const escape = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+    }[char]));
 
-        if (response.status === 401) {
-            clearSessionAndLogin();
-            return;
+    const formatDate = (value) => {
+        if (!value) {
+            return "Updating";
         }
-
-        if (!response.ok) {
-            throw new Error(data.message || "Cannot update this request.");
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+            return "Updating";
         }
-
-        const index = allRequests.findIndex((item) => String(item._id) === requestId);
-        if (index >= 0) {
-            allRequests[index] = data;
-        }
-
-        openRequestId = requestId;
-        applyFilters();
-
-        const updatedForm = document.querySelector(`[data-update-form="${requestId}"]`);
-        const updatedMessage = updatedForm?.querySelector("[data-update-message]");
-        if (updatedMessage) {
-            updatedMessage.textContent = "Changes saved.";
-            updatedMessage.classList.add("is-success");
-        }
-    } catch (error) {
-        message.textContent = error.message || "Cannot connect to server.";
-        message.classList.add("is-error");
-        submitButton.disabled = false;
-        submitButton.textContent = "Save changes";
-    }
-}
-
-function changePage(change) {
-    const pageCount = Math.max(Math.ceil(filteredRequests.length / PAGE_SIZE), 1);
-    const nextPage = currentPage + change;
-
-    if (nextPage < 1 || nextPage > pageCount) {
-        return;
-    }
-
-    currentPage = nextPage;
-    openRequestId = "";
-    renderList();
-    document.querySelector(".admin-main")?.scrollIntoView({ behavior: "smooth", block: "start" });
-}
-
-function getStatusClass(status) {
-    const classes = {
-        Reviewing: "is-reviewing",
-        Quoted: "is-quoted",
-        Approved: "is-approved",
-        Completed: "is-completed",
-        Cancelled: "is-cancelled"
+        return new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", year: "numeric" }).format(date);
     };
 
-    return classes[status] || "is-pending";
-}
+    const statusTone = (status) => String(status || "pending").toLowerCase();
 
-function formatDate(value) {
-    if (!value) {
-        return "Updating";
+    const badge = (status) => `<span class="admin-order-status" data-tone="${escape(statusTone(status))}">${escape(status || "Pending")}</span>`;
+
+    function feedback(message, success = false, selector = "[data-so-feedback]") {
+        const node = $(selector);
+        node.textContent = message;
+        node.hidden = !message;
+        node.classList.toggle("is-success", success);
     }
 
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) {
-        return "Updating";
+    function applyFilters() {
+        const query = $("[data-so-search]").value.trim().toLowerCase();
+        const filtered = state.allItems.filter((item) => {
+            if (!query) {
+                return true;
+            }
+            return [
+                item.requestNumber,
+                item.name,
+                item.email,
+                item.phone,
+                item.orderDetails,
+                item.city
+            ].join(" ").toLowerCase().includes(query);
+        });
+
+        state.pages = Math.max(Math.ceil(filtered.length / PAGE_SIZE), 1);
+        state.page = Math.min(state.page, state.pages);
+        const start = (state.page - 1) * PAGE_SIZE;
+        state.items = filtered.slice(start, start + PAGE_SIZE);
+        renderTable(filtered.length, start);
     }
 
-    return new Intl.DateTimeFormat("en-US", {
-        month: "short",
-        day: "2-digit",
-        year: "numeric"
-    }).format(date);
-}
+    function renderTable(total, start) {
+        $("[data-so-clear]").hidden = !$("[data-so-search]").value.trim() && !$("[data-so-status]").value;
+        $("[data-so-rows]").innerHTML = state.items.map((item) => `<tr>
+            <td>${escape(item.requestNumber || item._id)}</td>
+            <td>${escape(item.name || "Unknown")}<small>${escape(item.email || "")}</small></td>
+            <td>${escape(DELIVERY_LABELS[item.deliveryOption] || item.deliveryOption || "—")}</td>
+            <td>${escape(formatDate(item.createdAt))}</td>
+            <td>${badge(item.status)}</td>
+            <td class="orders-actions"><button type="button" class="orders-secondary" data-so-id="${escape(item._id)}">Details</button></td>
+        </tr>`).join("") || '<tr><td colspan="6" class="orders-empty">No special orders found.</td></tr>';
 
-function readCachedUser() {
-    try {
-        return JSON.parse(localStorage.getItem("sugarBlissUser") || "null");
-    } catch (error) {
-        return null;
+        const shown = state.items.length;
+        $("[data-so-pagination-info]").textContent = total
+            ? `Showing ${start + 1}-${start + shown} of ${total} requests`
+            : "Showing 0 of 0 requests";
+
+        const pages = Array.from({ length: state.pages }, (_, index) => index + 1)
+            .slice(Math.max(0, state.page - 3), Math.max(0, state.page - 3) + Math.min(5, state.pages));
+        $("[data-so-pages]").innerHTML =
+            `<button type="button" class="orders-page-button" data-page="${state.page - 1}" ${state.page <= 1 ? "disabled" : ""} title="Previous page" aria-label="Previous page">&lsaquo;</button>` +
+            pages.map((page) => `<button type="button" class="orders-page-button" data-page="${page}" ${page === state.page ? 'aria-current="page"' : ""}>${page}</button>`).join("") +
+            `<button type="button" class="orders-page-button" data-page="${state.page + 1}" ${state.page >= state.pages ? "disabled" : ""} title="Next page" aria-label="Next page">&rsaquo;</button>`;
     }
-}
 
-function clearSessionAndLogin() {
-    localStorage.removeItem("sugarBlissToken");
-    localStorage.removeItem("sugarBlissUser");
-    window.location.href = "/login";
-}
+    async function load() {
+        $("[data-so-table]").setAttribute("aria-busy", "true");
+        $("[data-so-retry]").hidden = true;
+        try {
+            const params = new URLSearchParams({ page: "1", limit: "100" });
+            const status = $("[data-so-status]").value;
+            if (status) {
+                params.set("status", status);
+            }
+            const data = await admin.request(`/api/special-orders?${params}`);
+            if (!data) {
+                return;
+            }
+            state.allItems = Array.isArray(data.specialOrders) ? data.specialOrders : [];
+            state.page = 1;
+            feedback("");
+            applyFilters();
+        } catch (error) {
+            state.allItems = [];
+            state.items = [];
+            $("[data-so-rows]").innerHTML = '<tr><td colspan="6" class="orders-empty">Unable to load special orders.</td></tr>';
+            $("[data-so-pages]").innerHTML = "";
+            $("[data-so-pagination-info]").textContent = "";
+            feedback(error.message);
+            $("[data-so-retry]").hidden = false;
+        } finally {
+            $("[data-so-table]").setAttribute("aria-busy", "false");
+        }
+    }
 
-function escapeHtml(value) {
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
+    function renderDetails(request) {
+        const address = [request.address1, request.address2, request.city, request.zipCode].filter(Boolean).join(", ") || "Not required for pickup";
+        $("[data-so-title]").textContent = request.requestNumber || "Special order";
+        $("[data-so-details]").innerHTML = `
+            <div class="orders-detail-meta">${badge(request.status)}<span>${escape(DELIVERY_LABELS[request.deliveryOption] || request.deliveryOption || "—")}</span><span>${escape(formatDate(request.createdAt))}</span></div>
+            <div class="so-details-grid">
+                <div><span>Customer</span><p>${escape(request.name || "—")}</p></div>
+                <div><span>Email</span><p>${escape(request.email || "—")}</p></div>
+                <div><span>Phone</span><p>${escape(request.phone || "—")}</p></div>
+                <div><span>Updated</span><p>${escape(formatDate(request.updatedAt))}</p></div>
+                <div class="is-wide"><span>Address</span><p>${escape(address)}</p></div>
+                <div class="is-wide"><span>Order details</span><p>${escape(request.orderDetails || "—")}</p></div>
+            </div>
+        `;
+        $("[data-so-edit-status]").innerHTML = STATUSES.map((status) =>
+            `<option value="${status}" ${request.status === status ? "selected" : ""}>${status}</option>`
+        ).join("");
+        $("[data-so-edit-note]").value = request.adminNote || "";
+        feedback("", false, "[data-so-detail-feedback]");
+    }
+
+    async function openDetails(id) {
+        try {
+            const request = await admin.request(`/api/special-orders/${id}`);
+            if (!request) {
+                return;
+            }
+            state.detail = request;
+            renderDetails(request);
+            if (!dialog.open) {
+                dialog.showModal();
+            }
+        } catch (error) {
+            feedback(error.message);
+        }
+    }
+
+    $("[data-so-search]").addEventListener("input", () => {
+        window.clearTimeout(state.searchTimer);
+        state.searchTimer = window.setTimeout(() => {
+            state.page = 1;
+            applyFilters();
+        }, 250);
+    });
+    $("[data-so-status]").addEventListener("change", () => {
+        state.page = 1;
+        load();
+    });
+    $("[data-so-clear]").addEventListener("click", () => {
+        $("[data-so-search]").value = "";
+        $("[data-so-status]").value = "";
+        state.page = 1;
+        load();
+    });
+    $("[data-so-retry]").addEventListener("click", load);
+    $("[data-so-pages]").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-page]");
+        const page = Number(button?.dataset.page);
+        if (!button || Number.isNaN(page) || page < 1 || page > state.pages) {
+            return;
+        }
+        state.page = page;
+        applyFilters();
+    });
+    $("[data-so-rows]").addEventListener("click", (event) => {
+        const button = event.target.closest("[data-so-id]");
+        if (button) {
+            openDetails(button.dataset.soId);
+        }
+    });
+    $("[data-so-close]").addEventListener("click", () => dialog.close());
+    $("[data-so-dismiss]").addEventListener("click", () => dialog.close());
+
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        if (!state.detail?._id) {
+            return;
+        }
+        const saveButton = $("[data-so-save]");
+        saveButton.disabled = true;
+        saveButton.textContent = "Saving...";
+        try {
+            const updated = await admin.request(`/api/special-orders/${state.detail._id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    status: form.elements.status.value,
+                    adminNote: form.elements.adminNote.value.trim()
+                })
+            });
+            if (!updated) {
+                return;
+            }
+            state.detail = updated;
+            const index = state.allItems.findIndex((item) => String(item._id) === String(updated._id));
+            if (index >= 0) {
+                state.allItems[index] = updated;
+            }
+            applyFilters();
+            renderDetails(updated);
+            feedback("Changes saved.", true, "[data-so-detail-feedback]");
+        } catch (error) {
+            feedback(error.message, false, "[data-so-detail-feedback]");
+        } finally {
+            saveButton.disabled = false;
+            saveButton.textContent = "Save changes";
+        }
+    });
+
+    load();
+}());

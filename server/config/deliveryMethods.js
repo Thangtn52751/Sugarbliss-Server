@@ -1,9 +1,20 @@
 const DELIVERY_METHODS = Object.freeze({
+    lalamove: Object.freeze({
+        code: 'lalamove',
+        label: 'Lalamove (Sandbox)',
+        estimate: 'On-demand local delivery',
+        fee: null,
+        requiresQuote: true,
+        provider: 'lalamove',
+        hidden: true,
+    }),
     standard: Object.freeze({
         code: 'standard',
         label: 'Standard Delivery',
-        estimate: '2-3 business days',
-        fee: 0,
+        estimate: 'Local delivery by Lalamove',
+        fee: null,
+        requiresQuote: true,
+        provider: 'lalamove',
     }),
     express: Object.freeze({
         code: 'express',

@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ path: require('node:path').join(__dirname, '.env') });
 
 const express = require('express');
 const cors = require('cors');
@@ -9,7 +9,15 @@ const userRoutes = require('./routes/userRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const specialOrderRoutes = require('./routes/specialOrderRoutes');
 const contactRoutes = require('./routes/contactRoutes');
+const shippingRoutes = require('./routes/shippingRoutes');
+const deliveryRoutes = require('./routes/deliveryRoutes');
+const chatboxRoutes = require('./routes/chatboxRoutes');
+const voucherRoutes = require('./routes/voucherRoutes');
+const adminDashboardRoutes = require('./routes/adminDashboardRoutes');
+const adminOrderRoutes = require('./routes/adminOrderRoutes');
 const requestLogger = require('./middleware/requestLogger');
+const paymentRoutes = require('./routes/paymentRoutes');
+const payments = require('./services/payments');
 
 const app = express();
 
@@ -26,8 +34,15 @@ app.get('/', (req, res) => {
             products: '/api/products',
             users: '/api/users',
             orders: '/api/orders',
+            payments: '/api/payments',
             specialOrders: '/api/special-orders',
             contact: '/api/contact',
+            delivery: '/api/delivery',
+            productSearch: '/api/products/search?q=cake',
+            chatbox: '/api/chatbox/message',
+            vouchers: '/api/vouchers/validate',
+            adminDashboard: '/api/admin/dashboard/overview',
+            adminOrders: '/api/admin/orders',
         },
     });
 });
@@ -35,8 +50,15 @@ app.get('/', (req, res) => {
 app.use('/api/products', productRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/payments', paymentRoutes);
 app.use('/api/special-orders', specialOrderRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/shipping', shippingRoutes);
+app.use('/api/delivery', deliveryRoutes);
+app.use('/api/chatbox', chatboxRoutes);
+app.use('/api/vouchers', voucherRoutes);
+app.use('/api/admin/dashboard', adminDashboardRoutes);
+app.use('/api/admin/orders', adminOrderRoutes);
 
 app.use((req, res) => {
     res.status(404).json({ message: 'API not found' });
@@ -55,6 +77,7 @@ app.use((err, req, res, next) => {
 
     res.status(statusCode).json({
         message: err.message || 'Server error',
+        code: err.code,
         stack: process.env.NODE_ENV === 'production' ? undefined : err.stack,
     });
 });
@@ -65,6 +88,7 @@ const startServer = async () => {
     try {
         await connectDB();
         console.log('MongoDB connected successfully!');
+        payments.startReconciliation();
 
         app.listen(PORT, () => {
             console.log(`Server running at http://localhost:${PORT}`);

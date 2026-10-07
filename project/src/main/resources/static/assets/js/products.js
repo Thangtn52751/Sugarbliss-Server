@@ -1,7 +1,26 @@
 const API_BASE_URL = window.SugarBlissApi.baseUrl;
 const preferredCategories = ["Cookies", "Waffles", "Macaroons", "Snacks", "Beverages"];
 
+function t(key, fallback) {
+    if (window.SugarI18n) {
+        const value = window.SugarI18n.translate(key);
+        if (value !== null) {
+            return value;
+        }
+    }
+    return fallback;
+}
+
+function tCategory(name) {
+    return window.SugarI18n ? window.SugarI18n.translateCategory(name) : name;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+    fetchProducts();
+});
+
+// Ve lai danh sach san pham khi nguoi dung doi ngon ngu
+window.addEventListener("sugarbliss:lang-changed", () => {
     fetchProducts();
 });
 
@@ -17,15 +36,15 @@ async function fetchProducts() {
     if (!token) {
         container.innerHTML = `
             <div class="products-state">
-                <p>Please log in to view our products.</p>
-                <a href="/login">Login Now</a>
+                <p>${escapeHtml(t("products.loginPrompt", "Please log in to view our products."))}</p>
+                <a href="/login">${escapeHtml(t("products.loginNow", "Login Now"))}</a>
             </div>
         `;
         categoryList.innerHTML = "";
         return;
     }
 
-    container.innerHTML = '<div class="products-state"><p>Loading products...</p></div>';
+    container.innerHTML = `<div class="products-state"><p>${escapeHtml(t("products.loading", "Loading products..."))}</p></div>`;
 
     try {
         const productsResponse = await fetch(`${API_BASE_URL}/api/products?status=all&limit=100`, {
@@ -37,7 +56,7 @@ async function fetchProducts() {
         const productsData = await productsResponse.json();
 
         if (!productsResponse.ok) {
-            throw new Error(productsData.message || "Cannot load products.");
+            throw new Error(productsData.message || t("products.loadError", "Cannot load products."));
         }
 
         renderProducts(Array.isArray(productsData.products) ? productsData.products : []);
@@ -45,7 +64,7 @@ async function fetchProducts() {
         container.innerHTML = `
             <div class="products-state is-error">
                 <p>${escapeHtml(error.message)}</p>
-                <a href="/login">Login Again</a>
+                <a href="/login">${escapeHtml(t("products.loginAgain", "Login Again"))}</a>
             </div>
         `;
     }
@@ -57,7 +76,7 @@ function renderProducts(products) {
     if (products.length === 0) {
         container.innerHTML = `
             <div class="products-state">
-                <p>No products are available yet.</p>
+                <p>${escapeHtml(t("products.empty", "No products are available yet."))}</p>
             </div>
         `;
         categoryList.innerHTML = "";
@@ -68,7 +87,7 @@ function renderProducts(products) {
     const orderedCategories = getOrderedCategories(groupedProducts);
 
     categoryList.innerHTML = orderedCategories
-        .map((category) => `<li><a href="#${toSectionId(category)}">${escapeHtml(category)}</a></li>`)
+        .map((category) => `<li><a href="#${toSectionId(category)}">${escapeHtml(tCategory(category))}</a></li>`)
         .join("");
 
     container.innerHTML = orderedCategories
@@ -104,7 +123,7 @@ function getOrderedCategories(groupedProducts) {
 function renderCategorySection(category, products) {
     return `
         <section class="category-section" id="${toSectionId(category)}">
-            <h2>${escapeHtml(category)}</h2>
+            <h2>${escapeHtml(tCategory(category))}</h2>
             <div class="products-grid-layout">
                 ${products.map(renderProductCard).join("")}
             </div>
@@ -116,6 +135,7 @@ function renderProductCard(product) {
     const productId = product._id || product.id || "";
     const imageSrc = resolveImageUrl(product.images?.[0] || product.image);
     const price = formatPrice(product.price);
+    const isUnavailable = product.status !== "active" || Number(product.stock) <= 0;
 
     return `
         <article class="product-card">
@@ -123,11 +143,13 @@ function renderProductCard(product) {
                 <img src="${escapeHtml(imageSrc)}" alt="${escapeHtml(product.name || "Sugar Bliss product")}">
             </button>
        
-            <h3>${escapeHtml(product.name || "Sugar Bliss Product")}</h3>
+            <h3>${escapeHtml(product.name || t("products.defaultName", "Sugar Bliss Product"))}</h3>
             <p class="product-price">${price}</p>
             <div class="product-actions">
                 <button class="btn-detail" type="button" data-detail-id="${escapeHtml(productId)}">View Detail</button>
-                <button class="btn-order" type="button" data-product-id="${escapeHtml(productId)}">Order Now</button>
+                <button class="btn-add-cart" type="button" data-add-cart-id="${escapeHtml(productId)}" ${isUnavailable ? "disabled" : ""}>
+                    ${isUnavailable ? "Unavailable" : "Add To Cart"}
+                </button>
             </div>
         </article>
     `;
@@ -146,13 +168,13 @@ function handleProductActionClick(event) {
         return;
     }
 
-    const orderButton = event.target.closest("[data-product-id]");
-    if (orderButton) {
-        createOrder(orderButton.dataset.productId, orderButton);
+    const addCartButton = event.target.closest("[data-add-cart-id]");
+    if (addCartButton) {
+        addProductToCart(addCartButton.dataset.addCartId, addCartButton);
     }
 }
 
-async function createOrder(productId, button) {
+async function addProductToCart(productId, button) {
     const token = localStorage.getItem("sugarBlissToken");
 
     if (!token) {
@@ -160,30 +182,39 @@ async function createOrder(productId, button) {
         return;
     }
 
-    const originalText = button.textContent;
+    const originalText = button.textContent.trim();
     button.disabled = true;
-    button.textContent = "Ordering...";
+    button.textContent = "Adding...";
 
     try {
-        const response = await fetch(`${API_BASE_URL}/api/orders`, {
+        const response = await fetch(`${API_BASE_URL}/api/users/me/cart/${productId}`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`
             },
-            body: JSON.stringify({
-                productId,
-                quantity: 1
-            })
+            body: JSON.stringify({ quantity: 1 })
         });
+
+        if (response.status === 401) {
+            localStorage.removeItem("sugarBlissToken");
+            localStorage.removeItem("sugarBlissUser");
+            window.location.href = "/login";
+            return;
+        }
+
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.message || "Cannot create order.");
+            throw new Error(data.message || "Cannot add this product to your cart.");
         }
 
-        button.textContent = "Ordered";
-        setTimeout(() => {
+        window.dispatchEvent(new CustomEvent("sugarbliss:cart-updated", {
+            detail: { count: Array.isArray(data) ? data.length : 0 }
+        }));
+
+        button.textContent = "Added";
+        window.setTimeout(() => {
             button.textContent = originalText;
             button.disabled = false;
         }, 1200);
@@ -214,7 +245,7 @@ function formatPrice(price) {
     const value = Number(price);
 
     if (!Number.isFinite(value)) {
-        return "Contact for price";
+        return t("products.contactPrice", "Contact for price");
     }
 
     return new Intl.NumberFormat("vi-VN", {

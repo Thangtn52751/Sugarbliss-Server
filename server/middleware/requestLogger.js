@@ -8,6 +8,10 @@ const sensitiveKeys = [
     'message',
     'orderdetails',
     'adminnote',
+    'apikey',
+    'signature',
+    'coordinates',
+    'query',
 ];
 
 const sanitizeValue = (value) => {
@@ -33,20 +37,21 @@ const sanitizeValue = (value) => {
 const requestLogger = (req, res, next) => {
     const startedAt = Date.now();
     const startedTime = new Date().toISOString();
+    const requestPath = req.originalUrl.split('?')[0];
 
-    console.log(`[${startedTime}] --> ${req.method} ${req.originalUrl}`);
+    console.log(`[${startedTime}] --> ${req.method} ${requestPath}`);
 
     res.on('finish', () => {
         const durationMs = Date.now() - startedAt;
         const query = Object.keys(req.query || {}).length
             ? ` query=${JSON.stringify(sanitizeValue(req.query))}`
             : '';
-        const body = Object.keys(req.body || {}).length
+        const body = requestPath === '/api/payments/zalopay/callback' ? ' body=[hidden payment callback]' : Object.keys(req.body || {}).length
             ? ` body=${JSON.stringify(sanitizeValue(req.body))}`
             : '';
 
         console.log(
-            `[${new Date().toISOString()}] <-- ${req.method} ${req.originalUrl} ${res.statusCode} ${durationMs}ms${query}${body}`
+            `[${new Date().toISOString()}] <-- ${req.method} ${requestPath} ${res.statusCode} ${durationMs}ms${query}${body}`
         );
     });
 

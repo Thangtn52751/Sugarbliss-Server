@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugar Bliss | Admin Customers</title>
+    <link rel="stylesheet" href="/assets/css/admin.css">
+    <link rel="stylesheet" href="/assets/css/admin-customers.css">
+    <script src="/assets/js/api-config.js" defer></script>
+    <script src="/assets/js/admin-shell.js?v=2" defer></script>
+    <script src="/assets/js/admin-customers.js" defer></script>
+</head>
+<body class="admin-page">
+    <sugar-admin-sidebar active="customers"></sugar-admin-sidebar>
+    <main class="admin-main" aria-label="Customers">
+        <div class="admin-access-state" data-admin-access-state role="status">Loading...</div>
+        <div class="admin-content" data-admin-content hidden>
+            <header class="admin-page-header">
+                <h1>Customers</h1>
+            </header>
+            <div class="customer-stats" data-customer-stats>
+                <div class="customer-stat"><span>Total accounts</span><strong data-stat-total>-</strong></div>
+                <div class="customer-stat"><span>Active</span><strong data-stat-active>-</strong></div>
+                <div class="customer-stat"><span>Disabled</span><strong data-stat-disabled>-</strong></div>
+                <div class="customer-stat"><span>Administrators</span><strong data-stat-admins>-</strong></div>
+            </div>
+            <div class="customer-toolbar">
+                <label class="customer-search"><span class="sr-only">Search customers</span><input type="search" data-customer-search placeholder="Search name, email or phone"></label>
+                <label><span class="sr-only">Account status</span><select data-customer-status><option value="">All statuses</option><option value="active">Active</option><option value="disabled">Disabled</option></select></label>
+                <label><span class="sr-only">Role</span><select data-customer-role><option value="">All roles</option><option value="customer">Customer</option><option value="admin">Admin</option></select></label>
+                <span data-customer-summary role="status">Loading...</span>
+            </div>
+            <p class="customer-feedback" data-customer-status-message role="status" hidden></p>
+            <button type="button" class="customer-secondary" data-customer-retry hidden>Retry</button>
+            <div class="admin-table-scroll customer-table-wrap">
+                <table class="customer-table">
+                    <thead><tr><th>Customer</th><th>Contact</th><th>Orders</th><th>Total spent</th><th>Vouchers</th><th>Joined</th><th>Status</th><th><span class="sr-only">Actions</span></th></tr></thead>
+                    <tbody data-customer-rows><tr><td colspan="8">Loading customers...</td></tr></tbody>
+                </table>
+            </div>
+            <footer class="customer-pagination"><span data-customer-page-label></span><div><button type="button" data-customer-prev title="Previous page" aria-label="Previous page">&larr;</button><button type="button" data-customer-next title="Next page" aria-label="Next page">&rarr;</button></div></footer>
+        </div>
+    </main>
+    <dialog class="customer-dialog" data-customer-dialog aria-labelledby="customer-dialog-title">
+        <header>
+            <h2 id="customer-dialog-title">Customer detail</h2>
+            <button type="button" data-close-customer title="Close" aria-label="Close">&times;</button>
+        </header>
+        <div class="customer-detail" data-customer-detail>
+            <p class="admin-empty-state">Loading detail...</p>
+        </div>
+    </dialog>
+</body>
+</html>

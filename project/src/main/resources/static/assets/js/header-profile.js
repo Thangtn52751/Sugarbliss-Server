@@ -77,14 +77,31 @@ function createProfileMenu(user) {
     menu.className = "profile-menu";
     menu.innerHTML = getProfileMenuMarkup(user);
     menu.addEventListener("click", handleProfileMenuClick);
+    applyMenuTranslations(menu);
     return menu;
 }
 
 function updateProfileMenus(user) {
     document.querySelectorAll(".profile-menu").forEach((menu) => {
         menu.innerHTML = getProfileMenuMarkup(user);
+        applyMenuTranslations(menu);
     });
 }
+
+// Dich menu tai khoan theo ngon ngu hien tai + cap nhat khi doi ngon ngu
+function applyMenuTranslations(menu) {
+    if (window.SugarI18n) {
+        window.SugarI18n.apply(menu);
+    }
+}
+
+window.addEventListener("sugarbliss:lang-changed", () => {
+    document.querySelectorAll(".profile-menu").forEach((menu) => {
+        if (window.SugarI18n) {
+            window.SugarI18n.apply(menu);
+        }
+    });
+});
 
 function getProfileMenuMarkup(user) {
     const displayName = user?.name || "Sugar Bliss Customer";
@@ -103,33 +120,33 @@ function getProfileMenuMarkup(user) {
         </div>
         <a class="profile-menu-item" href="/profile">
             <span class="menu-icon" aria-hidden="true"><img src="/assets/icons/profile_ic.png" alt=""></span>
-            <span>Profile</span>
+            <span data-i18n="menu.profile">Profile</span>
             <span class="menu-chevron" aria-hidden="true"></span>
         </a>
         ${user?.role === "admin" ? `
-        <a class="profile-menu-item" href="/admin/special-orders">
-            <span class="menu-icon" aria-hidden="true"><img src="/assets/icons/ic_setting.png" alt=""></span>
-            <span>Admin Special Orders</span>
+        <a class="profile-menu-item" href="/admin/dashboard">
+            <span class="menu-icon" aria-hidden="true"><img src="/assets/icons/ic_dashboard.png" alt=""></span>
+            <span>Admin Portal</span>
             <span class="menu-chevron" aria-hidden="true"></span>
         </a>` : ""}
         <a class="profile-menu-item" href="/orders">
             <span class="menu-icon" aria-hidden="true"><img src="/assets/icons/ic_mail.png" alt=""></span>
-            <span>Order History</span>
+            <span data-i18n="menu.orderHistory">Order History</span>
             <span class="menu-chevron" aria-hidden="true"></span>
         </a>
         <a class="profile-menu-item" href="/cart">
             <span class="menu-icon" aria-hidden="true"><img src="/assets/icons/ic_cart.png" alt=""></span>
-            <span class="menu-label-with-count">Your Cart <strong data-header-cart-count>${headerCartRecordCount}</strong></span>
+            <span class="menu-label-with-count"><span data-i18n="menu.yourCart">Your Cart</span> <strong data-header-cart-count>${headerCartRecordCount}</strong></span>
             <span class="menu-chevron" aria-hidden="true"></span>
         </a>
-        <div class="profile-menu-item is-static">
+        <a class="profile-menu-item" href="/settings">
             <span class="menu-icon" aria-hidden="true"><img src="/assets/icons/ic_setting.png" alt=""></span>
-            <span>Settings</span>
+            <span data-i18n="menu.settings">Settings</span>
             <span class="menu-chevron" aria-hidden="true"></span>
-        </div>
+        </a>
         <button class="profile-menu-item logout-item" type="button" data-header-logout>
             <span class="menu-icon" aria-hidden="true"><img src="/assets/icons/ic_logout.png" alt=""></span>
-            <span>Logout</span>
+            <span data-i18n="menu.logout">Logout</span>
         </button>
     `;
 }

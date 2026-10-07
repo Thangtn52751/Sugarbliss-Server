@@ -1,4 +1,5 @@
 const PROFILE_API_BASE_URL = window.SugarBlissApi.baseUrl;
+const TERMINAL_PROFILE_DELIVERY_STATUSES = new Set(["COMPLETED", "CANCELED", "REJECTED", "EXPIRED", "FAILED"]);
 
 document.addEventListener("DOMContentLoaded", () => {
     loadProfile();
@@ -73,9 +74,43 @@ async function loadRecentOrders() {
             throw new Error(data.message || "Cannot load orders.");
         }
 
-        renderOrders(Array.isArray(data) ? data.slice(0, 3) : []);
+        const recentOrders = Array.isArray(data) ? data.slice(0, 3) : [];
+        renderOrders(recentOrders);
+        syncRecentLalamoveOrders(recentOrders);
     } catch (error) {
         container.innerHTML = `<p class="profile-empty is-error">${escapeHtml(error.message)}</p>`;
+    }
+}
+
+async function syncRecentLalamoveOrders(orders) {
+    const token = localStorage.getItem("sugarBlissToken");
+    const syncable = orders.filter((order) => order.shippingProvider === "lalamove" && order.shippingOrderId &&
+        order.status !== "Cancelled" && !TERMINAL_PROFILE_DELIVERY_STATUSES.has(order.shippingStatus));
+    if (!token || !syncable.length) return;
+
+    const updates = new Map();
+    for (const order of syncable) {
+        try {
+            const orderId = String(order.id || order._id);
+            const response = await fetch(`${PROFILE_API_BASE_URL}/api/orders/${encodeURIComponent(orderId)}/shipping/refresh`, {
+                method: "POST",
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            const data = await response.json();
+            if (response.status === 401) {
+                localStorage.removeItem("sugarBlissToken");
+                localStorage.removeItem("sugarBlissUser");
+                window.location.href = "/login";
+                return;
+            }
+            if (response.ok) updates.set(orderId, data);
+        } catch {
+            // Keep the last known status when the delivery provider is temporarily unavailable.
+        }
+    }
+
+    if (updates.size) {
+        renderOrders(orders.map((order) => updates.get(String(order.id || order._id)) || order));
     }
 }
 
@@ -189,28 +224,25 @@ function renderOrders(orders) {
         return;
     }
 
-    container.innerHTML = orders.map((order) => `
+    container.innerHTML = orders.map((order) => {
+        const displayStatus = order.displayStatus || order.status || "In Progress";
+        return `
         <article class="order-row">
             <div>
                 <p class="order-name">${escapeHtml(truncate(order.productName, 24))}</p>
                 <p class="order-date">Ordered on ${escapeHtml(order.orderedOn)}</p>
             </div>
-            <span class="order-status ${getOrderStatusClass(order.status)}">${escapeHtml(order.status)}</span>
+            <span class="order-status ${getOrderStatusClass(order)}">${escapeHtml(displayStatus)}</span>
             <strong class="order-total">${formatVnd(order.total)}</strong>
         </article>
-    `).join("");
+    `;
+    }).join("");
 }
 
-function getOrderStatusClass(status) {
-    if (status === "In Progress") {
-        return "is-progress";
-    }
-
-    if (status === "Cancelled") {
-        return "is-cancelled";
-    }
-
-    return "is-delivered";
+function getOrderStatusClass(order) {
+    const tone = order.displayStatusTone || (order.status === "Delivered" ? "delivered"
+        : ['Cancelled', 'Failed'].includes(order.status) ? "cancelled" : "progress");
+    return tone === "delivered" ? "is-delivered" : tone === "cancelled" ? "is-cancelled" : "is-progress";
 }
 
 function renderFavorites(products) {

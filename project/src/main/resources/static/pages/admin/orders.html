@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugar Bliss | Admin Orders</title>
+    <link rel="stylesheet" href="/assets/css/admin.css">
+    <link rel="stylesheet" href="/assets/css/admin-orders.css">
+    <script src="/assets/js/api-config.js" defer></script>
+    <script src="/assets/js/admin-shell.js" defer></script>
+    <script src="/assets/js/admin-orders.js" defer></script>
+</head>
+<body class="admin-page">
+    <sugar-admin-sidebar active="orders"></sugar-admin-sidebar>
+    <main class="admin-main" aria-label="Orders">
+        <div class="admin-access-state" data-admin-access-state role="status">Loading...</div>
+        <div class="admin-content" data-admin-content hidden>
+            <header class="admin-page-header orders-header">
+                <h1>Orders</h1>
+                <div class="orders-filters" role="search">
+                    <label><span class="admin-sr-only">Search order ID or product</span><input type="search" maxlength="100" placeholder="Search Order ID..." data-orders-search></label>
+                    <label><span class="admin-sr-only">Order status</span><select data-orders-status><option value="">Status: All</option><option>In Progress</option><option>Ready for Pickup</option><option value="Delivered">Delivered / Collected</option><option>Cancelled</option><option>Failed</option></select></label>
+                    <label><span class="admin-sr-only">Order month</span><input type="month" data-orders-month title="Filter by month"></label>
+                    <button type="button" class="orders-icon-button" data-clear-filters title="Clear filters" aria-label="Clear filters" hidden>&times;</button>
+                </div>
+            </header>
+            <p class="orders-feedback" data-orders-feedback role="status" hidden></p>
+            <div class="orders-table-scroll" data-orders-table aria-busy="false">
+                <table class="orders-table">
+                    <thead><tr><th>Order ID</th><th>Customer</th><th>Items Summary</th><th class="orders-amount">Total Amount</th><th>Date</th><th>Status</th><th class="orders-actions">Actions</th></tr></thead>
+                    <tbody data-orders-rows><tr><td colspan="7" class="orders-empty">Loading orders...</td></tr></tbody>
+                </table>
+            </div>
+            <footer class="orders-pagination"><span data-orders-pagination-info role="status"></span><nav data-orders-pages aria-label="Order pages"></nav><button type="button" class="orders-secondary" data-orders-retry hidden>Retry</button></footer>
+        </div>
+    </main>
+    <dialog class="orders-dialog" data-order-dialog aria-labelledby="order-dialog-title">
+        <header><h2 id="order-dialog-title" data-order-title>Order details</h2><button type="button" class="orders-icon-button" data-close-order title="Close" aria-label="Close">&times;</button></header>
+        <div data-order-details></div>
+        <p class="orders-feedback" data-order-feedback role="status" hidden></p>
+        <form class="orders-pickup-form" data-pickup-form hidden>
+            <label>Pickup status<select name="pickupStatus" data-pickup-status></select></label>
+            <label class="orders-cash" data-cash-confirmation hidden><input name="cashReceived" type="checkbox">Customer collected the order and cash was received</label>
+            <button class="orders-primary" type="submit" data-save-pickup>Update status</button>
+        </form>
+        <footer><button type="button" class="orders-secondary" data-refresh-delivery hidden>Refresh delivery</button><a class="orders-secondary" data-track-delivery target="_blank" rel="noopener noreferrer" hidden>Track delivery</a><button type="button" class="orders-secondary" data-retry-detail hidden>Retry</button><button type="button" class="orders-secondary" data-dismiss-order>Close</button></footer>
+    </dialog>
+</body>
+</html>

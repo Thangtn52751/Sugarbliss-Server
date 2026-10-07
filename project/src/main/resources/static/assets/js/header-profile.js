@@ -123,6 +123,12 @@ function getProfileMenuMarkup(user) {
             <span data-i18n="menu.profile">Profile</span>
             <span class="menu-chevron" aria-hidden="true"></span>
         </a>
+        ${user?.role === "admin" ? `
+        <a class="profile-menu-item" href="/admin/dashboard">
+            <span class="menu-icon" aria-hidden="true"><img src="/assets/icons/ic_dashboard.png" alt=""></span>
+            <span>Admin Portal</span>
+            <span class="menu-chevron" aria-hidden="true"></span>
+        </a>` : ""}
         <a class="profile-menu-item" href="/orders">
             <span class="menu-icon" aria-hidden="true"><img src="/assets/icons/ic_mail.png" alt=""></span>
             <span data-i18n="menu.orderHistory">Order History</span>

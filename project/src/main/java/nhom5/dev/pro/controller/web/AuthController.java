@@ -91,4 +91,9 @@ public class AuthController {
     public String settings() {
         return "redirect:/pages/settings.html";
     }
+
+    @GetMapping({"/admin-special-orders", "/admin-special-orders.html"})
+    public String adminSpecialOrdersAlias() {
+        return "redirect:/admin/special-orders";
+    }
 }

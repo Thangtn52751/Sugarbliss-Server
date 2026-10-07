@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugar Bliss | Admin Special Orders</title>
+    <link rel="stylesheet" href="/assets/css/home.css">
+    <link rel="stylesheet" href="/assets/css/admin-special-orders.css">
+</head>
+<body>
+    <sugar-header active="admin"></sugar-header>
+
+    <main class="admin-page">
+        <section class="admin-hero">
+            <div class="admin-hero-inner">
+                <p>Admin Dashboard / Requests</p>
+                <h1>Special Orders</h1>
+                <span class="admin-role-badge">Admin only</span>
+            </div>
+        </section>
+
+        <section class="admin-content">
+            <aside class="admin-sidebar">
+                <h2>Filter by status</h2>
+                <div class="admin-filters" data-status-filters>
+                    <button type="button" class="is-active" data-status-filter="">All</button>
+                    <button type="button" data-status-filter="Pending">Pending</button>
+                    <button type="button" data-status-filter="Reviewing">Reviewing</button>
+                    <button type="button" data-status-filter="Quoted">Quoted</button>
+                    <button type="button" data-status-filter="Approved">Approved</button>
+                    <button type="button" data-status-filter="Completed">Completed</button>
+                    <button type="button" data-status-filter="Cancelled">Cancelled</button>
+                </div>
+                <p>Open a request to update its status and leave an internal note for the team.</p>
+            </aside>
+
+            <div class="admin-main">
+                <label class="admin-search">
+                    <span class="sr-only">Search special orders</span>
+                    <input type="search" placeholder="Search by request, customer, email, or phone" data-admin-search>
+                </label>
+
+                <div class="admin-state" data-admin-state>Loading special orders...</div>
+                <div class="admin-list" data-admin-list></div>
+
+                <div class="admin-pagination" data-admin-pagination hidden>
+                    <p data-admin-summary></p>
+                    <div class="admin-page-actions">
+                        <button type="button" data-admin-previous aria-label="Previous page" title="Previous page">&larr;</button>
+                        <span data-admin-page></span>
+                        <button type="button" data-admin-next aria-label="Next page" title="Next page">&rarr;</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <sugar-footer></sugar-footer>
+    <script src="/assets/js/api-config.js"></script>
+    <script src="/assets/js/shared-components.js"></script>
+    <script src="/assets/js/header-profile.js"></script>
+    <script src="/assets/js/admin-special-orders.js"></script>
+</body>
+</html>

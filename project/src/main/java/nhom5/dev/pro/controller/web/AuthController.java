@@ -81,4 +81,9 @@ public class AuthController {
     public String profile() {
         return "redirect:/pages/profile.html";
     }
+
+    @GetMapping({"/admin", "/admin/special-orders", "/admin-special-orders", "/admin-special-orders.html"})
+    public String adminSpecialOrders() {
+        return "redirect:/pages/admin-special-orders.html";
+    }
 }

@@ -22,6 +22,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     const imagePreviews = document.getElementById('product-image-previews');
     const clearImages = document.getElementById('btn-clear-product-images');
     const saveButton = productForm.querySelector('.btn-save');
+
+    // Modal Detail elements
+    const detailModal = document.getElementById('product-detail-modal');
+    const detailContent = document.getElementById('detail-popup-content');
+    const btnCloseDetailModal = document.getElementById('btn-close-detail-modal');
+    const btnCloseDetailBottom = document.getElementById('btn-close-detail-bottom');
+
     let existingImages = [];
     let previewUrls = [];
     let saving = false;
@@ -87,17 +94,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         saveButton.textContent = value ? 'Saving...' : 'Save Product';
     }
 
-    // 1. Tải danh sách sản phẩm (Kết nối GET /api/products & GET /api/products/search)
+    // 1. Tải danh sách sản phẩm
     async function loadProducts() {
         tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px;">Loading data...</td></tr>';
         
         try {
             let url = '';
             if (searchQuery) {
-                // Gọi Endpoint Tìm kiếm riêng trong hình: GET /api/products/search
                 url = `/api/products/search?q=${encodeURIComponent(searchQuery)}&page=${currentPage}&limit=${currentLimit}`;
             } else {
-                // Endpoint mặc định: GET /api/products
                 url = `/api/products?status=all&page=${currentPage}&limit=${currentLimit}`;
             }
 
@@ -124,23 +129,27 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         tbody.innerHTML = products.map(p => {
+            const id = p._id || p.id;
             const imgUrl = window.SugarBlissAdmin.assetUrl(p.images?.[0] || p.image || "/assets/images/cake1.png");
             const priceFmt = new Intl.NumberFormat("vi-VN").format(p.price || 0);
             const isActive = (p.status === 'active' || p.status === 'Active' || p.status === undefined);
 
             return `
                 <tr>
-                    <td><img src="${imgUrl}" class="product-img" alt="Product"></td>
-                    <td class="product-name">${escapeHtml(p.name)}</td>
+                    <td><img src="${imgUrl}" class="product-img" alt="Product" style="cursor: pointer;" onclick="window.openDetailModal('${id}')"></td>
+                    <td class="product-name" style="cursor: pointer;" onclick="window.openDetailModal('${id}')">${escapeHtml(p.name)}</td>
                     <td>${escapeHtml(p.category || 'Uncategorized')}</td>
                     <td class="price-text">đ${priceFmt}</td>
                     <td>${p.stock ?? 0} pcs</td>
                     <td><span class="status-badge ${isActive ? 'active' : 'inactive'}">${isActive ? 'Active' : 'Inactive'}</span></td>
                     <td class="action-btns">
-                        <button class="btn-icon" title="Edit" onclick="openEditModal('${p._id || p.id}')">
+                        <button class="btn-icon" title="View Detail" onclick="window.openDetailModal('${id}')">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                        </button>
+                        <button class="btn-icon" title="Edit" onclick="window.openEditModal('${id}')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
                         </button>
-                        <button class="btn-icon" title="Delete" style="color: var(--admin-accent);" onclick="deleteProduct('${p._id || p.id}')">
+                        <button class="btn-icon" title="Delete" style="color: var(--admin-accent);" onclick="window.deleteProduct('${id}')">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                         </button>
                     </td>
@@ -171,7 +180,102 @@ document.addEventListener('DOMContentLoaded', async () => {
         loadProducts();
     };
 
-    // 4. Xóa sản phẩm (Kết nối DELETE /api/products/:id)
+    // 4. Mở Popup Xem Chi Tiết (Tự động bóc tách đúng data từ Backend)
+    window.openDetailModal = async (id) => {
+        try {
+            detailContent.innerHTML = '<div style="text-align: center; padding: 30px; color: var(--admin-muted);">Loading detail...</div>';
+            detailModal.hidden = false;
+
+            const data = await window.SugarBlissAdmin.request(`/api/products/${id}`);
+            if (!data) {
+                detailContent.innerHTML = '<div style="text-align: center; color: var(--admin-accent); padding: 20px;">Không có dữ liệu trả về từ server.</div>';
+                return;
+            }
+
+            // Bóc tách linh hoạt mọi kiểu trả về từ Backend
+            const p = data.product || data.data || data.result || data;
+
+            if (!p || typeof p !== 'object') {
+                detailContent.innerHTML = '<div style="text-align: center; color: var(--admin-accent); padding: 20px;">Dữ liệu sản phẩm không hợp lệ.</div>';
+                return;
+            }
+
+            renderDetailPopup(p);
+        } catch (error) {
+            console.error("Detail Error:", error);
+            detailContent.innerHTML = `<div style="text-align: center; color: var(--admin-accent); padding: 20px;">Lỗi: ${escapeHtml(error.message)}</div>`;
+        }
+    };
+
+    function renderDetailPopup(p) {
+        const images = Array.isArray(p.images) && p.images.length > 0 
+            ? p.images.filter(Boolean) 
+            : (p.image ? [p.image] : []);
+        
+        const mainImgUrl = window.SugarBlissAdmin.assetUrl(images[0] || "/assets/images/cake1.png");
+        const priceFmt = new Intl.NumberFormat("vi-VN").format(p.price || 0);
+        const isActive = (p.status === 'active' || p.status === 'Active' || p.status === undefined);
+        const ingredients = Array.isArray(p.ingredients) ? p.ingredients.join(', ') : (p.ingredients || 'N/A');
+        const ratingVal = p.rating || p.averageRating || 0;
+        const reviewCount = Array.isArray(p.reviews) ? p.reviews.length : 0;
+
+        detailContent.innerHTML = `
+            <div class="detail-popup-grid">
+                <div class="detail-popup-media">
+                    <img id="detail-main-img" src="${escapeHtml(mainImgUrl)}" class="detail-popup-main-img" alt="Product Image">
+                    ${images.length > 1 ? `
+                        <div class="detail-popup-thumbs">
+                            ${images.map((img, idx) => `
+                                <img src="${escapeHtml(window.SugarBlissAdmin.assetUrl(img))}" class="detail-thumb ${idx === 0 ? 'active' : ''}" onclick="window.changeDetailMainImg(this, '${escapeHtml(window.SugarBlissAdmin.assetUrl(img))}')" alt="Thumb ${idx + 1}">
+                            `).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+                <div class="detail-popup-info">
+                    <div class="detail-popup-badge-row">
+                        <span class="status-badge ${isActive ? 'active' : 'inactive'}">${escapeHtml(p.status || (isActive ? 'Active' : 'Inactive'))}</span>
+                        <span class="detail-category-tag">${escapeHtml(p.category || 'Uncategorized')}</span>
+                    </div>
+                    <h2 class="detail-popup-title">${escapeHtml(p.name || 'Untitled Product')}</h2>
+                    <div class="detail-popup-price">đ${priceFmt}</div>
+                    
+                    <div class="detail-popup-specs">
+                        <div class="spec-item"><strong>ID:</strong> <span>${escapeHtml(p._id || p.id || 'N/A')}</span></div>
+                        <div class="spec-item"><strong>Stock:</strong> <span>${p.stock ?? 0} pcs</span></div>
+                        <div class="spec-item"><strong>Weight:</strong> <span>${p.weightGram ? p.weightGram + 'g' : 'N/A'}</span></div>
+                        <div class="spec-item"><strong>Shelf Life:</strong> <span>${p.shelfLifeDays ? p.shelfLifeDays + ' days' : 'N/A'}</span></div>
+                        <div class="spec-item"><strong>Rating:</strong> <span>★ ${ratingVal} (${reviewCount} reviews)</span></div>
+                        <div class="spec-item"><strong>Ingredients:</strong> <span>${escapeHtml(ingredients)}</span></div>
+                    </div>
+
+                    <div class="detail-popup-desc">
+                        <strong>Description:</strong>
+                        <p>${escapeHtml(p.description || 'No description available.')}</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    window.changeDetailMainImg = (thumbEl, url) => {
+        const mainImg = document.getElementById('detail-main-img');
+        if (mainImg) mainImg.src = url;
+        const thumbs = thumbEl.parentElement.querySelectorAll('.detail-thumb');
+        thumbs.forEach(t => t.classList.remove('active'));
+        thumbEl.classList.add('active');
+    };
+
+    function closeDetailModal() {
+        detailModal.hidden = true;
+    }
+
+    btnCloseDetailModal?.addEventListener('click', closeDetailModal);
+    btnCloseDetailBottom?.addEventListener('click', closeDetailModal);
+    detailModal?.addEventListener('click', (e) => {
+        if (e.target === detailModal) closeDetailModal();
+    });
+
+    // 5. Xóa sản phẩm
     window.deleteProduct = async (id) => {
         if (!confirm("Are you sure you want to delete this product?")) return;
         try {
@@ -182,7 +286,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    // 5. Mở Modal Thêm mới
+    // 6. Mở Modal Thêm mới
     btnOpenAdd.addEventListener('click', () => {
         if (saving) return;
         productForm.reset();
@@ -193,13 +297,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         modal.hidden = false;
     });
 
-    // 6. Mở Modal Chỉnh sửa (Kết nối GET /api/products/:id)
+    // 7. Mở Modal Chỉnh sửa
     window.openEditModal = async (id) => {
         if (saving) return;
         try {
             const data = await window.SugarBlissAdmin.request(`/api/products/${id}`);
             if (!data) return;
-            const product = data.product || data;
+            const product = data.product || data.data || data.result || data;
             productForm.reset();
 
             document.getElementById('prod-id').value = product._id || product.id;
@@ -219,7 +323,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     };
 
-    // 7. Lưu Form (Kết nối POST /api/products hoặc PUT /api/products/:id)
+    // 8. Lưu Form
     productForm.addEventListener('submit', async (e) => {
         e.preventDefault();
         if (saving || !productForm.reportValidity()) return;
@@ -234,14 +338,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         try {
             if (id) {
-                // Sửa: PUT /api/products/:id
                 const result = await window.SugarBlissAdmin.request(`/api/products/${id}`, {
                     method: 'PUT',
                     body: payload
                 });
                 if (!result) return;
             } else {
-                // Thêm: POST /api/products
                 const result = await window.SugarBlissAdmin.request(`/api/products`, {
                     method: 'POST',
                     body: payload
@@ -256,11 +358,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         } finally { setSaving(false); }
     });
 
-    // Đóng Modal
     btnCloseModal.addEventListener('click', closeModal);
     btnCancelModal.addEventListener('click', closeModal);
 
-    // 8. Tim kiếm Debounce
+    // 9. Tìm kiếm Debounce
     let typingTimer;
     searchInput.addEventListener('input', (e) => {
         clearTimeout(typingTimer);

@@ -1,0 +1,49 @@
+.admin-order-status[data-tone="pending"] { color: #b58116; background: #fff4d6; }
+.admin-order-status[data-tone="reviewing"] { color: #4186d8; background: #e4f1ff; }
+.admin-order-status[data-tone="quoted"] { color: #6d4ec8; background: #efe7ff; }
+.admin-order-status[data-tone="approved"] { color: #1f8a6a; background: #ddf4ee; }
+.admin-order-status[data-tone="completed"] { color: #37904a; background: #dff3e3; }
+.admin-order-status[data-tone="cancelled"] { color: #d94960; background: #ffe4e9; }
+
+.orders-dialog textarea {
+    width: 100%;
+    min-height: 96px;
+    padding: 10px 12px;
+    border: 1px solid var(--admin-border);
+    border-radius: 6px;
+    background: #fff;
+    color: #30282c;
+    resize: vertical;
+}
+
+.orders-dialog textarea:focus-visible {
+    outline: 2px solid var(--admin-accent);
+    outline-offset: 3px;
+}
+
+.so-details-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px 24px;
+    margin: 16px 0 8px;
+}
+
+.so-details-grid .is-wide { grid-column: 1 / -1; }
+.so-details-grid span {
+    display: block;
+    margin-bottom: 5px;
+    color: #847078;
+    font-size: 11px;
+    font-weight: 600;
+}
+.so-details-grid p {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
+}
+
+@media (max-width: 640px) {
+    .so-details-grid { grid-template-columns: minmax(0, 1fr); }
+}

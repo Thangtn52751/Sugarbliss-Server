@@ -21,6 +21,11 @@ button:disabled { opacity: 0.5; cursor: default; }
 .voucher-state { display: inline-block; padding: 4px 8px; border-radius: 4px; color: #28664c; background: #eaf6ef; font-size: 11px; white-space: nowrap; }
 .voucher-state.is-unavailable { color: #866318; background: #fbf2d8; }
 .voucher-state.is-expired { color: #a72d45; background: #ffeaf0; }
+.voucher-actions { display: flex; align-items: center; justify-content: flex-end; gap: 8px; white-space: nowrap; }
+.voucher-status-button { min-width: 92px; padding: 7px 10px; border: 1px solid #bcd8c9; border-radius: 6px; color: #28664c; background: #f4faf6; cursor: pointer; }
+.voucher-status-button:hover:not(:disabled) { background: #eaf6ef; }
+.voucher-status-button:focus-visible { outline: 2px solid #28664c; outline-offset: 3px; }
+.voucher-status-button:disabled { cursor: not-allowed; }
 .voucher-feedback { margin: 12px 0; color: #a72d45; line-height: 1.5; overflow-wrap: anywhere; }
 .voucher-feedback.is-success { color: #28664c; }
 .voucher-pagination { display: flex; align-items: center; justify-content: space-between; margin-top: 16px; color: #75656d; font-size: 12px; }

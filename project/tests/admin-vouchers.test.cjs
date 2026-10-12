@@ -32,6 +32,7 @@ async function screen({ verified = true, confirm = true, handler } = {}) {
         if (handler) { const response = await handler(request); if (response !== undefined) return response; }
         if (url.startsWith('/api/vouchers/recipients')) return [{ id: '650000000000000000000002', name: '<b>Buyer</b>', email: 'buyer@example.test', voucherCount: 2 }];
         if (request.method === 'POST') return { ...voucher, code: request.body.code, assignedUserCount: 1 };
+        if (request.method === 'PATCH') return { ...voucher, active: request.body.active };
         if (request.method === 'DELETE') return { message: 'Voucher deleted.' };
         return [voucher];
     } };
@@ -41,7 +42,10 @@ async function screen({ verified = true, confirm = true, handler } = {}) {
     return { get, form, requests, open: () => get('[data-add-voucher]').listeners.click(),
         choose: (id) => get('[data-recipient-list]').listeners.change({ target: { type: 'checkbox', checked: true, value: id } }),
         submit: () => form.listeners.submit({ preventDefault() {} }),
-        delete: () => get('[data-voucher-rows]').listeners.click({ target: { closest: () => ({ dataset: { deleteVoucher: voucher.id } }) } }) };
+        delete: () => get('[data-voucher-rows]').listeners.click({ target: { closest: selector => selector === '[data-delete-voucher]' ? { dataset: { deleteVoucher: voucher.id } } : null } }),
+        toggle: (disabled = false) => get('[data-voucher-rows]').listeners.click({ target: {
+            closest: selector => selector === '[data-toggle-voucher]' ? { dataset: { toggleVoucher: voucher.id }, disabled } : null,
+        } }) };
 }
 
 test('voucher screen does not load data without a server-verified admin session', async () => {
@@ -114,4 +118,75 @@ test('Delete requires confirmation and updates the list after a successful API r
     await accepted.delete();
     assert.equal(accepted.requests.find((request) => request.method === 'DELETE').url, `/api/vouchers/${voucher.id}`);
     assert.match(accepted.get('[data-voucher-rows]').innerHTML, /No vouchers found/);
+});
+
+test('Enable or Disable is next to Delete and updates only the server-confirmed active state', async () => {
+    const view = await screen();
+    assert.match(view.get('[data-voucher-rows]').innerHTML, /class="voucher-actions"[\s\S]*data-toggle-voucher[\s\S]*data-delete-voucher/);
+    assert.match(view.get('[data-voucher-rows]').innerHTML, /aria-label="Disable SUGAR10"[^>]*>Disable/);
+    await view.toggle();
+    const request = view.requests.find(request => request.method === 'PATCH');
+    assert.equal(request.url, `/api/vouchers/${voucher.id}/status`);
+    assert.deepEqual(request.body, { active: false });
+    assert.match(view.get('[data-voucher-rows]').innerHTML, />Inactive<\/span>/);
+    assert.match(view.get('[data-voucher-rows]').innerHTML, /aria-label="Enable SUGAR10"[^>]*>Enable/);
+    assert.equal(view.get('[data-admin-voucher-status]').textContent, 'SUGAR10 disabled.');
+    await view.toggle();
+    assert.match(view.get('[data-voucher-rows]').innerHTML, />Active<\/span>/);
+    assert.equal(view.get('[data-admin-voucher-status]').textContent, 'SUGAR10 enabled.');
+});
+
+test('effective statuses remain date-driven and invalid inactive vouchers cannot be enabled', async () => {
+    for (const [extra, message] of [[{ expiresAt: null }, /expiry date is missing/],
+        [{ expiresAt: new Date(0).toISOString() }, /voucher has expired/],
+        [{ usageLimit: 1, usedCount: 1 }, /usage limit has been reached/]]) {
+        const view = await screen({ handler: request => request.method === 'GET' ? [{ ...voucher, active: false, ...extra }] : undefined });
+        assert.match(view.get('[data-voucher-rows]').innerHTML, /data-toggle-voucher[^>]*disabled/);
+        await view.toggle();
+        assert.equal(view.requests.some(request => request.method === 'PATCH'), false);
+        assert.match(view.get('[data-admin-voucher-status]').textContent, message);
+    }
+    const future = { ...voucher, active: false, startsAt: new Date(Date.now() + 3600000).toISOString() };
+    const scheduled = await screen({ handler: request => request.method === 'PATCH' ? { ...future, active: true } : [future] });
+    await scheduled.toggle();
+    assert.match(scheduled.get('[data-voucher-rows]').innerHTML, />Upcoming<\/span>/);
+    assert.match(scheduled.get('[data-voucher-rows]').innerHTML, /aria-label="Disable SUGAR10"[^>]*>Disable/);
+});
+
+test('a failed status request keeps the previous button and permits retry', async () => {
+    let failed = true;
+    const view = await screen({ handler: request => {
+        if (request.method === 'PATCH' && failed) throw new Error('Fixture update failed');
+    } });
+    await view.toggle();
+    assert.match(view.get('[data-voucher-rows]').innerHTML, /aria-label="Disable SUGAR10"[^>]*>Disable/);
+    assert.equal(view.get('[data-admin-voucher-status]').textContent, 'Fixture update failed');
+    failed = false;
+    await view.toggle();
+    assert.match(view.get('[data-voucher-rows]').innerHTML, />Inactive<\/span>/);
+});
+
+test('pending status changes block duplicate requests and delete until completion', async () => {
+    let finish;
+    const view = await screen({ handler: request => request.method === 'PATCH' ? new Promise(resolve => { finish = resolve; }) : undefined });
+    const pending = view.toggle();
+    assert.match(view.get('[data-voucher-rows]').innerHTML, /data-toggle-voucher[^>]*disabled/);
+    await view.toggle();
+    await view.delete();
+    assert.equal(view.requests.filter(request => request.method === 'PATCH').length, 1);
+    assert.equal(view.requests.some(request => request.method === 'DELETE'), false);
+    finish({ ...voucher, active: false });
+    await pending;
+    assert.doesNotMatch(view.get('[data-voucher-rows]').innerHTML, /data-toggle-voucher[^>]*disabled/);
+});
+
+test('changing status reapplies the current status filter and ignores disabled button events', async () => {
+    const view = await screen();
+    await view.toggle(true);
+    assert.equal(view.requests.some(request => request.method === 'PATCH'), false);
+    view.get('[data-voucher-filter]').value = 'Active';
+    view.get('[data-voucher-filter]').listeners.change();
+    await view.toggle();
+    assert.match(view.get('[data-voucher-rows]').innerHTML, /No vouchers found/);
+    assert.equal(view.get('[data-voucher-summary]').textContent, '0 vouchers');
 });

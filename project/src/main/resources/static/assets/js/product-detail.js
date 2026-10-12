@@ -4,6 +4,39 @@ const currentProductId = urlParams.get('id');
 const API_BASE_URL = window.SugarBlissApi ? window.SugarBlissApi.baseUrl : 'http://localhost:3000';
 // Giữ lại biến lưu trạng thái yêu thích của team bạn[cite: 17]
 let isCurrentProductFavorite = false;
+let currentProduct = null;
+let addingToCart = false;
+
+function productIsAvailable() {
+    const stock = Number(currentProduct?.stock);
+    return currentProduct?.status === 'active' && Number.isSafeInteger(stock) && stock > 0;
+}
+
+function syncProductAvailability() {
+    const available = productIsAvailable();
+    const stock = available ? Number(currentProduct.stock) : 0;
+    const input = document.getElementById('qty-input');
+    const button = document.querySelector('.detail-actions .btn-add-cart');
+    const status = document.getElementById('product-availability');
+    document.querySelector('.detail-container')?.classList.toggle('is-unavailable', Boolean(currentProduct) && !available);
+    input.disabled = !available || addingToCart;
+    input.max = String(Math.max(1, stock));
+    input.value = String(Math.max(1, Math.min(Number(input.value) || 1, Math.max(1, stock))));
+    document.querySelector('.quantity-selector button:first-child').disabled = !available || addingToCart || Number(input.value) <= 1;
+    document.querySelector('.quantity-selector button:last-child').disabled = !available || addingToCart || Number(input.value) >= stock;
+    button.disabled = !available || addingToCart;
+    const soldOut = currentProduct?.status === 'out-of-stock' || currentProduct?.status === 'active' && Number(currentProduct.stock) <= 0;
+    const key = available ? 'detail.addToCart' : soldOut ? 'products.outOfStock' : 'products.unavailable';
+    const fallback = available ? 'Add To Cart' : soldOut ? 'Out of stock' : 'Unavailable';
+    if (!addingToCart) {
+        button.setAttribute('data-i18n', key);
+        button.textContent = window.SugarI18n?.translate(key) || fallback;
+    }
+    status.hidden = !currentProduct || available;
+    status.textContent = available ? '' : window.SugarI18n?.translate(key) || fallback;
+}
+
+window.addEventListener('sugarbliss:lang-changed', syncProductAvailability);
 
 document.addEventListener('DOMContentLoaded', () => {
     if (!currentProductId) {
@@ -151,9 +184,10 @@ function renderProductImages(product) {
 
 function updateQty(change) {
     const input = document.getElementById('qty-input');
-    if (input) {
-        let newVal = parseInt(input.value) + change;
-        if (newVal >= 1) input.value = newVal;
+    if (input && !input.disabled && productIsAvailable() && !addingToCart) {
+        const newVal = Number(input.value) + change;
+        if (Number.isSafeInteger(newVal) && newVal >= 1 && newVal <= Number(currentProduct.stock)) input.value = String(newVal);
+        syncProductAvailability();
     }
 }
 
@@ -169,6 +203,8 @@ async function fetchProductDetail() {
 
         const data = await response.json();
         const product = data.product || data.data || data; 
+        currentProduct = product;
+        syncProductAvailability();
 
         const priceStr = product.price ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price) : "Liên hệ";
         
@@ -239,6 +275,7 @@ async function fetchRelatedProducts() {
 }
 
 async function addProductToCart(button) {
+    if (!button || button.disabled || addingToCart || !productIsAvailable()) return;
     const token = localStorage.getItem("sugarBlissToken");
     if (!token) {
         window.location.href = "/login";
@@ -247,7 +284,10 @@ async function addProductToCart(button) {
 
     const qtyInput = document.getElementById('qty-input');
     const qty = qtyInput ? qtyInput.value : 1;
-    const originalText = button.textContent;
+    if (!Number.isSafeInteger(Number(qty)) || Number(qty) < 1 || Number(qty) > Number(currentProduct.stock)) return;
+    let succeeded = false;
+    addingToCart = true;
+    syncProductAvailability();
 
     button.disabled = true;
     button.textContent = "Adding...";
@@ -283,18 +323,22 @@ async function addProductToCart(button) {
         }));
         
         button.textContent = "Added to Cart";
+        succeeded = true;
         
         // Gọi hàm kiểm tra review lại sau khi mua hàng thành công
         checkReviewEligibility();
         
         window.setTimeout(() => {
-            button.textContent = originalText;
-            button.disabled = false;
+            addingToCart = false;
+            syncProductAvailability();
         }, 1200);
     } catch (error) {
         alert(error.message);
-        button.textContent = originalText;
-        button.disabled = false;
+    } finally {
+        if (!succeeded) {
+            addingToCart = false;
+            syncProductAvailability();
+        }
     }
 }
 

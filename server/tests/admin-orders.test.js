@@ -7,6 +7,7 @@ const Order = require('../models/Order');
 const User = require('../models/User');
 const Product = require('../models/Product');
 const shipping = require('../services/shipping');
+const pickupNotifications = require('../services/pickupNotifications');
 const routes = require('../routes/adminOrderRoutes');
 const { normalizeFilters } = require('../services/adminOrders');
 
@@ -76,6 +77,7 @@ before(async () => {
 after(async () => { await new Promise((resolve) => server.close(resolve));
     if (originalSecret === undefined) delete process.env.JWT_SECRET; else process.env.JWT_SECRET = originalSecret; });
 beforeEach(() => {
+    mock.method(pickupNotifications, 'notifyReady', async () => {});
     orders = []; adminUser = { _id: adminId, role: 'admin', isActive: true }; buyer = { _id: buyerId, name: 'Real fixture buyer', email: 'buyer@example.test', role: 'customer', isActive: true };
     mock.method(User, 'findById', (id) => query(String(id) === String(adminId) ? adminUser : buyer));
     mock.method(Order, 'find', (filter) => query(orders.filter((order) => matches(order, filter))));
@@ -186,6 +188,8 @@ test('legacy pickup orders without pickupStatus can move to ready, then collecte
     assert.equal(ready.status, 200); assert.equal(ready.data.status.label, 'Ready for Pickup');
     assert.equal(order.status, 'In Progress'); assert.equal(order.paymentStatus, 'Pending');
     assert.equal(ready.data.pickupActions[0].requiresCashConfirmation, true);
+    assert.equal(pickupNotifications.notifyReady.mock.callCount(), 1);
+    assert.equal(pickupNotifications.notifyReady.mock.calls[0].arguments[0].user.email, buyer.email);
     assert.equal((await call('?status=Ready%20for%20Pickup')).data.total, 1);
     assert.equal((await call(path, 'PATCH', { pickupStatus: 'COLLECTED' })).data.code, 'PICKUP_CASH_CONFIRMATION_REQUIRED');
     const collected = await call(path, 'PATCH', { pickupStatus: 'COLLECTED', cashReceived: true });
@@ -193,6 +197,7 @@ test('legacy pickup orders without pickupStatus can move to ready, then collecte
     assert.equal(order.status, 'Delivered'); assert.equal(order.paymentStatus, 'Paid');
     assert.deepEqual(collected.data.pickupActions, []);
     assert.equal(Product.updateOne.mock.callCount(), 0);
+    assert.equal(pickupNotifications.notifyReady.mock.callCount(), 1);
 });
 
 test('paid online pickup can be collected without altering payment, total, stock or provider state', async () => {

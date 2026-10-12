@@ -65,7 +65,7 @@ const orderResponse = (order) => {
 const parseQuantity = (quantity) => {
     const parsedQuantity = Number(quantity);
 
-    return Number.isInteger(parsedQuantity) && parsedQuantity > 0
+    return Number.isSafeInteger(parsedQuantity) && parsedQuantity > 0
         ? parsedQuantity
         : null;
 };
@@ -85,7 +85,11 @@ const combineRequestedItems = (items) => {
             throw error;
         }
 
-        combinedItems.set(productId, (combinedItems.get(productId) || 0) + quantity);
+        const combinedQuantity = (combinedItems.get(productId) || 0) + quantity;
+        if (!Number.isSafeInteger(combinedQuantity)) {
+            throw Object.assign(new Error('Order quantity is too large.'), { statusCode: 400 });
+        }
+        combinedItems.set(productId, combinedQuantity);
     });
 
     return [...combinedItems].map(([productId, quantity]) => ({ productId, quantity }));
@@ -127,7 +131,7 @@ const restoreStockItem = async (item) => {
         { $inc: { stock: item.quantity } },
     );
     await Product.updateOne(
-        { _id: item.product._id, status: 'out-of-stock' },
+        { _id: item.product._id, status: 'out-of-stock', stock: { $gt: 0 } },
         { $set: { status: 'active' } },
     );
 };
@@ -156,7 +160,7 @@ const reserveStock = async (items) => {
             reservedItems.push(item);
 
             if (product.stock === 0) {
-                await Product.updateOne({ _id: product._id }, { status: 'out-of-stock' });
+                await Product.updateOne({ _id: product._id, status: 'active', stock: 0 }, { status: 'out-of-stock' });
             }
         }
     } catch (error) {
@@ -307,7 +311,10 @@ router.post('/', asyncHandler(async (req, res) => {
             ? itemSnapshots[0].name
             : `${itemSnapshots[0].name} + ${itemSnapshots.length - 1} more`;
         const user = await User.findById(req.user._id);
-        const shippingAddress = quote ? quote.recipient.toObject() : {
+        const shippingAddress = deliveryMethod === 'pickup' ? {
+            recipientName: user.name,
+            phone: user.phone || '',
+        } : quote ? quote.recipient.toObject() : {
             recipientName: req.body.shippingAddress?.recipientName || user.name,
             phone: req.body.shippingAddress?.phone || user.phone || '',
             address: req.body.shippingAddress?.address || user.address || '',
@@ -328,6 +335,7 @@ router.post('/', asyncHandler(async (req, res) => {
             orderedOn: new Date(),
             items: itemSnapshots,
             deliveryMethod,
+            ...(deliveryMethod === 'pickup' ? { pickupStatus: 'PREPARING' } : {}),
             shippingAddress,
             paymentMethod,
             paymentStatus: 'Pending',

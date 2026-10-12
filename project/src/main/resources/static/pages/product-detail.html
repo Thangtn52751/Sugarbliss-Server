@@ -35,14 +35,15 @@
                     <p id="product-desc"></p>
                 </div>
 
+                <p class="product-availability" id="product-availability" role="status" hidden></p>
                 <div class="detail-actions">
                     <div class="quantity-selector">
-                        <button type="button" onclick="updateQty(-1)" aria-label="Decrease quantity">&minus;</button>
-                        <input type="number" id="qty-input" value="1" min="1" readonly>
-                        <button type="button" onclick="updateQty(1)" aria-label="Increase quantity">+</button>
+                        <button type="button" onclick="updateQty(-1)" aria-label="Decrease quantity" disabled>&minus;</button>
+                        <input type="number" id="qty-input" value="1" min="1" readonly disabled>
+                        <button type="button" onclick="updateQty(1)" aria-label="Increase quantity" disabled>+</button>
                     </div>
                     <button class="btn-favourite" id="favorite-detail-button" type="button" aria-pressed="false" data-i18n="detail.favourites">&#9825; Favourites</button>
-                    <button class="btn-add-cart" type="button" onclick="addProductToCart(this)" data-i18n="detail.addToCart">Add To Cart</button>
+                    <button class="btn-add-cart" type="button" onclick="addProductToCart(this)" data-i18n="detail.addToCart" disabled>Add To Cart</button>
                 </div>
             </div>
         </div>

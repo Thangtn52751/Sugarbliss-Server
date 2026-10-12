@@ -77,7 +77,9 @@
             <dl class="orders-totals"><div><dt>Subtotal</dt><dd>${money(order.subtotal)}</dd></div><div><dt>Delivery</dt><dd>${money(order.shippingFee)}</dd></div>
                 <div><dt>Discount${order.voucherCode ? ` (${escape(order.voucherCode)})` : ''}</dt><dd>${order.discount ? '-' : ''}${money(order.discount)}</dd></div>
                 <div class="orders-grand-total"><dt>Total</dt><dd>${money(order.total)}</dd></div></dl></div>
-            ${order.providerManaged ? `<p class="orders-provider-info">Lalamove &middot; ${escape(order.shippingStatus || 'Awaiting confirmation')}${order.shippingOrderId ? `<br>${escape(order.shippingOrderId)}` : ''}${order.shippingError ? `<br>${escape(order.shippingError)}` : ''}</p>` : ''}`;
+            ${order.providerManaged ? `<p class="orders-provider-info">Lalamove &middot; ${escape(order.shippingStatus || 'Awaiting confirmation')}${order.shippingOrderId ? `<br>${escape(order.shippingOrderId)}` : ''}${order.shippingError ? `<br>${escape(order.shippingError)}` : ''}</p>` : ''}
+            ${order.deliveryMethod === 'pickup' && !order.providerManaged && order.pickupNotification?.status ? `<p class="orders-provider-info" role="status">${escape(({ Sent: 'Pickup email sent.', Sending: 'Sending pickup email...', Failed: 'Pickup email could not be sent. Check SMTP settings and retry.' })[order.pickupNotification.status] || '')}</p>` : ''}`;
+        $('[data-retry-pickup-email]').hidden = !order.pickupNotification?.canRetry || order.providerManaged;
         form.hidden = !order.pickupActions.length;
         form.elements.pickupStatus.innerHTML = order.pickupActions.map((action) => `<option value="${escape(action.value)}">${escape(action.label)}</option>`).join('');
         form.elements.pickupStatus.value = order.pickupActions[0]?.value || '';
@@ -107,7 +109,7 @@
         ++state.detailVersion; window.clearTimeout(state.timer); state.detail = { id, pickupActions: [] };
         $('[data-order-title]').textContent = 'Order details'; $('[data-order-details]').textContent = 'Loading...';
         form.hidden = true;
-        for (const selector of ['[data-refresh-delivery]', '[data-track-delivery]', '[data-retry-detail]']) $(selector).hidden = true;
+        for (const selector of ['[data-refresh-delivery]', '[data-track-delivery]', '[data-retry-detail]', '[data-retry-pickup-email]']) $(selector).hidden = true;
         feedback('', false, '[data-order-feedback]'); dialog.showModal(); fetchDetail(id);
     }
     function closeDetail() { if (!state.busy) dialog.close(); }
@@ -121,7 +123,7 @@
     async function mutate(path, options, success) {
         if (state.busy || !state.detail) return;
         state.busy = true; ++state.detailVersion; window.clearTimeout(state.timer);
-        for (const selector of ['[data-save-pickup]', '[data-refresh-delivery]', '[data-close-order]', '[data-dismiss-order]', '[data-retry-detail]', '[data-pickup-status]']) $(selector).disabled = true;
+        for (const selector of ['[data-save-pickup]', '[data-refresh-delivery]', '[data-close-order]', '[data-dismiss-order]', '[data-retry-detail]', '[data-pickup-status]', '[data-retry-pickup-email]']) $(selector).disabled = true;
         feedback('', false, '[data-order-feedback]');
         try {
             const order = await admin.request(path, options);
@@ -131,7 +133,7 @@
             await fetchDetail(state.detail.id); feedback(error.message, false, '[data-order-feedback]');
         } finally {
             state.busy = false;
-            for (const selector of ['[data-save-pickup]', '[data-refresh-delivery]', '[data-close-order]', '[data-dismiss-order]', '[data-retry-detail]', '[data-pickup-status]']) $(selector).disabled = false;
+            for (const selector of ['[data-save-pickup]', '[data-refresh-delivery]', '[data-close-order]', '[data-dismiss-order]', '[data-retry-detail]', '[data-pickup-status]', '[data-retry-pickup-email]']) $(selector).disabled = false;
             scheduleDetailRefresh();
         }
     }
@@ -143,6 +145,13 @@
     });
     $('[data-refresh-delivery]').addEventListener('click', () => {
         if (state.detail?.providerManaged) mutate(`/api/admin/orders/${encodeURIComponent(state.detail.id)}/shipping/refresh`, { method: 'POST' }, 'Delivery status refreshed.');
+    });
+    $('[data-retry-pickup-email]').addEventListener('click', () => {
+        if (state.detail?.pickupNotification?.canRetry && !state.detail.providerManaged) {
+            mutate(`/api/admin/orders/${encodeURIComponent(state.detail.id)}/pickup-status`, {
+                method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pickupStatus: 'READY_FOR_PICKUP' }),
+            }, 'Pickup email status updated.');
+        }
     });
     $('[data-orders-rows]').addEventListener('click', (event) => {
         const button = event.target.closest('[data-order-id]'); if (button && !state.busy) openDetail(button.dataset.orderId);

@@ -135,20 +135,24 @@ function renderProductCard(product) {
     const productId = product._id || product.id || "";
     const imageSrc = resolveImageUrl(product.images?.[0] || product.image);
     const price = formatPrice(product.price);
-    const isUnavailable = product.status !== "active" || Number(product.stock) <= 0;
+    const stock = Number(product.stock);
+    const isUnavailable = product.status !== "active" || !Number.isSafeInteger(stock) || stock <= 0;
+    const unavailableLabel = product.status === "out-of-stock" || product.status === "active" && stock <= 0
+        ? t("products.outOfStock", "Out of stock") : t("products.unavailable", "Unavailable");
 
     return `
-        <article class="product-card">
-            <button class="product-image-button" type="button" data-image-detail-id="${escapeHtml(productId)}" aria-label="View ${escapeHtml(product.name || "Sugar Bliss product")} detail" style="cursor: pointer; background: transparent; border: none; padding: 0;">
+        <article class="product-card${isUnavailable ? ' is-unavailable' : ''}" ${isUnavailable ? 'aria-disabled="true"' : ''}>
+            <button class="product-image-button" type="button" data-image-detail-id="${escapeHtml(productId)}" aria-label="View ${escapeHtml(product.name || "Sugar Bliss product")} detail" ${isUnavailable ? 'disabled' : ''}>
                 <img src="${escapeHtml(imageSrc)}" alt="${escapeHtml(product.name || "Sugar Bliss product")}">
+                ${isUnavailable ? `<span class="product-stock-badge">${escapeHtml(unavailableLabel)}</span>` : ''}
             </button>
        
             <h3>${escapeHtml(product.name || t("products.defaultName", "Sugar Bliss Product"))}</h3>
             <p class="product-price">${price}</p>
             <div class="product-actions">
-                <button class="btn-detail" type="button" data-detail-id="${escapeHtml(productId)}">View Detail</button>
+                <button class="btn-detail" type="button" data-detail-id="${escapeHtml(productId)}" ${isUnavailable ? 'disabled' : ''}>${escapeHtml(t('products.viewDetail', 'View Detail'))}</button>
                 <button class="btn-add-cart" type="button" data-add-cart-id="${escapeHtml(productId)}" ${isUnavailable ? "disabled" : ""}>
-                    ${isUnavailable ? "Unavailable" : "Add To Cart"}
+                    ${escapeHtml(isUnavailable ? unavailableLabel : t('products.addToCart', 'Add To Cart'))}
                 </button>
             </div>
         </article>
@@ -158,23 +162,26 @@ function renderProductCard(product) {
 function handleProductActionClick(event) {
     const imageButton = event.target.closest("[data-image-detail-id]");
     if (imageButton) {
+        if (imageButton.disabled) return;
         window.location.href = `/pages/product-detail.html?id=${imageButton.dataset.imageDetailId}`;
         return;
     }
 
     const detailButton = event.target.closest("[data-detail-id]");
     if (detailButton) {
+        if (detailButton.disabled) return;
         window.location.href = `/pages/product-detail.html?id=${detailButton.dataset.detailId}`;
         return;
     }
 
     const addCartButton = event.target.closest("[data-add-cart-id]");
-    if (addCartButton) {
+    if (addCartButton && !addCartButton.disabled) {
         addProductToCart(addCartButton.dataset.addCartId, addCartButton);
     }
 }
 
 async function addProductToCart(productId, button) {
+    if (!button || button.disabled) return;
     const token = localStorage.getItem("sugarBlissToken");
 
     if (!token) {

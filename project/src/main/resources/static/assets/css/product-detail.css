@@ -1190,9 +1190,16 @@ body {
     transition: 0.3s;
 }
 
-.btn-add-cart:hover {
+.btn-add-cart:hover:not(:disabled) {
     background: #39c968;
 }
+
+.product-availability { display: inline-block; margin: 0 0 16px; padding: 8px 12px; border: 1px solid #d4c5cb; border-radius: 6px; background: #f1e9ed; color: #6e4e5b; font-size: 13px; font-weight: 700; }
+.product-availability[hidden] { display: none; }
+.detail-container.is-unavailable .main-image img { filter: grayscale(0.7); opacity: 0.6; }
+.quantity-selector button:disabled { color: #a2989d; cursor: not-allowed; }
+.quantity-selector input:disabled { color: #85757d; }
+.detail-actions .btn-add-cart:disabled { background: #e9e0e4; color: #78626b; cursor: not-allowed; }
 
 /* KHỐI SẢN PHẨM GỢI Ý */
 .related-header {

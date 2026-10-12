@@ -124,6 +124,9 @@ const orderSchema = new mongoose.Schema({
         enum: ['', 'PREPARING', 'READY_FOR_PICKUP', 'COLLECTED'],
         default: '',
     },
+    pickupReadyEmailStatus: { type: String, enum: ['', 'Sending', 'Sent', 'Failed'], default: '' },
+    pickupReadyEmailAttemptedAt: Date,
+    pickupReadyEmailSentAt: Date,
     shippingAddress: {
         coordinates: { lat: String, lng: String },
         recipientName: {

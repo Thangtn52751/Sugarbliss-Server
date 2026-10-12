@@ -194,6 +194,7 @@
         $("[data-checkout-result]").hidden = true;
         $("[data-checkout-review]").hidden = false;
         $("[data-checkout-items]").innerHTML = renderItems(state.items);
+        $("[data-address-form]").hidden = state.method === "pickup";
         $("[data-method-name]").textContent = method()?.label || "Standard Delivery";
         $("[data-method-description]").textContent = needsQuote()
             ? "Delivered by Lalamove. Get your delivery fee before placing the order."
@@ -203,14 +204,14 @@
     }
 
     function paymentLabel(code) {
-        return ({ COD: 'Cash on delivery', ZaloPay: 'ZaloPay', Visa: 'Visa / international card' })[code] || code;
+        return ({ COD: state.method === 'pickup' ? 'Pay at store' : 'Cash on delivery', ZaloPay: 'ZaloPay', Visa: 'Visa / international card' })[code] || code;
     }
 
     function renderPaymentMethods() {
         $("[data-payment-options]").innerHTML = state.paymentMethods.map((option) => {
             const selected = option.code === state.paymentMethod;
             return `<label class="checkout-payment-option"><input type="radio" name="paymentMethod" value="${escape(option.code)}" ${selected ? 'checked' : ''} ${!option.available || state.busy || state.pending ? 'disabled' : ''}>
-                <span class="checkout-icon">${icon('wallet')}</span><span><strong>${escape(option.label)}</strong>${option.environment ? '<small>Sandbox</small>' : ''}</span>
+                <span class="checkout-icon">${icon('wallet')}</span><span><strong>${escape(option.code === 'COD' ? paymentLabel('COD') : option.label)}</strong>${option.environment ? '<small>Sandbox</small>' : ''}</span>
                 <span class="checkout-selected">${!option.available ? 'Unavailable' : selected ? 'Selected' : ''}</span></label>`;
         }).join('');
     }
@@ -352,14 +353,14 @@
             state.paymentMethods.find((option) => option.code === state.paymentMethod)?.available !== true ||
             (needsQuote() && (!state.selectedAddress || !quoteValid()));
         $("[data-place-order]").textContent = state.busy ? "Placing your order..." : `${state.paymentMethod === 'COD' ? 'Place order' : 'Continue to payment'}${fee === null ? "" : ` · ${money(total)}`}`;
-        $("[data-payment-note]").innerHTML = `${icon('shield')}${state.paymentMethod === 'COD' ? 'Cash on delivery' : `Sandbox · ${escape(paymentLabel(state.paymentMethod))}`}`;
+        $("[data-payment-note]").innerHTML = `${icon('shield')}${state.paymentMethod === 'COD' ? escape(paymentLabel('COD')) : `Sandbox · ${escape(paymentLabel(state.paymentMethod))}`}`;
         $(".checkout-payment").disabled = state.busy || Boolean(state.pending);
         $("[data-quote-status]").hidden = !needsQuote();
         if (method()?.available === false) {
             $("[data-quote-status]").hidden = false;
             quoteMessage("This delivery method is currently unavailable. Please return to your cart to choose another method.", true);
         }
-        $("[data-address-form] fieldset").disabled = state.busy || Boolean(state.pending);
+        $("[data-address-form] fieldset").disabled = state.method === 'pickup' || state.busy || Boolean(state.pending);
         const voucherLocked = state.busy || Boolean(state.pending);
         if ($('[data-voucher-input]')) $('[data-voucher-input]').disabled = voucherLocked;
         if ($('[data-voucher-apply]')) $('[data-voucher-apply]').disabled = voucherLocked || state.voucherBusy;
@@ -612,14 +613,14 @@
     async function placeOrder() {
         if (state.busy || state.quoting || state.voucherBusy) return;
         if (!state.pending) {
-            if (!state.items.length || method()?.available === false || !$("[data-address-form]").reportValidity()) return;
+            if (!state.items.length || method()?.available === false || (state.method !== 'pickup' && !$("[data-address-form]").reportValidity())) return;
             if (state.paymentMethods.find((option) => option.code === state.paymentMethod)?.available !== true) return;
             if (needsQuote() && (!state.selectedAddress || $("[data-address-search]").value.trim() !== state.selectedAddress || !quoteValid())) {
                 invalidateQuote();
                 quoteMessage("Select a verified address and wait for the delivery fee before placing your order.", true);
                 return;
             }
-            const address = readAddress();
+            const address = state.method === 'pickup' ? {} : readAddress();
             if (state.paymentMethod !== 'COD' && typeof window.crypto?.randomUUID !== 'function') {
                 quoteMessage('Open checkout over HTTPS or localhost to use sandbox online payment.', true);
                 $('[data-quote-status]').hidden = false;
@@ -629,7 +630,7 @@
                 body: { deliveryMethod: state.method, paymentMethod: state.paymentMethod,
                     ...(state.paymentMethod !== 'COD' ? { checkoutKey: window.crypto.randomUUID() } : {}),
                     ...(state.voucher ? { voucherCode: state.voucher.code } : {}),
-                    ...(needsQuote() ? { shippingQuoteId: state.quote.id } : { shippingAddress: address }) } };
+                    ...(needsQuote() ? { shippingQuoteId: state.quote.id } : state.method === 'pickup' ? {} : { shippingAddress: address }) } };
             if (!persistPending()) {
                 state.pending = null;
                 quoteMessage("Please allow this site's session storage before placing an order so your checkout can be recovered if the connection drops.", true);
@@ -691,6 +692,12 @@
         return `<div class="checkout-detail-row"><span class="checkout-icon">${icon("pin")}</span><div><span class="checkout-detail-label">Ship to</span><strong>${escape(address.recipientName || "Recipient")}</strong><p>${escape(address.phone || "")}</p><p>${escape(address.address || "")}</p>${address.note ? `<p>Note: ${escape(address.note)}</p>` : ""}</div></div>`;
     }
 
+    function fulfillmentDetails(order) {
+        return order.deliveryMethod === 'pickup'
+            ? `<div class="checkout-detail-row"><span class="checkout-icon">${icon('pin')}</span><div><span class="checkout-detail-label">Store Pickup</span><strong>Sugar Bliss</strong><p>We will email you when your order is ready to collect.</p></div></div>`
+            : addressDetails(order.shippingAddress);
+    }
+
     function deliveryLabel(value) {
         return ({ standard: "Standard Delivery", lalamove: "Standard Delivery", express: "Express Delivery", pickup: "Store Pickup" })[value] || "Delivery";
     }
@@ -710,6 +717,7 @@
     }
 
     function renderOrder(order) {
+        state.method = order.deliveryMethod || state.method;
         if (order.status === 'Failed' || order.paymentStatus === 'Failed') {
             renderFailedPayment(order);
             return;
@@ -728,7 +736,7 @@
         const title = cancelled ? "This order has been cancelled." : pending ? "Your order is saved." : `Thanks, ${customer} — it's confirmed.`;
         const description = cancelled ? "View your order details below or return to the menu."
             : pending ? "Your order is recorded. Delivery is still being confirmed; check its status below or contact the store."
-                : online ? `Payment received via ${paymentLabel(order.paymentMethod)}. No cash payment is due on delivery.` : "Your sweet treats are on our list. Pay cash when you receive your order.";
+                : online ? `Payment received via ${paymentLabel(order.paymentMethod)}. No cash payment is due.` : order.deliveryMethod === 'pickup' ? "Your treats are on our list. Pay at the store when you collect your order." : "Your sweet treats are on our list. Pay cash when you receive your order.";
         showResult(`<header class="checkout-result-heading ${needsAttention ? "is-pending" : ""}">
             <div class="checkout-result-icon">${icon(needsAttention ? "clock" : "check")}</div>
             <span class="checkout-badge">${icon(needsAttention ? "clock" : "shield")}${escape(status)}</span>
@@ -738,10 +746,10 @@
         </header>
         <div class="checkout-result-layout"><div class="checkout-stack">
             <section class="checkout-card"><h2>${needsAttention ? "What happens next" : "A little bliss is on its way"}</h2>
-                <div class="checkout-next"><span>1</span><div><strong>${needsAttention ? "Check delivery status" : "We prepare your order"}</strong><p>${needsAttention ? "Use Refresh delivery below to check the latest status of this order." : "The store will confirm and prepare your treats for delivery."}</p></div></div>
-                <div class="checkout-next"><span>2</span><div><strong>${cancelled ? "Browse your orders" : online ? 'Paid online' : "Cash on delivery"}</strong><p>${cancelled ? "Your order history includes the latest order and delivery details." : online ? `${money(order.total)} paid via ${escape(paymentLabel(order.paymentMethod))}.` : `Have ${money(order.total)} ready when you receive your order.`}</p></div></div>
+                <div class="checkout-next"><span>1</span><div><strong>${needsAttention ? "Check delivery status" : "We prepare your order"}</strong><p>${needsAttention ? "Use Refresh delivery below to check the latest status of this order." : order.deliveryMethod === 'pickup' ? "We will email you when your treats are ready to collect." : "The store will confirm and prepare your treats for delivery."}</p></div></div>
+                <div class="checkout-next"><span>2</span><div><strong>${cancelled ? "Browse your orders" : online ? 'Paid online' : escape(paymentLabel('COD'))}</strong><p>${cancelled ? "Your order history includes the latest order and delivery details." : online ? `${money(order.total)} paid via ${escape(paymentLabel(order.paymentMethod))}.` : `Have ${money(order.total)} ready when you receive your order.`}</p></div></div>
             </section>
-            <section class="checkout-card"><h2>Delivery</h2>${addressDetails(order.shippingAddress)}
+            <section class="checkout-card"><h2>${order.deliveryMethod === 'pickup' ? 'Store Pickup' : 'Delivery'}</h2>${fulfillmentDetails(order)}
                 <div class="checkout-detail-row"><span class="checkout-icon">${icon("truck")}</span><div><span class="checkout-detail-label">Method</span><strong>${escape(deliveryLabel(order.deliveryMethod))}</strong><p>${escape(order.shippingProvider === "lalamove" ? `Lalamove · ${shippingLabel(order.shippingStatus)}` : order.status)}</p>${order.shippingOrderId ? `<p>Delivery #${escape(order.shippingOrderId)}</p>` : ""}</div></div>
                 ${order.shippingError ? `<p class="checkout-error-copy">${escape(order.shippingError)}</p>` : ""}
                 ${order.shippingProvider === "lalamove" ? `<div class="checkout-result-actions"><button class="checkout-button checkout-button-secondary" type="button" data-refresh-order="${escape(order.id || order._id)}" data-has-booking="${Boolean(order.shippingOrderId)}">Refresh delivery</button>${trackingLink(order.shippingTrackingUrl)}</div><p class="checkout-quote-status" data-refresh-status role="status"></p>` : ""}
@@ -780,7 +788,7 @@
         showResult(`<header class="checkout-heading"><p class="checkout-eyebrow">Sandbox payment</p><h1>Awaiting payment</h1>
             <p>Order ${escape(order.orderNumber)} · ${escape(paymentLabel(order.paymentMethod))}</p></header>
             <div class="checkout-layout"><section class="checkout-card"><h2>Your items</h2>${renderItems(order.items || [])}
-                <div class="checkout-order-footer">${addressDetails(order.shippingAddress)}</div></section>
+                <div class="checkout-order-footer">${fulfillmentDetails(order)}</div></section>
             <aside class="checkout-card checkout-summary"><h2>Payment summary</h2>${totals(order)}
                 <p class="checkout-quote-status">${order.payment?.expiresAt ? `Payment window ends at ${escape(new Date(order.payment.expiresAt).toLocaleTimeString())}.` : 'Awaiting gateway confirmation.'}</p>
                 ${!checking ? `<button class="checkout-button checkout-button-primary" type="button" data-pay-order="${id}" data-payment-method="${escape(order.paymentMethod)}">Continue to ${escape(paymentLabel(order.paymentMethod))}</button>` : ''}
@@ -844,7 +852,7 @@
             <span class="checkout-badge">${icon("clock")}${uncertain ? "Confirmation needed" : "Checkout incomplete"}</span>
             <h1>${uncertain ? "We're checking your order." : "We couldn't place your order."}</h1><p>${escape(message)}</p>
         </div></section><div class="checkout-layout"><section class="checkout-card"><div class="checkout-card-heading"><h2>Your order review</h2><span class="checkout-badge">${escape(paymentLabel(state.pending?.body.paymentMethod || state.paymentMethod))}</span></div>
-            ${renderItems(state.items)}<div class="checkout-order-footer">${addressDetails(address)}${totals({ subtotal: subtotal(), discount: discountAmount(), shippingFee: fee, total: Math.max(0, subtotal() - discountAmount()) + fee })}</div></section>
+            ${renderItems(state.items)}<div class="checkout-order-footer">${fulfillmentDetails({ deliveryMethod: state.method, shippingAddress: address })}${totals({ subtotal: subtotal(), discount: discountAmount(), shippingFee: fee, total: Math.max(0, subtotal() - discountAmount()) + fee })}</div></section>
             <aside class="checkout-stack"><section class="checkout-card checkout-error-card"><h2>${uncertain ? "Check your order" : "Let's try again"}</h2><p class="checkout-error-copy">${uncertain ? "The confirmation was interrupted. Check this checkout request or your order history before starting another order." : "Review your address and delivery fee, then try placing your order again."}</p>
                 ${recoverable ? '<button class="checkout-button checkout-button-primary" type="button" data-retry-order>Check this order again</button>' : !uncertain ? '<button class="checkout-button checkout-button-primary" type="button" data-return-review>Return to checkout</button>' : ""}
                 <a class="checkout-button checkout-button-secondary" href="/orders">View order history</a><p class="checkout-payment-note">${icon("wallet")}${escape(paymentLabel(state.pending?.body.paymentMethod || state.paymentMethod))}</p></section>

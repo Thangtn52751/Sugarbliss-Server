@@ -82,6 +82,35 @@ router.post('/', admin, asyncHandler(async (req, res) => {
     }
 }));
 
+router.patch('/:id/status', admin, asyncHandler(async (req, res) => {
+    if (!mongoose.isValidObjectId(req.params.id)) throw voucherError('INVALID_CODE');
+    const body = req.body;
+    if (!body || Array.isArray(body) || typeof body.active !== 'boolean' ||
+        Object.keys(body).some((key) => key !== 'active')) throw voucherError('INVALID_CONFIGURATION');
+
+    const voucher = await Voucher.findOne({ _id: req.params.id, deletedAt: null });
+    if (!voucher) throw voucherError('NOT_FOUND', 404);
+    if (body.active) {
+        if (!voucher.expiresAt) throw voucherError('INVALID_CONFIGURATION', 400, {
+            message: 'Cannot enable a voucher without a valid expiry date.',
+        });
+        await voucher.validate();
+        if (voucher.expiresAt <= new Date()) throw voucherError('EXPIRED');
+        if (voucher.usageLimit > 0 && voucher.usedCount >= voucher.usageLimit) throw voucherError('USAGE_LIMIT_REACHED');
+    }
+
+    // Recheck availability atomically in case checkout consumes the last use or admin deletes the voucher.
+    const updated = await Voucher.findOneAndUpdate({
+        _id: voucher._id, deletedAt: null,
+        ...(body.active ? {
+            expiresAt: { $gt: new Date() }, usageLimit: voucher.usageLimit,
+            ...(voucher.usageLimit > 0 ? { usedCount: { $lt: voucher.usageLimit } } : {}),
+        } : {}),
+    }, { $set: { active: body.active } }, { new: true });
+    if (!updated) throw voucherError('CHANGED', 409);
+    res.json(voucherView(updated));
+}));
+
 router.delete('/:id', admin, asyncHandler(async (req, res) => {
     if (!mongoose.isValidObjectId(req.params.id)) throw voucherError('INVALID_CODE');
     const voucher = await Voucher.findOneAndUpdate({ _id: req.params.id }, {

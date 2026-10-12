@@ -96,6 +96,15 @@ test('collection ships without API keys, JWTs, or provider secrets', () => {
     assert.equal(/(?:pk|sk)_test_[0-9A-Za-z]+/.test(serialized), false);
 });
 
+test('voucher status Postman request uses admin authorization and only the active boolean', () => {
+    const collection = JSON.parse(fs.readFileSync(collectionPath, 'utf8'));
+    const folder = collection.item.find(item => item.name === 'Checkout Vouchers');
+    const request = folder.item.find(item => item.request.url.raw === '{{baseUrl}}/api/vouchers/{{voucherId}}/status').request;
+    assert.equal(request.method, 'PATCH');
+    assert.equal(request.auth.bearer[0].value, '{{adminToken}}');
+    assert.deepEqual(JSON.parse(request.body.raw), { active: true });
+});
+
 test('Visa Postman flow uses hosted payments with an isolated, retry-stable checkout key', () => {
     const collection = JSON.parse(fs.readFileSync(collectionPath, 'utf8'));
     const folder = collection.item.find((item) => item.name === 'Visa Card Checkout (Sandbox)');

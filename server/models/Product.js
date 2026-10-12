@@ -63,6 +63,10 @@ const productSchema = new mongoose.Schema({
         type: Number,
         default: 0,
         min: 0,
+        validate: {
+            validator: Number.isSafeInteger,
+            message: 'Product quantity must be a non-negative safe integer.',
+        },
     },
     ingredients: [{
         type: String,

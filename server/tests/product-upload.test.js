@@ -86,3 +86,15 @@ test('creating without any image is rejected instead of supplying a fake default
     const result = await call('', 'POST', form()); assert.equal(result.status, 400);
     assert.match(result.data.message, /At least one product image/); assert.equal(products.length, 0);
 });
+
+test('product quantity accepts zero or integers but rejects fractions, negative and unsafe values', async () => {
+    for (const quantity of ['0', '25']) {
+        const data = form([image()]); data.set('stock', quantity);
+        const result = await call('', 'POST', data);
+        assert.equal(result.status, 201); assert.equal(result.data.stock, Number(quantity));
+    }
+    for (const quantity of ['-1', '1.5', '9007199254740992', 'no']) {
+        const data = form([image()]); data.set('stock', quantity);
+        assert.equal((await call('', 'POST', data)).status, 400);
+    }
+});

@@ -109,6 +109,31 @@ test('checkout displays owned vouchers and validates the selected code', async (
     assert.equal(view.requests.filter((request) => request.path === '/api/vouchers/validate').length, 1);
 });
 
+test('Store Pickup hides and disables every delivery field and places an order with no customer input', async () => {
+    const view = await checkout();
+    assert.equal(view.get('[data-address-form]').hidden, true);
+    assert.equal(view.get('[data-address-form] fieldset').disabled, true);
+    for (const field of Object.values(view.get('[data-address-form]').elements)) field.value = '';
+    view.get('[data-address-form]').reportValidity = () => { throw new Error('Pickup must not validate delivery inputs.'); };
+    await view.place();
+    const body = view.requests.find((request) => request.path === '/api/orders').body;
+    assert.equal(body.deliveryMethod, 'pickup');
+    assert.equal(body.shippingAddress, undefined);
+    assert.equal(body.shippingQuoteId, undefined);
+    assert.equal(view.requests.some((request) => request.path.startsWith('/api/delivery/')), false);
+    assert.doesNotMatch(view.result(), /Ship to/);
+    assert.match(view.result(), /email you when your order is ready/);
+});
+
+test('delivery checkout keeps address inputs visible and rejects invalid delivery details', async () => {
+    const view = await checkout({ search: '?delivery=standard' });
+    assert.equal(view.get('[data-address-form]').hidden, false);
+    assert.equal(view.get('[data-address-form] fieldset').disabled, false);
+    view.get('[data-address-form]').reportValidity = () => false;
+    await view.place();
+    assert.equal(view.requests.some((request) => request.path === '/api/orders'), false);
+});
+
 test('voucher changes product subtotal only; quoted shipping remains fully payable', async () => {
     const view = await checkout({ search: '?delivery=standard' });
     await view.apply(' sugar10 ');
@@ -223,11 +248,11 @@ test('online checkout creates an idempotent unpaid order then opens the sandbox 
     assert.equal(view.storage.size, 0);
 });
 
-test('COD checkout keeps cash confirmation and does not call a payment endpoint', async () => {
+test('COD pickup confirms payment at the store and does not call a payment endpoint', async () => {
     const view = await checkout({ handler: async (request) => request.path === '/api/orders'
         ? { ok: true, status: 201, json: async () => savedOrder({ paymentProvider: '', paymentMethod: 'COD' }) } : null });
     await view.place();
-    assert.match(view.result(), /Pay cash/);
+    assert.match(view.result(), /Pay at the store/);
     assert.equal(view.requests.some((request) => /payments\/.*\/checkout/.test(request.path)), false);
     assert.equal(view.redirects.length, 0);
 });

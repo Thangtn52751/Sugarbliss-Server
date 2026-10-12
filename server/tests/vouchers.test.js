@@ -268,8 +268,9 @@ test('deleting an automatic campaign stops grants on subsequent registrations', 
     assert.equal((await call('/api/users/register', 'POST', registration(), '')).data.voucherCount, 0);
 });
 
-test('only admin can create, list, search recipients or delete vouchers', async () => {
-    for (const [path, method, input] of [['', 'POST', body()], ['', 'GET'], ['/recipients', 'GET'], [`/${new mongoose.Types.ObjectId()}`, 'DELETE']]) {
+test('only admin can create, list, search recipients, change status or delete vouchers', async () => {
+    for (const [path, method, input] of [['', 'POST', body()], ['', 'GET'], ['/recipients', 'GET'],
+        [`/${new mongoose.Types.ObjectId()}/status`, 'PATCH', { active: true }], [`/${new mongoose.Types.ObjectId()}`, 'DELETE']]) {
         assert.equal((await call(`/api/vouchers${path}`, method, input, '')).status, 401);
         assert.equal((await call(`/api/vouchers${path}`, method, input, 'owner')).status, 403);
     }
@@ -288,11 +289,116 @@ test('admin creates and assigns only selected users; count is derived rather tha
     assert.equal(vouchers[0].usageOrders.length, 0);
 });
 
-test('there is no voucher editing API', async () => {
+test('status changes do not expose a general voucher editing API', async () => {
     const voucher = fixture();
     assert.equal((await call(`/api/vouchers/${voucher._id}`, 'PUT', { value: 99 }, 'admin')).status, 404);
     assert.equal((await call(`/api/vouchers/${voucher._id}`, 'PATCH', { value: 99 }, 'admin')).status, 404);
     assert.equal(voucher.value, 10);
+});
+
+test('admin status updates are idempotent and preserve pricing, expiry, owners and usage', async () => {
+    const orderId = new mongoose.Types.ObjectId();
+    const voucher = fixture({ active: false, usedCount: 2, usageOrders: [orderId], usageLimit: 6, autoAssignOnRegister: true });
+    const expiry = voucher.expiresAt.getTime();
+    const path = `/api/vouchers/${voucher._id}/status`;
+    for (const active of [true, true, false, false]) {
+        const result = await call(path, 'PATCH', { active }, 'admin');
+        assert.equal(result.status, 200);
+        assert.equal(result.data.active, active);
+        assert.equal(result.data.id, String(voucher._id));
+        assert.equal(result.data.discountScope, 'products');
+        assert.equal(result.data.autoAssignOnRegister, true);
+        assert.equal(result.data.usedCount, 2);
+        assert.equal(result.data.value, 10);
+        assert.equal(voucher.expiresAt.getTime(), expiry);
+        assert.deepEqual(voucher.usageOrders.map(String), [String(orderId)]);
+        assert.equal(users[0].voucherCount, 1);
+    }
+    assert.equal(User.updateMany.mock.callCount(), 0);
+});
+
+test('status requires an explicit boolean and rejects unrelated or forged fields', async () => {
+    const voucher = fixture({ active: false });
+    for (const input of [undefined, null, [], {}, { active: 'true' }, { active: 1 },
+        { active: true, value: 99 }, { active: true, userIds: [String(otherId)] },
+        { active: true, expiresAt: new Date(Date.now() + 86400000).toISOString() }, { active: true, deletedAt: null }]) {
+        assert.equal((await call(`/api/vouchers/${voucher._id}/status`, 'PATCH', input, 'admin')).status, 400);
+    }
+    assert.equal(voucher.active, false);
+    assert.equal(Voucher.findOneAndUpdate.mock.callCount(), 0);
+});
+
+test('status rejects invalid IDs and cannot reactivate archived or missing vouchers', async () => {
+    const archived = fixture({ active: false, deletedAt: new Date() });
+    assert.equal((await call('/api/vouchers/invalid/status', 'PATCH', { active: true }, 'admin')).status, 400);
+    for (const id of [archived._id, new mongoose.Types.ObjectId()]) {
+        const result = await call(`/api/vouchers/${id}/status`, 'PATCH', { active: true }, 'admin');
+        assert.equal(result.status, 404);
+        assert.equal(result.data.code, 'VOUCHER_NOT_FOUND');
+    }
+    assert.equal(archived.active, false);
+});
+
+test('enabling refuses undated, expired, exhausted or invalid vouchers without extending their validity', async () => {
+    for (const [index, extra] of [{ expiresAt: null }, { expiresAt: new Date(0) },
+        { usageLimit: 1, usedCount: 1 }, { startsAt: new Date(Date.now() + 2 * 86400000) }, { value: 101 }].entries()) {
+        const voucher = fixture({ code: `INVALID${index}`, active: false, ...extra });
+        const result = await call(`/api/vouchers/${voucher._id}/status`, 'PATCH', { active: true }, 'admin');
+        assert.equal(result.status, 400);
+        assert.equal(voucher.active, false);
+        if (index === 0) assert.match(result.data.message, /expiry date/);
+        if (index === 1) assert.equal(result.data.code, 'VOUCHER_EXPIRED');
+        if (index === 2) assert.equal(result.data.code, 'VOUCHER_USAGE_LIMIT_REACHED');
+    }
+    assert.equal(Voucher.findOneAndUpdate.mock.callCount(), 0);
+});
+
+test('admin can disable legacy undated, expired or exhausted vouchers', async () => {
+    for (const [index, extra] of [{ expiresAt: null }, { expiresAt: new Date(0) }, { usageLimit: 1, usedCount: 1 }].entries()) {
+        const voucher = fixture({ code: `DISABLE${index}`, ...extra });
+        const result = await call(`/api/vouchers/${voucher._id}/status`, 'PATCH', { active: false }, 'admin');
+        assert.equal(result.status, 200);
+        assert.equal(result.data.active, false);
+        assert.equal(users[0].voucherCount, index + 1);
+    }
+});
+
+test('a scheduled voucher can be enabled without bypassing its future start time', async () => {
+    const voucher = fixture({ active: false, startsAt: new Date(Date.now() + 3600000) });
+    assert.equal((await call(`/api/vouchers/${voucher._id}/status`, 'PATCH', { active: true }, 'admin')).status, 200);
+    assert.equal(voucher.evaluate(100000).reason, 'NOT_STARTED');
+    assert.equal((await service.getRegistrationVoucherIds()).length, 0);
+});
+
+test('enabling rechecks expiry, deletion and the last use at the atomic write', async () => {
+    const updateVoucher = Voucher.findOneAndUpdate;
+    for (const [index, change] of [doc => { doc.usedCount = 1; }, doc => { doc.expiresAt = new Date(0); },
+        doc => { doc.deletedAt = new Date(); }].entries()) {
+        const voucher = fixture({ code: `RACE${index}`, active: false, usageLimit: 1 });
+        mock.method(Voucher, 'findOneAndUpdate', async (filter, changes) => {
+            change(voucher);
+            return updateVoucher(filter, changes);
+        });
+        const result = await call(`/api/vouchers/${voucher._id}/status`, 'PATCH', { active: true }, 'admin');
+        assert.equal(result.status, 409);
+        assert.equal(result.data.code, 'VOUCHER_CHANGED');
+        assert.equal(voucher.active, false);
+    }
+});
+
+test('toggling status affects validation and future grants, not existing ownership', async () => {
+    const voucher = fixture({ active: false, autoAssignOnRegister: true });
+    const path = `/api/vouchers/${voucher._id}/status`;
+    await assert.rejects(service.evaluateVoucher(voucher.code, 100000, ownerId), { code: 'VOUCHER_INACTIVE' });
+    assert.deepEqual(await service.getRegistrationVoucherIds(), []);
+    await call(path, 'PATCH', { active: true }, 'admin');
+    assert.equal((await service.evaluateVoucher(voucher.code, 100000, ownerId)).discount, 10000);
+    assert.deepEqual((await service.getRegistrationVoucherIds()).map(String), [String(voucher._id)]);
+    await call(path, 'PATCH', { active: false }, 'admin');
+    await assert.rejects(service.reserveVoucher(voucher.code, 100000, new mongoose.Types.ObjectId(), ownerId), { code: 'VOUCHER_INACTIVE' });
+    assert.deepEqual(await service.getRegistrationVoucherIds(), []);
+    assert.equal(users[0].voucherCount, 1);
+    assert.equal(voucher.usedCount, 0);
 });
 
 test('duplicate codes are rejected without granting a second voucher', async () => {

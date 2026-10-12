@@ -894,6 +894,37 @@
       ]
     },
     {
+      "name": "Admin Customers",
+      "description": "Existing admin-only customer APIs. Choose a disposable userId before changing account status.",
+      "item": [
+        {
+          "name": "GET /api/users/admin/customers",
+          "request": {
+            "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "header": [], "url": { "raw": "{{baseUrl}}/api/users/admin/customers?search=&status=&role=" },
+            "description": "List customers and aggregate summary. Optional search matches name/email/phone; status active/disabled; role admin/customer."
+          }, "response": []
+        },
+        {
+          "name": "GET /api/users/admin/customers/:id",
+          "request": {
+            "method": "GET", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "header": [], "url": { "raw": "{{baseUrl}}/api/users/admin/customers/{{userId}}" },
+            "description": "Read customer profile, aggregate order statistics and five recent orders."
+          }, "response": []
+        },
+        {
+          "name": "PATCH /api/users/admin/customers/:id/status",
+          "request": {
+            "method": "PATCH", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/api/users/admin/customers/{{userId}}/status" },
+            "body": { "mode": "raw", "raw": "{\n  \"isActive\": true\n}", "options": { "raw": { "language": "json" } } },
+            "description": "Explicitly select a disposable customer. Set boolean isActive to enable/disable; self and admin accounts cannot be changed here."
+          }, "response": []
+        }
+      ]
+    },
+    {
       "name": "Admin Orders",
       "description": "Requires adminToken. Lalamove fulfillment is provider-managed; only Store Pickup has manual forward transitions. Do not mutate real customer orders during tests.",
       "item": [
@@ -923,7 +954,7 @@
             "method": "PATCH", "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
             "header": [{ "key": "Content-Type", "value": "application/json" }], "url": { "raw": "{{baseUrl}}/api/admin/orders/{{adminPickupOrderId}}/pickup-status" },
             "body": { "mode": "raw", "raw": "{\n  \"pickupStatus\": \"READY_FOR_PICKUP\"\n}", "options": { "raw": { "language": "json" } } },
-            "description": "Explicitly choose a test pickup ID. Forward-only PREPARING -> READY_FOR_PICKUP -> COLLECTED. For the second step, set pickupStatus COLLECTED; pending COD also requires cashReceived:true, marking payment Paid. Online/Bank Transfer must already be Paid. Collected sets purchase status Delivered, displayed Collected. No stock or voucher release. Lalamove/Express, terminal orders, backwards transitions, forged fields or payment races are rejected."
+            "description": "Explicitly choose a test pickup ID. Forward-only PREPARING -> READY_FOR_PICKUP -> COLLECTED. READY_FOR_PICKUP sends a styled email to the registered customer using server SMTP. Detail includes pickupNotification status/sentAt/canRetry. Repeating READY_FOR_PICKUP retries a failed email without changing stock; Sent emails are not resent. For the second step, set pickupStatus COLLECTED; pending COD also requires cashReceived:true, marking payment Paid. Online/Bank Transfer must already be Paid. Collected sets purchase status Delivered, displayed Collected. No stock or voucher release. Lalamove/Express, terminal orders, backwards transitions, forged fields or payment races are rejected."
           }, "response": []
         },
         {
@@ -1972,7 +2003,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 1,\n  \"deliveryMethod\": \"pickup\",\n  \"paymentMethod\": \"COD\",\n  \"shippingAddress\": {\n    \"recipientName\": \"Nguyen Van A\",\n    \"phone\": \"0901234567\",\n    \"address\": \"Store Pickup\"\n  }\n}",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 1,\n  \"deliveryMethod\": \"pickup\",\n  \"paymentMethod\": \"COD\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2068,7 +2099,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"deliveryMethod\": \"pickup\",\n  \"paymentMethod\": \"COD\",\n  \"shippingAddress\": {\n    \"recipientName\": \"Nguyen Van A\",\n    \"phone\": \"0901234567\",\n    \"address\": \"Store Pickup\"\n  }\n}",
+              "raw": "{\n  \"deliveryMethod\": \"pickup\",\n  \"paymentMethod\": \"COD\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2992,7 +3023,7 @@
             "url": {
               "raw": "{{baseUrl}}/api/orders"
             },
-            "description": "Reset checkoutKey to empty ONLY for a new order, not after a timeout. Stock is reserved, delivery waits for Paid. Pickup: omit quote, use deliveryMethod=pickup and shippingAddress.",
+            "description": "Reset checkoutKey to empty ONLY for a new order, not after a timeout. Stock is reserved, delivery waits for Paid. Pickup: omit quote and shippingAddress, use deliveryMethod=pickup. The server takes the contact from the account.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 1,\n  \"deliveryMethod\": \"standard\",\n  \"shippingQuoteId\": \"{{shippingQuoteId}}\",\n  \"paymentMethod\": \"{{paymentMethod}}\",\n  \"checkoutKey\": \"{{checkoutKey}}\"\n}",
@@ -3151,7 +3182,7 @@
             "description": "Reset visaCheckoutKey only for a genuinely new order, never after a timeout. Repeating this request returns the same owned order. For standard delivery obtain a prepaid Visa quote using the general Payments folder.",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 1,\n  \"deliveryMethod\": \"pickup\",\n  \"paymentMethod\": \"Visa\",\n  \"checkoutKey\": \"{{visaCheckoutKey}}\",\n  \"shippingAddress\": {\n    \"recipientName\": \"Nguyen Van A\",\n    \"phone\": \"0901234567\",\n    \"address\": \"Store Pickup\"\n  }\n}",
+              "raw": "{\n  \"productId\": \"{{productId}}\",\n  \"quantity\": 1,\n  \"deliveryMethod\": \"pickup\",\n  \"paymentMethod\": \"Visa\",\n  \"checkoutKey\": \"{{visaCheckoutKey}}\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -3267,7 +3298,7 @@
             "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
             "header": [],
             "url": { "raw": "{{baseUrl}}/api/vouchers" },
-            "description": "Admin-only voucher list. There is intentionally no update endpoint."
+            "description": "Admin-only voucher list. Status can be enabled/disabled through PATCH /api/vouchers/:id/status; general pricing, date or recipient editing is not exposed."
           },
           "response": []
         },
@@ -3324,6 +3355,22 @@
               "options": { "raw": { "language": "json" } }
             },
             "description": "Creates an additional test campaign, not the seeded WELCOME50K code. Register a new email afterward and check GET /api/vouchers/mine. No current account is assigned this offer. Delete voucherId afterward to stop future grants and remove this test campaign's ownership. Campaign expiry is shared across recipients, not 30 days per signup."
+          },
+          "response": []
+        },
+        {
+          "name": "Admin - PATCH /api/vouchers/:id/status",
+          "request": {
+            "method": "PATCH",
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{adminToken}}", "type": "string" }] },
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/api/vouchers/{{voucherId}}/status" },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"active\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "description": "Choose a test voucherId explicitly. Admin-only status update accepting only active (boolean). Set false to disable; true to enable a valid non-expired, non-exhausted voucher. Future-start vouchers may be enabled but remain Upcoming. Missing expiry, invalid configuration and archived vouchers cannot be enabled. Does not alter prices, expiry, owners, counters or existing orders. Returns the saved voucher; repeated requests are safe."
           },
           "response": []
         },

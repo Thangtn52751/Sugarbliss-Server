@@ -131,7 +131,7 @@ async function failOrder(order, { message, expired = false, expectedState } = {}
     if (failed) {
         for (const item of failed.items) {
             await Product.updateOne({ _id: item.product }, { $inc: { stock: item.quantity } });
-            await Product.updateOne({ _id: item.product, status: 'out-of-stock' }, { $set: { status: 'active' } });
+            await Product.updateOne({ _id: item.product, status: 'out-of-stock', stock: { $gt: 0 } }, { $set: { status: 'active' } });
         }
         await releaseVoucher(failed.voucher, failed._id);
     }

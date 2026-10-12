@@ -107,6 +107,25 @@ test('COD collection exposes required cash confirmation and sends its checked st
     assert.equal(view.requests.find((request) => request.method === 'PATCH').body.cashReceived, true);
 });
 
+test('pickup email failure remains visible and retry uses the same ready status endpoint', async () => {
+    const ready = { ...order, pickupNotification: { status: 'Failed', canRetry: true } };
+    const view = await screen({ handler: (request) => !request.url.includes('?') ? ready : undefined }); await view.open();
+    assert.match(view.get('[data-order-details]').innerHTML, /email could not be sent/);
+    assert.equal(view.get('[data-retry-pickup-email]').hidden, false);
+    view.get('[data-retry-pickup-email]').listeners.click(); await settle();
+    assert.deepEqual(view.requests.find((request) => request.method === 'PATCH').body, { pickupStatus: 'READY_FOR_PICKUP' });
+});
+
+test('successful pickup email has no retry button and Lalamove never offers email retries', async () => {
+    for (const extra of [{ pickupNotification: { status: 'Sent', canRetry: false } },
+        { providerManaged: true, pickupActions: [], pickupNotification: { status: 'Failed', canRetry: true } }]) {
+        const view = await screen({ handler: (request) => !request.url.includes('?') ? { ...order, ...extra } : undefined }); await view.open();
+        assert.equal(view.get('[data-retry-pickup-email]').hidden, true);
+        view.get('[data-retry-pickup-email]').listeners.click(); await settle();
+        assert.equal(view.requests.some((request) => request.method === 'PATCH'), false);
+    }
+});
+
 test('Lalamove details never submit pickup changes, poll saved status, and provide provider refresh', async () => {
     const delivery = { ...order, providerManaged: true, deliveryLabel: 'Lalamove', deliveryMethod: 'standard', pickupActions: [], shippingOrderId: '123', shippingStatus: 'ON_GOING',
         status: { code: 'ON_GOING', label: 'Driver Assigned', tone: 'progress', terminal: false }, trackingUrl: 'https://share.sandbox.lalamove.com/test' };

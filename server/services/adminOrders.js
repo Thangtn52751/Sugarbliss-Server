@@ -5,9 +5,10 @@ const DELIVERY_METHODS = require('../config/deliveryMethods');
 const { getOrderStatusView, isLalamoveOrder, getPickupStatus } = require('../utils/orderStatus');
 const shipping = require('./shipping');
 const lalamove = require('./lalamove');
+const pickupNotifications = require('./pickupNotifications');
 
 const orderError = (message, statusCode = 400, code = 'ADMIN_ORDER_INVALID_INPUT') => Object.assign(new Error(message), { statusCode, code });
-const ORDER_FIELDS = 'orderNumber user productName items subtotal shippingFee discount voucherCode total orderedOn status deliveryMethod pickupStatus shippingAddress paymentMethod paymentStatus shippingProvider delivery_provider shippingStatus shippingOrderId lalamove_order_id shippingTrackingUrl shippingError';
+const ORDER_FIELDS = 'orderNumber user productName items subtotal shippingFee discount voucherCode total orderedOn status deliveryMethod pickupStatus pickupReadyEmailStatus pickupReadyEmailAttemptedAt pickupReadyEmailSentAt shippingAddress paymentMethod paymentStatus shippingProvider delivery_provider shippingStatus shippingOrderId lalamove_order_id shippingTrackingUrl shippingError';
 const NO_PROVIDER = { $in: ['', null] };
 
 function pickupActions(order) {
@@ -43,6 +44,12 @@ function orderView(order, detail = false) {
         shippingOrderId: order.shippingOrderId || order.lalamove_order_id || '',
         trackingUrl: providerManaged ? lalamove.trackingUrl(order.shippingTrackingUrl) : '',
         shippingError: order.shippingError || '',
+        pickupNotification: { status: order.pickupReadyEmailStatus || '', sentAt: order.pickupReadyEmailSentAt || null,
+            canRetry: !providerManaged && order.deliveryMethod === 'pickup' && getPickupStatus(order) === 'READY_FOR_PICKUP' &&
+                order.status === 'In Progress' && ['Pending', 'Paid'].includes(order.paymentStatus) &&
+                (order.paymentMethod === 'COD' || order.paymentStatus === 'Paid') &&
+                (order.pickupReadyEmailStatus === 'Failed' || order.pickupReadyEmailStatus === 'Sending' &&
+                    new Date(order.pickupReadyEmailAttemptedAt).getTime() < Date.now() - 5 * 60000) },
     });
     return view;
 }
@@ -109,7 +116,13 @@ async function updatePickupStatus(id, body = {}) {
     const order = await readOrder(id);
     if (isLalamoveOrder(order)) throw orderError('Lalamove controls this delivery status. Manual changes are not allowed.', 409, 'DELIVERY_PROVIDER_MANAGED');
     if (order.deliveryMethod !== 'pickup') throw orderError('Only Store Pickup orders can be updated manually.', 409, 'ORDER_NOT_PICKUP');
-    if (getPickupStatus(order) === body.pickupStatus && ['In Progress', 'Delivered'].includes(order.status)) return orderView(order, true);
+    if (getPickupStatus(order) === body.pickupStatus && ['In Progress', 'Delivered'].includes(order.status)) {
+        if (body.pickupStatus === 'READY_FOR_PICKUP') {
+            await pickupNotifications.notifyReady(order);
+            return getOrder(id);
+        }
+        return orderView(order, true);
+    }
     const action = pickupActions(order).find((item) => item.value === body.pickupStatus);
     if (!action) throw orderError('This pickup transition is unavailable. Refresh the order and check payment.', 409, 'PICKUP_TRANSITION_NOT_ALLOWED');
     if (action.requiresCashConfirmation && body.cashReceived !== true) throw orderError('Confirm cash was received before completing this COD pickup.', 400, 'PICKUP_CASH_CONFIRMATION_REQUIRED');
@@ -123,6 +136,7 @@ async function updatePickupStatus(id, body = {}) {
         ...(body.pickupStatus === 'COLLECTED' ? { status: 'Delivered', ...(action.requiresCashConfirmation ? { paymentStatus: 'Paid' } : {}) } : {}),
     } }, { new: true, runValidators: true });
     if (!updated) throw orderError('The order changed. Refresh it before trying again.', 409, 'ORDER_CHANGED');
+    if (body.pickupStatus === 'READY_FOR_PICKUP') await pickupNotifications.notifyReady({ ...order, pickupStatus: body.pickupStatus });
     return getOrder(id);
 }
 

@@ -1,7 +1,7 @@
 # Vouchers
 
-Admin screen: `/admin/vouchers`. Only create and delete are supported; there is
-no voucher update endpoint. All API routes require a Bearer token; management
+Admin screen: `/admin/vouchers`. Create, delete and Enable/Disable status buttons are
+supported; general voucher editing is not exposed. All API routes require a Bearer token; management
 and recipient search additionally require the server-confirmed `admin` role.
 
 ## API
@@ -11,6 +11,7 @@ and recipient search additionally require the server-confirmed `admin` role.
 | GET | `/api/vouchers` | Admin: list non-deleted vouchers |
 | GET | `/api/vouchers/recipients?q=name-or-email` | Admin: find active recipients, including their voucherCount |
 | POST | `/api/vouchers` | Admin: create for selected userIds and/or future registrations |
+| PATCH | `/api/vouchers/:id/status` | Admin: enable/disable only, with `{ "active": true/false }` |
 | DELETE | `/api/vouchers/:id` | Admin: delete and revoke from all owners |
 | GET | `/api/vouchers/mine` | User: owned vouchers and voucherCount |
 | POST | `/api/vouchers/validate` | User: preview an owned voucher against product subtotal |
@@ -40,7 +41,34 @@ An expired voucher is rejected at preview and again when creating an order.
 at most 100. `usageLimit: 0` means unlimited uses, not unlimited validity.
 `maxDiscount: 0` means no percentage cap. Codes are case-insensitive and unique,
 including archived codes. Missing/disabled recipients are rejected, duplicates
-in userIds are removed. Mass assignment to existing accounts and editing are not exposed.
+in userIds are removed. Mass assignment to existing accounts and general editing are not exposed.
+
+## Enable Or Disable
+
+Use the Enable/Disable button next to Delete in admin, or send:
+
+```http
+PATCH /api/vouchers/<voucher-id>/status
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+
+{"active": true}
+```
+
+Set `active` to `false` to disable. This endpoint accepts only the boolean
+`active` field and returns the saved voucher in the same format as the admin list.
+Pricing, dates, ownership, automatic assignment settings and usage are unchanged;
+repeating the same requested status is safe. Disabled vouchers immediately fail
+checkout validation and are not granted to future registrations. Existing order
+snapshots and already-reserved uses remain unchanged.
+
+Enabling requires valid configuration, a future expiry and remaining usage.
+An enabled future-start voucher still shows Upcoming and cannot be redeemed yet.
+Expired, exhausted and undated vouchers cannot be enabled; the Enable button is locked
+with a reason in its tooltip, and backend validation independently rejects the
+request. Any non-deleted voucher can be disabled, including legacy undated ones.
+Deleted vouchers cannot be restored. Failed requests retain the prior button
+state and display the server error. No new environment variables are needed.
 
 ## New Account Voucher
 
@@ -132,6 +160,10 @@ describes the single-document guarantee used here.
    Expired, upcoming, disabled, undated or deleted automatic offers are not granted.
 8. Apply WELCOME50K: 275,000 VND products + 30,000 VND delivery - 50,000 VND discount
    gives 255,000 VND total. A product subtotal below 200,000 VND is rejected.
+9. Use Disable/Enable next to Delete in admin: status updates without changing ownership or
+   usage. A disabled owned code fails validation; a valid enabled code succeeds.
+   Enable a scheduled code: it remains Upcoming. Missing-expiry, expired,
+   exhausted, deleted and customer-authorized activation requests are rejected.
 
 Run `npm test` in `server` and `node --test tests/*.test.cjs` in `project`.
 The full Postman collection includes all routes and admin/customer token scopes.

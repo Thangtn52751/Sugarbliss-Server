@@ -1304,7 +1304,7 @@ body {
 
 .reviews-container {
     display: grid;
-    grid-template-columns: 280px 1fr;
+    grid-template-columns: 300px minmax(0, 1fr);
     gap: 40px;
 }
 
@@ -1334,6 +1334,10 @@ body {
 
 .summary-write {
     margin-bottom: 25px;
+    margin-inline: 0;
+    padding: 0;
+    border: 0;
+    min-width: 0;
 }
 
 .summary-write strong {
@@ -1353,7 +1357,7 @@ body {
     font-size: 22px;
     margin-top: 5px;
     cursor: pointer;
-    letter-spacing: 2px;
+    letter-spacing: 0;
 }
 
 .btn-submit-review {
@@ -1392,12 +1396,15 @@ body {
     justify-content: space-between;
     align-items: center;
     margin-bottom: 15px;
+    gap: 12px;
+    flex-wrap: wrap;
 }
 
 .review-user {
     display: flex;
     align-items: center;
     gap: 15px;
+    min-width: 0;
 }
 
 .review-avatar {
@@ -1411,18 +1418,20 @@ body {
     justify-content: center;
     font-weight: bold;
     font-size: 14px;
+    flex: 0 0 32px;
 }
 
 .review-name {
     font-weight: bold;
     font-size: 14px;
     color: #333;
+    overflow-wrap: anywhere;
 }
 
 .review-stars {
     color: #555;
     font-size: 14px;
-    letter-spacing: 2px;
+    letter-spacing: 0;
 }
 
 .review-text {
@@ -1430,6 +1439,8 @@ body {
     font-size: 14px;
     line-height: 1.6;
     margin: 0;
+    overflow-wrap: anywhere;
+    white-space: pre-wrap;
 }
 
 @media (max-width: 980px) {
@@ -1457,14 +1468,21 @@ body {
     cursor: pointer;
 }
 
-.write-stars span {
+.write-stars button {
+    width: 34px;
+    height: 36px;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    font: inherit;
+    cursor: pointer;
     color: #ccc;
     transition: color 0.2s ease, transform 0.1s ease;
     user-select: none;
 }
 
-.write-stars span:hover,
-.write-stars span.active {
+.write-stars button:hover:not(:disabled),
+.write-stars button.active {
     color: #d94960;
     transform: scale(1.1);
 }
@@ -1505,3 +1523,23 @@ body {
 .btn-delete-review:hover {
     color: #bd384d;
 }
+
+.reviews-summary, .reviews-list, .review-card { min-width: 0; }
+.review-meta { display: flex; align-items: center; gap: 15px; }
+.review-permission, .review-feedback { margin: 0 0 14px; font-size: 12px; line-height: 1.5; color: #75646d; overflow-wrap: anywhere; }
+.review-feedback { color: #28664c; }
+.review-feedback.is-error { color: #ad2946; }
+.review-permission[hidden], .review-feedback[hidden], .review-retry[hidden], .review-clear-photos[hidden] { display: none; }
+.review-clear-photos { margin-top: 8px; padding: 3px 0; border: 0; background: transparent; color: #ad2946; font-size: 12px; text-decoration: underline; cursor: pointer; }
+.review-retry { align-self: flex-start; margin-bottom: 14px; padding: 6px 10px; border: 1px solid #f3d9df; border-radius: 6px; background: #fff; color: #ad2946; cursor: pointer; }
+.review-photo-label { display: block; margin-bottom: 8px; font-size: 12px; color: #5f4f57; }
+#review-photos { width: 100%; min-width: 0; font: inherit; font-size: 11px; color: #75646d; }
+#review-photos::file-selector-button { padding: 7px 9px; margin-right: 8px; border: 1px solid #f3d9df; border-radius: 6px; background: #fff4f7; color: #ad2946; cursor: pointer; }
+.review-photo-previews, .review-photo-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 8px; margin-top: 12px; max-width: 420px; }
+.review-photo-preview, .review-photo-gallery a { position: relative; display: block; min-width: 0; aspect-ratio: 1; border: 1px solid #f3d9df; border-radius: 6px; overflow: hidden; }
+.review-photo-preview img, .review-photo-gallery img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.review-photo-preview button { position: absolute; top: 3px; right: 3px; width: 24px; height: 24px; padding: 0; border: 1px solid #f3d9df; border-radius: 4px; background: #fff; color: #ad2946; font-size: 20px; line-height: 1; cursor: pointer; }
+.review-fields:disabled, #review-fields:disabled .write-stars button, #review-fields:disabled textarea, #review-fields:disabled input { cursor: not-allowed; }
+#review-fields:disabled .write-stars button { color: #ccc; transform: none; }
+#review-fields:disabled textarea, #review-fields:disabled input { background: #faf7f8; color: #897d83; }
+.reviews-empty { padding: 20px; text-align: center; color: #7c7377; font-size: 14px; }

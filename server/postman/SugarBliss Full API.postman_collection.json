@@ -1027,9 +1027,25 @@
                   "key": "search",
                   "value": "{{searchQuery}}",
                   "disabled": true
+                },
+                {
+                  "key": "minPrice",
+                  "value": "100000",
+                  "disabled": true
+                },
+                {
+                  "key": "maxPrice",
+                  "value": "300000",
+                  "disabled": true
+                },
+                {
+                  "key": "sort",
+                  "value": "price_asc",
+                  "disabled": true
                 }
               ]
-            }
+            },
+            "description": "Optional inclusive minPrice/maxPrice (non-negative whole VND amounts); leave either unset for an open bound. sort: default, price_asc or price_desc. Price sorting is global and precedes pagination, with a stable ID tie-breaker. Combines with a single exact category, status, featured and escaped search. pagination.total counts all matching products. Response categories come from the database independently of price, selected category and page, keeping category choices available even for empty results. Invalid bounds/sort/page or repeated category return 400 PRODUCT_FILTER_INVALID; limit is capped at 100."
           },
           "response": []
         },
@@ -1320,6 +1336,35 @@
           "response": []
         },
         {
+          "name": "GET /api/products/:id/reviews/eligibility",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/products/{{productId}}/reviews/eligibility" },
+            "description": "Customer-specific permission: returns canReview and reason. Requires a successful COD order or confirmed Paid payment containing productId. Cancelled, Failed, Refunded and pending online orders do not qualify. Already-reviewed products return ALREADY_REVIEWED."
+          },
+          "response": []
+        },
+        {
+          "name": "POST /api/products/:id/reviews (photos)",
+          "event": [{ "listen": "test", "script": { "type": "text/javascript", "exec": [
+            "pm.test('Review created', function () { pm.expect(pm.response.code).to.eql(201); });",
+            "if (pm.response.code === 201) pm.collectionVariables.set('reviewId', pm.response.json()._id);"
+          ] } }],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/api/products/{{productId}}/reviews" },
+            "body": { "mode": "formdata", "formdata": [
+              { "key": "rating", "value": "5", "type": "text" },
+              { "key": "comment", "value": "Fresh, beautiful, and delicious.", "type": "text" },
+              { "key": "images", "type": "file", "src": [], "disabled": true }
+            ] },
+            "description": "Choose a purchased productId. Enable images and select up to 5 JPG, PNG or WebP files (5 MB each). Do not set Content-Type manually. Photos are optional. Response contains server-generated /uploads/reviews paths. Submit this OR the JSON review example, not both for the same user/product."
+          },
+          "response": []
+        },
+        {
           "name": "POST /api/products/:id/reviews",
           "event": [
             {
@@ -1364,7 +1409,8 @@
                 "{{productId}}",
                 "reviews"
               ]
-            }
+            },
+            "description": "Text-only review. Customer must have a successful order for this exact product. One review per customer/product. Online payment must be confirmed; cancelled, failed and refunded orders do not qualify. Rating 1-5 and comment 1-1000 characters. Uploaded photos use the multipart example; image URLs and forged ownership are rejected."
           },
           "response": []
         },
@@ -1412,7 +1458,8 @@
                 "reviews",
                 "{{reviewId}}"
               ]
-            }
+            },
+            "description": "Owner can edit only while a successful order remains; admin may moderate. JSON retains photos. Multipart rating/comment/images replaces photos when new files are supplied (5 JPG/PNG/WebP, 5 MB each) and removes old uploads. Ownership and image URLs cannot be changed."
           },
           "response": []
         },

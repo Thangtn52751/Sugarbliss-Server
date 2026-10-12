@@ -1267,6 +1267,33 @@ body {
 }
 
 /* Product page overrides */
+.products-controls { padding: 0 0 22px; margin-bottom: 24px; border-bottom: 1px solid #f3d9df; }
+.products-filter-form { display: grid; grid-template-columns: minmax(0, 1fr); align-items: end; gap: 14px; margin: 0; }
+.products-filter-form label { display: grid; gap: 7px; min-width: 0; font-size: 12px; font-weight: 600; color: #5f4f57; }
+.products-filter-form input, .products-filter-form select { width: 100%; min-width: 0; height: 40px; padding: 9px 11px; border: 1px solid #dacbd1; border-radius: 6px; background: #fff; color: #31262b; font: inherit; font-size: 13px; }
+.products-filter-form input:focus-visible, .products-filter-form select:focus-visible { outline: 2px solid #d94960; outline-offset: 2px; }
+.products-filter-apply, .products-filter-reset { min-height: 40px; padding: 9px 15px; border: 1px solid #dacbd1; border-radius: 6px; background: #fff; color: #5f4f57; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; }
+.products-filter-apply { background: #2d7d4a; color: #fff; border-color: #2d7d4a; }
+.products-filter-apply:hover { background: #236339; }
+.products-filter-reset:hover:not(:disabled) { background: #fff0f4; }
+.products-filter-reset:disabled { color: #897d83; cursor: not-allowed; }
+.products-filter-error, .products-result-count { margin: 12px 0 0; font-size: 12px; line-height: 1.5; color: #75646d; overflow-wrap: anywhere; }
+.products-filter-error { color: #ad2946; }
+.products-filter-error[hidden], [data-category-list][hidden], [data-products-more][hidden] { display: none; }
+.products-result-count { min-height: 18px; }
+.products-content { flex: 1; min-width: 0; background: #ffe7eb; }
+.products-layout.is-price-sorted .products-main { max-width: 1280px; margin: 0 auto; padding: 36px 28px 56px; }
+.products-layout.is-price-sorted .products-grid-layout { grid-template-columns: repeat(3, minmax(0, 280px)); gap: 40px 28px; }
+.products-pagination { display: flex; justify-content: center; padding: 0 24px 36px; }
+.products-pagination .products-filter-reset { min-width: 190px; }
+@media (min-width: 1600px) { .products-layout.is-price-sorted .products-grid-layout { grid-template-columns: repeat(4, minmax(0, 280px)); } }
+@media (max-width: 1280px) {
+    .products-main .products-grid-layout, .products-layout.is-price-sorted .products-grid-layout { grid-template-columns: repeat(2, minmax(0, 280px)); gap: 38px 28px; }
+}
+@media (max-width: 620px) {
+    .products-main .products-grid-layout, .products-layout.is-price-sorted .products-grid-layout { grid-template-columns: minmax(0, 1fr); }
+    .products-layout.is-price-sorted .products-main { padding-inline: 24px; }
+}
 .products-banner {
     height: 230px;
     max-width: none;
@@ -1297,19 +1324,32 @@ body {
     max-width: none;
     width: 100%;
     min-height: 760px;
+    background: #fff;
 }
 
 .products-sidebar {
     position: sticky;
-    top: 0;
+    top: 16px;
     align-self: flex-start;
-    min-height: 100vh;
-    padding-top: 72px;
+    flex: 0 0 280px;
+    width: 280px;
+    min-width: 0;
+    min-height: 0;
+    max-height: calc(100dvh - 32px);
+    padding: 32px 24px;
+    overflow-y: auto;
+    scrollbar-width: thin;
 }
 
 .products-sidebar li {
-    margin-bottom: 36px;
+    margin-bottom: 8px;
+    max-width: 100%;
 }
+
+.products-category-button { display: block; width: 100%; min-height: 40px; padding: 9px 11px; border: 0; border-left: 3px solid transparent; border-radius: 4px; background: transparent; color: #d94960; font: inherit; font-size: 14px; font-weight: 600; text-align: left; overflow-wrap: anywhere; cursor: pointer; }
+.products-category-button:hover { background: #fff7fa; }
+.products-category-button[aria-pressed="true"] { border-left-color: #d94960; background: #fff0f4; }
+.products-category-button:focus-visible { outline: 2px solid #d94960; outline-offset: 2px; }
 
 .products-sidebar a {
     display: inline-flex;
@@ -1468,13 +1508,18 @@ body {
         position: static;
         width: 100%;
         min-height: 0;
+        max-height: none;
+        overflow: visible;
         padding: 22px 28px;
     }
+
+    .products-filter-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .products-sort-field { grid-column: 1 / -1; }
 
     .products-sidebar ul {
         display: flex;
         flex-wrap: wrap;
-        justify-content: center;
+        justify-content: flex-start;
         gap: 14px 24px;
     }
 

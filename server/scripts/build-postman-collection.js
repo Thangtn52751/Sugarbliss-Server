@@ -332,12 +332,16 @@ const collection = {
                     { key: 'category', value: 'Cake', disabled: true },
                     { key: 'featured', value: 'true', disabled: true },
                     { key: 'search', value: '{{searchQuery}}', disabled: true },
+                    { key: 'minPrice', value: '100000', disabled: true },
+                    { key: 'maxPrice', value: '300000', disabled: true },
+                    { key: 'sort', value: 'price_asc', disabled: true },
                 ],
                 tests: [
                     ...statusTest(200),
                     'const data = pm.response.json();',
                     "if (data.products?.[0]) pm.collectionVariables.set('productId', data.products[0]._id || data.products[0].id);",
                 ],
+                description: 'Optional inclusive minPrice/maxPrice (non-negative whole VND amounts), sort default/price_asc/price_desc. Filters combine with category/status/featured/search. Sorting happens globally before pagination with a stable ID tie-breaker; total counts matches. Response categories come from the database independently of price, selected category and page, so the category menu stays usable. Invalid ranges, repeated category or sorting return 400 PRODUCT_FILTER_INVALID.',
             }),
             requestItem({
                 name: 'GET /api/products/search',
@@ -422,10 +426,18 @@ const collection = {
                 tests: statusTest(200),
             }),
             requestItem({
+                name: 'GET /api/products/:id/reviews/eligibility',
+                method: 'GET',
+                pathname: '/api/products/{{productId}}/reviews/eligibility',
+                description: 'Customer-specific review permission. Requires a successful COD order or confirmed Paid payment containing productId. Cancelled, Failed, Refunded and pending online orders do not qualify. Existing reviews return ALREADY_REVIEWED.',
+                tests: statusTest(200),
+            }),
+            requestItem({
                 name: 'POST /api/products/:id/reviews',
                 method: 'POST',
                 pathname: '/api/products/{{productId}}/reviews',
                 body: { rating: 5, comment: 'Fresh, beautiful, and delicious.' },
+                description: 'JSON remains supported for reviews without photos. The authenticated customer must have successfully ordered this exact product; one review per user/product. Cannot supply user, images URLs or order/payment status.',
                 tests: [
                     ...statusTest(201),
                     'const data = pm.response.json();',
@@ -433,10 +445,23 @@ const collection = {
                 ],
             }),
             requestItem({
+                name: 'POST /api/products/:id/reviews (photos)',
+                method: 'POST',
+                pathname: '/api/products/{{productId}}/reviews',
+                formdata: [
+                    { key: 'rating', value: '5', type: 'text' },
+                    { key: 'comment', value: 'Fresh, beautiful, and delicious.', type: 'text' },
+                    { key: 'images', type: 'file', src: [], disabled: true },
+                ],
+                description: 'Select a purchased productId. Enable images and attach up to 5 JPG, PNG or WebP files, each up to 5 MB. Do not set Content-Type manually. Files are optional. Response includes server-generated /uploads/reviews paths. Submit this OR the JSON example, not both for the same user/product.',
+                tests: [...statusTest(201), "if (pm.response.code === 201) pm.collectionVariables.set('reviewId', pm.response.json()._id);"],
+            }),
+            requestItem({
                 name: 'PUT /api/products/:id/reviews/:reviewId',
                 method: 'PUT',
                 pathname: '/api/products/{{productId}}/reviews/{{reviewId}}',
                 body: { rating: 4, comment: 'Updated review from Postman.' },
+                description: 'Owner must still have a successful order; admin may moderate. JSON keeps existing photos. Multipart with new images replaces the photo gallery (same upload limits), removes superseded files and recalculates the summary. Cannot forge user or image URLs.',
                 tests: statusTest(200),
             }),
             requestItem({

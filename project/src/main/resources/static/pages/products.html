@@ -17,12 +17,27 @@
 
         <div class="products-layout">
             <aside class="products-sidebar">
-                <!-- <ul id="category-list" data-category-list></ul> -->
-                 <ul id="category-list" data-category-list></ul>
+                <div class="products-controls">
+                    <form class="products-filter-form" data-product-filters>
+                        <label><span data-i18n="products.minPrice">Price from (VND)</span><input id="products-min-price" name="minPrice" type="number" min="0" max="9007199254740991" step="1" inputmode="numeric" placeholder="0"></label>
+                        <label><span data-i18n="products.maxPrice">Price to (VND)</span><input id="products-max-price" name="maxPrice" type="number" min="0" max="9007199254740991" step="1" inputmode="numeric"></label>
+                        <label class="products-sort-field"><span data-i18n="products.sortLabel">Sort by</span><select id="products-sort" name="sort">
+                            <option value="default" data-i18n="products.sortDefault">Recommended</option>
+                            <option value="price_asc" data-i18n="products.sortLowHigh">Price: Low to high</option>
+                            <option value="price_desc" data-i18n="products.sortHighLow">Price: High to low</option>
+                        </select></label>
+                        <button class="products-filter-apply" type="submit" data-i18n="products.applyFilter">Apply</button>
+                        <button class="products-filter-reset" type="button" data-clear-product-filters data-i18n="products.clearFilter">Clear filters</button>
+                    </form>
+                    <p class="products-filter-error" data-product-filter-error role="alert" hidden></p>
+                    <p class="products-result-count" data-products-result-count role="status"></p>
+                </div>
+                <ul id="category-list" data-category-list></ul>
             </aside>
-<!-- 
-            <section class="products-main" id="products-container" data-products-container></section> -->
-            <section class="products-main" id="products-container" data-products-container></section>
+            <div class="products-content">
+                <section class="products-main" id="products-container" data-products-container></section>
+                <div class="products-pagination"><button class="products-filter-reset" type="button" data-products-more data-i18n="products.loadMore" hidden>Load more</button></div>
+            </div>
         </div>
     </main>
 

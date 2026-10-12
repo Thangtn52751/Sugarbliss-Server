@@ -1,5 +1,12 @@
 const API_BASE_URL = window.SugarBlissApi.baseUrl;
 const preferredCategories = ["Cookies", "Waffles", "Macaroons", "Snacks", "Beverages"];
+const productFilters = { minPrice: '', maxPrice: '', sort: 'default', category: '' };
+let availableProductCategories = [];
+let productFilterTimer = null;
+let productsRequestVersion = 0;
+let loadedProducts = [];
+let productsPagination = { page: 0, pages: 0, total: 0 };
+let productsLoading = false;
 
 function t(key, fallback) {
     if (window.SugarI18n) {
@@ -16,6 +23,26 @@ function tCategory(name) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+    document.querySelector('[data-product-filters]')?.addEventListener('submit', event => { event.preventDefault(); applyProductFilters(); });
+    document.getElementById('products-sort')?.addEventListener('change', () => applyProductFilters());
+    ['products-min-price', 'products-max-price'].forEach(id => {
+        document.getElementById(id)?.addEventListener('input', () => {
+            window.clearTimeout(productFilterTimer);
+            productFilterTimer = window.setTimeout(() => applyProductFilters(productFilters.category, false), 350);
+        });
+    });
+    document.querySelector('[data-category-list]')?.addEventListener('click', event => {
+        const button = event.target.closest('[data-product-category]');
+        if (button && !button.disabled) applyProductFilters(button.dataset.productCategory);
+    });
+    document.querySelector('[data-clear-product-filters]')?.addEventListener('click', () => {
+        document.querySelector('[data-product-filters]').reset();
+        window.clearTimeout(productFilterTimer);
+        Object.assign(productFilters, { minPrice: '', maxPrice: '', sort: 'default', category: '' });
+        filterFeedback();
+        fetchProducts();
+    });
+    document.querySelector('[data-products-more]')?.addEventListener('click', () => fetchProducts(true));
     fetchProducts();
 });
 
@@ -24,7 +51,59 @@ window.addEventListener("sugarbliss:lang-changed", () => {
     fetchProducts();
 });
 
-async function fetchProducts() {
+function filterFeedback(message = '') {
+    const node = document.querySelector('[data-product-filter-error]');
+    if (node) { node.textContent = message; node.hidden = !message; }
+}
+
+function applyProductFilters(category = productFilters.category, reportValidity = true) {
+    window.clearTimeout(productFilterTimer);
+    const form = document.querySelector('[data-product-filters]');
+    if (!form) return;
+    if (!(reportValidity ? form.reportValidity() : form.checkValidity())) {
+        filterFeedback(t('products.priceInputError', 'Enter a non-negative whole VND amount.'));
+        return;
+    }
+    const rawMinPrice = document.getElementById('products-min-price').value.trim();
+    const rawMaxPrice = document.getElementById('products-max-price').value.trim();
+    if ([rawMinPrice, rawMaxPrice].some(value => value !== '' && (!Number.isSafeInteger(Number(value)) || Number(value) < 0))) {
+        filterFeedback(t('products.priceInputError', 'Enter a non-negative whole VND amount.'));
+        return;
+    }
+    const minPrice = rawMinPrice === '' ? '' : String(Number(rawMinPrice));
+    const maxPrice = rawMaxPrice === '' ? '' : String(Number(rawMaxPrice));
+    if (minPrice && maxPrice && Number(minPrice) > Number(maxPrice)) {
+        filterFeedback(t('products.priceRangeError', 'Price from must not exceed Price to.'));
+        return;
+    }
+    Object.assign(productFilters, { minPrice, maxPrice, sort: document.getElementById('products-sort').value, category });
+    filterFeedback();
+    fetchProducts();
+}
+
+function syncProductsPagination() {
+    const more = document.querySelector('[data-products-more]');
+    if (more) {
+        more.hidden = productsPagination.page >= productsPagination.pages || !loadedProducts.length;
+        more.disabled = productsLoading;
+        more.textContent = productsLoading ? t('products.loading', 'Loading products...') : t('products.loadMore', 'Load more');
+    }
+    const count = document.querySelector('[data-products-result-count]');
+    if (count) count.textContent = productsLoading ? t('products.loading', 'Loading products...')
+        : t(productsPagination.total === 1 ? 'products.resultCountOne' : 'products.resultCount',
+            productsPagination.total === 1 ? '{count} product' : '{count} products').replace('{count}', String(productsPagination.total));
+}
+
+function renderProductCategories() {
+    const list = document.querySelector('[data-category-list]');
+    if (!list) return;
+    const categories = [...new Set([...availableProductCategories, ...(productFilters.category ? [productFilters.category] : [])])];
+    const ordered = getOrderedCategories(Object.fromEntries(categories.map(category => [category, []])));
+    list.hidden = false;
+    list.innerHTML = ['', ...ordered].map(category => `<li><button type="button" class="products-category-button" data-product-category="${escapeHtml(category)}" aria-pressed="${category === productFilters.category}">${escapeHtml(category ? tCategory(category) : t('products.allCategories', 'All products'))}</button></li>`).join('');
+}
+
+async function fetchProducts(append = false) {
     const container = document.querySelector("[data-products-container]");
     const categoryList = document.querySelector("[data-category-list]");
     const token = localStorage.getItem("sugarBlissToken");
@@ -32,6 +111,10 @@ async function fetchProducts() {
     if (!container || !categoryList) {
         return;
     }
+    if (append && (productsLoading || productsPagination.page >= productsPagination.pages)) return;
+    const version = ++productsRequestVersion;
+    const page = append ? productsPagination.page + 1 : 1;
+    renderProductCategories();
 
     if (!token) {
         container.innerHTML = `
@@ -41,54 +124,92 @@ async function fetchProducts() {
             </div>
         `;
         categoryList.innerHTML = "";
+        loadedProducts = [];
+        productsPagination = { page: 0, pages: 0, total: 0 };
+        productsLoading = false;
+        syncProductsPagination();
         return;
     }
 
-    container.innerHTML = `<div class="products-state"><p>${escapeHtml(t("products.loading", "Loading products..."))}</p></div>`;
+    productsLoading = true;
+    filterFeedback();
+    if (!append) {
+        loadedProducts = [];
+        productsPagination = { page: 0, pages: 0, total: 0 };
+        container.innerHTML = `<div class="products-state"><p>${escapeHtml(t("products.loading", "Loading products..."))}</p></div>`;
+    }
+    container.setAttribute('aria-busy', 'true');
+    syncProductsPagination();
 
     try {
-        const productsResponse = await fetch(`${API_BASE_URL}/api/products?status=all&limit=100`, {
+        const query = new URLSearchParams({ status: 'all', limit: '100', page: String(page), sort: productFilters.sort });
+        if (productFilters.minPrice !== '') query.set('minPrice', productFilters.minPrice);
+        if (productFilters.maxPrice !== '') query.set('maxPrice', productFilters.maxPrice);
+        if (productFilters.category !== '') query.set('category', productFilters.category);
+        const productsResponse = await fetch(`${API_BASE_URL}/api/products?${query}`, {
             headers: {
                 Authorization: `Bearer ${token}`
             }
         });
 
         const productsData = await productsResponse.json();
+        if (version !== productsRequestVersion) return;
 
         if (!productsResponse.ok) {
-            throw new Error(productsData.message || t("products.loadError", "Cannot load products."));
+            throw Object.assign(new Error(productsData.message || t("products.loadError", "Cannot load products.")), { status: productsResponse.status });
         }
 
-        renderProducts(Array.isArray(productsData.products) ? productsData.products : []);
+        const incoming = Array.isArray(productsData.products) ? productsData.products : [];
+        if (Array.isArray(productsData.categories)) {
+            availableProductCategories = productsData.categories.filter(category => typeof category === 'string' && category.trim());
+        } else if (!availableProductCategories.length) {
+            availableProductCategories = [...new Set(incoming.map(product => product.category).filter(Boolean))];
+        }
+        loadedProducts = append ? [...new Map([...loadedProducts, ...incoming].map(product => [String(product._id || product.id), product])).values()] : incoming;
+        productsPagination = { page, pages: Number(productsData.pagination?.pages) || 1,
+            total: Number(productsData.pagination?.total) || loadedProducts.length };
+        renderProducts(loadedProducts);
     } catch (error) {
-        container.innerHTML = `
+        if (version !== productsRequestVersion) return;
+        if (append) filterFeedback(error.message);
+        else container.innerHTML = `
             <div class="products-state is-error">
                 <p>${escapeHtml(error.message)}</p>
-                <a href="/login">${escapeHtml(t("products.loginAgain", "Login Again"))}</a>
+                ${error.status === 401 ? `<a href="/login">${escapeHtml(t('products.loginAgain', 'Login Again'))}</a>` : `<button class="products-filter-reset" type="button" data-retry-products>${escapeHtml(t('products.retry', 'Try again'))}</button>`}
             </div>
         `;
+        container.addEventListener('click', handleProductActionClick);
+    } finally {
+        if (version === productsRequestVersion) {
+            productsLoading = false;
+            container.setAttribute('aria-busy', 'false');
+            syncProductsPagination();
+        }
     }
 }
 
 function renderProducts(products) {
     const container = document.querySelector("[data-products-container]");
-    const categoryList = document.querySelector("[data-category-list]");
+    const sortedByPrice = productFilters.sort !== 'default';
+    renderProductCategories();
+    document.querySelector('.products-layout')?.classList.toggle('is-price-sorted', sortedByPrice);
     if (products.length === 0) {
         container.innerHTML = `
             <div class="products-state">
-                <p>${escapeHtml(t("products.empty", "No products are available yet."))}</p>
+                <p>${escapeHtml(productFilters.category !== '' || productFilters.minPrice !== '' || productFilters.maxPrice !== '' ? t('products.noMatches', 'No products match these filters.') : t("products.empty", "No products are available yet."))}</p>
             </div>
         `;
-        categoryList.innerHTML = "";
+        return;
+    }
+
+    if (sortedByPrice) {
+        container.innerHTML = `<div class="products-grid-layout">${products.map(renderProductCard).join('')}</div>`;
+        container.addEventListener('click', handleProductActionClick);
         return;
     }
 
     const groupedProducts = groupProductsByCategory(products);
     const orderedCategories = getOrderedCategories(groupedProducts);
-
-    categoryList.innerHTML = orderedCategories
-        .map((category) => `<li><a href="#${toSectionId(category)}">${escapeHtml(tCategory(category))}</a></li>`)
-        .join("");
 
     container.innerHTML = orderedCategories
         .map((category) => renderCategorySection(category, groupedProducts[category]))
@@ -107,7 +228,7 @@ function groupProductsByCategory(products) {
 
         groups[category].push(product);
         return groups;
-    }, {});
+    }, Object.create(null));
 }
 
 function getOrderedCategories(groupedProducts) {
@@ -160,6 +281,7 @@ function renderProductCard(product) {
 }
 
 function handleProductActionClick(event) {
+    if (event.target.closest('[data-retry-products]')) { fetchProducts(); return; }
     const imageButton = event.target.closest("[data-image-detail-id]");
     if (imageButton) {
         if (imageButton.disabled) return;

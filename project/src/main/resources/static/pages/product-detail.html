@@ -63,20 +63,27 @@
             <div class="reviews-container">
                 <div class="reviews-summary">
                     <div class="summary-score" id="summary-score">0.0/5.0</div>
-                    <div class="summary-count" id="summary-count" data-i18n="detail.reviewsBasedOn">Based on 0 reviews</div>
-                    <div class="summary-write">
+                    <div class="summary-count" id="summary-count">Based on 0 reviews</div>
+                    <p class="review-permission" id="review-permission" role="status"></p>
+                    <button class="review-retry" id="review-permission-retry" type="button" data-i18n="detail.reviewRetry" hidden>Try again</button>
+                    <fieldset class="summary-write" id="review-fields" disabled>
                         <strong data-i18n="detail.writeReview">Write a Review</strong>
                         <span data-i18n="detail.rating">Rating</span>
                         <div class="write-stars" id="write-stars">
-                            <span data-value="1">★</span>
-                            <span data-value="2">★</span>
-                            <span data-value="3">★</span>
-                            <span data-value="4">★</span>
-                            <span data-value="5">★</span>
+                            <button type="button" data-value="1" aria-label="1 star" aria-pressed="false">★</button>
+                            <button type="button" data-value="2" aria-label="2 stars" aria-pressed="false">★</button>
+                            <button type="button" data-value="3" aria-label="3 stars" aria-pressed="false">★</button>
+                            <button type="button" data-value="4" aria-label="4 stars" aria-pressed="false">★</button>
+                            <button type="button" data-value="5" aria-label="5 stars" aria-pressed="false">★</button>
                         </div>
-                        <textarea id="review-comment" class="review-textarea" placeholder="Write your review here..."></textarea>
-                    </div>
-                    <button class="btn-submit-review" id="btn-submit-review" data-i18n="detail.submitReview">Submit Review</button>
+                        <textarea id="review-comment" class="review-textarea" maxlength="1000" aria-label="Review" placeholder="Write your review here..."></textarea>
+                        <label class="review-photo-label" for="review-photos" data-i18n="detail.reviewPhotos">Photos (optional)</label>
+                        <input id="review-photos" type="file" accept="image/jpeg,image/png,image/webp" multiple>
+                        <button id="review-clear-photos" class="review-clear-photos" type="button" data-i18n="detail.reviewClearPhotos" hidden>Remove photos</button>
+                        <div class="review-photo-previews" id="review-photo-previews"></div>
+                    </fieldset>
+                    <p class="review-feedback" id="review-feedback" role="status" hidden></p>
+                    <button class="btn-submit-review" id="btn-submit-review" type="button" disabled>Submit Review</button>
                 </div>
                 
                 <div class="reviews-list" id="product-reviews-list">
@@ -91,6 +98,7 @@
     <script src="/assets/js/i18n.js"></script>
     <script src="/assets/js/shared-components.js"></script>
     <script src="/assets/js/header-profile.js"></script>
+    <script src="/assets/js/product-reviews.js"></script>
     <script src="/assets/js/product-detail.js"></script>
 </body>
 </html>

@@ -56,8 +56,8 @@ const getProductPayload = (body, files) => {
         images: uploadedImages.length ? uploadedImages : submittedImages,
         category: body.category,
         stock: body.stock,
-        weightGram: body.weightGram,
-        shelfLifeDays: body.shelfLifeDays,
+        weightGram: body.weightGram === '' ? null : body.weightGram,
+        shelfLifeDays: body.shelfLifeDays === '' ? null : body.shelfLifeDays,
         featured: body.featured,
         status: body.status,
     };

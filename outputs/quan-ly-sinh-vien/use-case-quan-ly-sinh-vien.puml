@@ -1,0 +1,81 @@
+@startuml
+left to right direction
+skinparam backgroundColor #FFFFFF
+skinparam defaultFontName SansSerif
+skinparam defaultFontSize 15
+skinparam shadowing false
+skinparam roundcorner 12
+skinparam nodesep 28
+skinparam ranksep 55
+skinparam ArrowColor #53657B
+skinparam actorBorderColor #243B53
+skinparam actorFontColor #243B53
+skinparam usecase {
+  BackgroundColor #EFF6FF
+  BorderColor #537AA5
+  FontColor #17324D
+}
+skinparam rectangle {
+  BorderColor #8BA2B9
+  FontColor #17324D
+}
+title USE CASE TỔNG QUÁT — QUẢN LÝ SINH VIÊN
+
+actor "Sinh viên" as SV
+actor "Giảng viên" as GV
+actor "Phòng đào tạo" as PDT
+actor "Kế toán" as KT
+actor "Quản trị viên" as QTV
+
+rectangle "HỆ THỐNG QUẢN LÝ SINH VIÊN" {
+  usecase "Xem hồ sơ cá nhân" as HoSo
+  usecase "Đăng ký học phần" as DangKy
+  usecase "Kiểm tra điều kiện\nđăng ký" as DieuKien
+  usecase "Xem thời khóa biểu" as TKB
+  usecase "Xem kết quả học tập" as KetQua
+  usecase "Xuất bảng điểm" as XuatDiem
+  usecase "Tra cứu học phí" as TraHocPhi
+
+  usecase "Xem danh sách lớp" as DSLop
+  usecase "Nhập / cập nhật điểm" as NhapDiem
+  usecase "Tính điểm tổng kết" as TinhDiem
+
+  usecase "Quản lý hồ sơ sinh viên" as QLHoSo
+  usecase "Quản lý môn học,\nlớp học phần" as QLMon
+  usecase "Lập thời khóa biểu" as LapTKB
+  usecase "Lập báo cáo, thống kê\nđào tạo" as BaoCao
+
+  usecase "Quản lý học phí,\ncông nợ" as QLHocPhi
+  usecase "Ghi nhận nộp học phí" as ThuPhi
+
+  usecase "Quản lý tài khoản\nvà phân quyền" as TaiKhoan
+  usecase "Sao lưu / khôi phục\ndữ liệu" as SaoLuu
+}
+
+SV -- HoSo
+SV -- DangKy
+SV -- TKB
+SV -- KetQua
+SV -- TraHocPhi
+GV -- DSLop
+GV -- NhapDiem
+PDT -- QLHoSo
+PDT -- QLMon
+PDT -- LapTKB
+PDT -- BaoCao
+KT -- QLHocPhi
+KT -- ThuPhi
+QTV -- TaiKhoan
+QTV -- SaoLuu
+
+DangKy ..> DieuKien : <<include>>
+NhapDiem ..> TinhDiem : <<include>>
+XuatDiem .left.> KetQua : <<extend>>\n[khi sinh viên chọn xuất]
+
+legend bottom left
+  Đường liền: Actor tham gia Use Case.
+  <<include>>: Luôn thực hiện chức năng được bao gồm.
+  <<extend>>: Bổ sung hành vi khi thỏa điều kiện.
+  Tiền điều kiện chung: Đã đăng nhập, có quyền phù hợp.
+endlegend
+@enduml

@@ -98,3 +98,39 @@ test('product quantity accepts zero or integers but rejects fractions, negative 
         assert.equal((await call('', 'POST', data)).status, 400);
     }
 });
+
+test('multipart specifications are stored as numbers and an ingredients array on create and edit', async () => {
+    const data = form([image()]); data.set('weightGram', '300.5'); data.set('shelfLifeDays', '3');
+    data.set('ingredients', JSON.stringify(['Flour', ' Butter ', 'Milk']));
+    const created = await call('', 'POST', data);
+    assert.equal(created.status, 201); assert.equal(created.data.weightGram, 300.5); assert.equal(created.data.shelfLifeDays, 3);
+    assert.deepEqual(created.data.ingredients, ['Flour', 'Butter', 'Milk']);
+    const update = form(); update.set('weightGram', '250'); update.set('shelfLifeDays', '5'); update.set('ingredients', '["Flour","Cocoa"]');
+    const edited = await call('/' + created.data._id, 'PUT', update);
+    assert.equal(edited.status, 200); assert.equal(edited.data.weightGram, 250); assert.equal(edited.data.shelfLifeDays, 5);
+    assert.deepEqual(edited.data.ingredients, ['Flour', 'Cocoa']); assert.deepEqual(edited.data.images, created.data.images);
+    const retained = await call('/' + created.data._id, 'PUT', form());
+    assert.equal(retained.data.weightGram, 250); assert.equal(retained.data.shelfLifeDays, 5);
+    assert.deepEqual(retained.data.ingredients, ['Flour', 'Cocoa']);
+});
+
+test('blank specification fields explicitly clear old data instead of leaving stale values', async () => {
+    const data = form([image()]); data.set('weightGram', '300'); data.set('shelfLifeDays', '3'); data.set('ingredients', '["Butter"]');
+    const created = (await call('', 'POST', data)).data;
+    const update = form(); update.set('weightGram', ''); update.set('shelfLifeDays', ''); update.set('ingredients', '[]');
+    const result = await call('/' + created._id, 'PUT', update);
+    assert.equal(result.status, 200); assert.equal(result.data.weightGram, null); assert.equal(result.data.shelfLifeDays, null);
+    assert.deepEqual(result.data.ingredients, []);
+});
+
+test('optional weight and shelf life accept zero but reject negative or non-numeric input', async () => {
+    const zero = form([image()]); zero.set('weightGram', '0'); zero.set('shelfLifeDays', '0');
+    const result = await call('', 'POST', zero);
+    assert.equal(result.status, 201); assert.equal(result.data.weightGram, 0); assert.equal(result.data.shelfLifeDays, 0);
+    for (const field of ['weightGram', 'shelfLifeDays']) {
+        for (const value of ['-1', 'no']) {
+            const data = form([image()]); data.set(field, value);
+            assert.equal((await call('', 'POST', data)).status, 400);
+        }
+    }
+});

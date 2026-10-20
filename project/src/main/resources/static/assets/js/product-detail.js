@@ -211,10 +211,10 @@ async function fetchProductDetail() {
         renderProductImages(product);
         
         document.getElementById('product-desc').innerText = product.description || "Chưa có mô tả cho sản phẩm này.";
-        document.getElementById('product-weight').innerText = product.weightGram ? `${product.weightGram}g` : "Đang cập nhật";
-        document.getElementById('product-exp').innerText = product.shelfLifeDays ? `${product.shelfLifeDays} days` : "Đang cập nhật";
+        document.getElementById('product-weight').innerText = product.weightGram != null ? `${product.weightGram}g` : "Đang cập nhật";
+        document.getElementById('product-exp').innerText = product.shelfLifeDays != null ? `${product.shelfLifeDays} days` : "Đang cập nhật";
         
-        if (product.ingredients && Array.isArray(product.ingredients)) {
+        if (Array.isArray(product.ingredients) && product.ingredients.length) {
             document.getElementById('product-ingredients').innerText = product.ingredients.join(', ');
         } else {
             document.getElementById('product-ingredients').innerText = "Đang cập nhật";

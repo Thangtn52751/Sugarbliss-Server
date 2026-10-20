@@ -215,7 +215,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const mainImgUrl = window.SugarBlissAdmin.assetUrl(images[0] || "/assets/images/cake1.png");
         const priceFmt = new Intl.NumberFormat("vi-VN").format(p.price || 0);
         const isActive = (p.status === 'active' || p.status === 'Active' || p.status === undefined);
-        const ingredients = Array.isArray(p.ingredients) ? p.ingredients.join(', ') : (p.ingredients || 'N/A');
+        const ingredients = Array.isArray(p.ingredients) ? p.ingredients.join(', ') || 'N/A' : (p.ingredients || 'N/A');
         const ratingVal = p.rating || p.averageRating || 0;
         const reviewCount = Array.isArray(p.reviews) ? p.reviews.length : 0;
 
@@ -242,8 +242,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <div class="detail-popup-specs">
                         <div class="spec-item"><strong>ID:</strong> <span>${escapeHtml(p._id || p.id || 'N/A')}</span></div>
                         <div class="spec-item"><strong>Stock:</strong> <span>${p.stock ?? 0} pcs</span></div>
-                        <div class="spec-item"><strong>Weight:</strong> <span>${p.weightGram ? p.weightGram + 'g' : 'N/A'}</span></div>
-                        <div class="spec-item"><strong>Shelf Life:</strong> <span>${p.shelfLifeDays ? p.shelfLifeDays + ' days' : 'N/A'}</span></div>
+                        <div class="spec-item"><strong>Weight:</strong> <span>${p.weightGram != null ? p.weightGram + 'g' : 'N/A'}</span></div>
+                        <div class="spec-item"><strong>Shelf Life:</strong> <span>${p.shelfLifeDays != null ? p.shelfLifeDays + ' days' : 'N/A'}</span></div>
                         <div class="spec-item"><strong>Rating:</strong> <span>★ ${ratingVal} (${reviewCount} reviews)</span></div>
                         <div class="spec-item"><strong>Ingredients:</strong> <span>${escapeHtml(ingredients)}</span></div>
                     </div>
@@ -309,6 +309,9 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('prod-id').value = product._id || product.id;
             document.getElementById('prod-name').value = product.name || '';
             document.getElementById('prod-description').value = product.description || '';
+            document.getElementById('prod-weightGram').value = product.weightGram ?? '';
+            document.getElementById('prod-shelfLifeDays').value = product.shelfLifeDays ?? '';
+            document.getElementById('prod-ingredients').value = Array.isArray(product.ingredients) ? product.ingredients.join(', ') : (product.ingredients || '');
             document.getElementById('prod-category').value = product.category || '';
             document.getElementById('prod-price').value = product.price || 0;
             document.getElementById('prod-stock').value = product.stock || 0;
@@ -329,9 +332,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (saving || !productForm.reportValidity()) return;
         const id = document.getElementById('prod-id').value;
         const payload = new FormData();
-        for (const field of ['name', 'description', 'category', 'price', 'stock', 'status']) {
+        for (const field of ['name', 'description', 'category', 'price', 'stock', 'status', 'weightGram', 'shelfLifeDays']) {
             payload.append(field, document.getElementById(`prod-${field}`).value);
         }
+        const ingredients = document.getElementById('prod-ingredients').value.split(/[,\r\n]+/).map(value => value.trim()).filter(Boolean);
+        payload.append('ingredients', JSON.stringify(ingredients));
         Array.from(imageInput.files || []).forEach((file) => payload.append('images', file));
         setSaving(true);
         formError('');

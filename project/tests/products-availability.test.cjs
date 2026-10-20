@@ -130,3 +130,17 @@ test('Vietnamese sold-out labels survive language changes on both views', async 
     assert.equal(detail.get('.detail-actions .btn-add-cart').textContent, 'Het hang');
     assert.equal(detail.get('.detail-actions .btn-add-cart').disabled, true);
 });
+
+test('customer detail displays the saved product weight, shelf life and ingredients', async () => {
+    const view = screen('product-detail.js', product({ weightGram: 300.5, shelfLifeDays: 3, ingredients: ['Flour', 'Butter', 'Milk'] }));
+    await view.context.fetchProductDetail();
+    assert.equal(view.get('product-weight').innerText, '300.5g'); assert.equal(view.get('product-exp').innerText, '3 days');
+    assert.equal(view.get('product-ingredients').innerText, 'Flour, Butter, Milk');
+});
+
+test('customer detail preserves zero values and shows the missing-data state for empty ingredients', async () => {
+    const view = screen('product-detail.js', product({ weightGram: 0, shelfLifeDays: 0, ingredients: [] }));
+    await view.context.fetchProductDetail();
+    assert.equal(view.get('product-weight').innerText, '0g'); assert.equal(view.get('product-exp').innerText, '0 days');
+    assert.equal(view.get('product-ingredients').innerText, '\u0110ang c\u1eadp nh\u1eadt');
+});

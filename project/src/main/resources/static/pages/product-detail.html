@@ -56,19 +56,60 @@
             </div>
         </div>
 
-        
-        <!-- Khối Customer Reviews -->
-        <div class="reviews-section">
-            <h2 data-i18n="detail.reviewsTitle">Customer Reviews</h2>
+        <!-- Khối Customer Reviews Chuyên Nghiệp -->
+        <section class="reviews-section">
+            <div class="reviews-header-block">
+                <h2 data-i18n="detail.reviewsTitle">Customer Reviews</h2>
+                <p class="reviews-subtitle">Real experiences and feedback from our sweet lovers</p>
+            </div>
+            
             <div class="reviews-container">
+                <!-- Summary Card Left -->
                 <div class="reviews-summary">
-                    <div class="summary-score" id="summary-score">0.0/5.0</div>
+                    <div class="summary-score-wrapper">
+                        <div class="summary-score" id="summary-score">0.0</div>
+                        <div class="summary-score-max">/ 5.0</div>
+                    </div>
+                    
+                    <div class="summary-stars-overview" id="summary-stars-overview" aria-hidden="true">★★★★★</div>
                     <div class="summary-count" id="summary-count">Based on 0 reviews</div>
+
+                    <!-- Breakdown Progress Bars -->
+                    <div class="rating-breakdown" id="rating-breakdown">
+                        <div class="breakdown-row" data-star="5">
+                            <span class="star-label">5 ★</span>
+                            <div class="bar-bg"><div class="bar-fill" style="width: 0%"></div></div>
+                            <span class="count-label">0</span>
+                        </div>
+                        <div class="breakdown-row" data-star="4">
+                            <span class="star-label">4 ★</span>
+                            <div class="bar-bg"><div class="bar-fill" style="width: 0%"></div></div>
+                            <span class="count-label">0</span>
+                        </div>
+                        <div class="breakdown-row" data-star="3">
+                            <span class="star-label">3 ★</span>
+                            <div class="bar-bg"><div class="bar-fill" style="width: 0%"></div></div>
+                            <span class="count-label">0</span>
+                        </div>
+                        <div class="breakdown-row" data-star="2">
+                            <span class="star-label">2 ★</span>
+                            <div class="bar-bg"><div class="bar-fill" style="width: 0%"></div></div>
+                            <span class="count-label">0</span>
+                        </div>
+                        <div class="breakdown-row" data-star="1">
+                            <span class="star-label">1 ★</span>
+                            <div class="bar-bg"><div class="bar-fill" style="width: 0%"></div></div>
+                            <span class="count-label">0</span>
+                        </div>
+                    </div>
+
                     <p class="review-permission" id="review-permission" role="status"></p>
                     <button class="review-retry" id="review-permission-retry" type="button" data-i18n="detail.reviewRetry" hidden>Try again</button>
+                    
                     <fieldset class="summary-write" id="review-fields" disabled>
-                        <strong data-i18n="detail.writeReview">Write a Review</strong>
-                        <span data-i18n="detail.rating">Rating</span>
+                        <legend class="write-review-title" data-i18n="detail.writeReview">Write a Review</legend>
+                        <span class="write-review-sub" data-i18n="detail.rating">Tap a star to rate:</span>
+                        
                         <div class="write-stars" id="write-stars">
                             <button type="button" data-value="1" aria-label="1 star" aria-pressed="false">★</button>
                             <button type="button" data-value="2" aria-label="2 stars" aria-pressed="false">★</button>
@@ -76,21 +117,42 @@
                             <button type="button" data-value="4" aria-label="4 stars" aria-pressed="false">★</button>
                             <button type="button" data-value="5" aria-label="5 stars" aria-pressed="false">★</button>
                         </div>
-                        <textarea id="review-comment" class="review-textarea" maxlength="1000" aria-label="Review" placeholder="Write your review here..."></textarea>
-                        <label class="review-photo-label" for="review-photos" data-i18n="detail.reviewPhotos">Photos (optional)</label>
-                        <input id="review-photos" type="file" accept="image/jpeg,image/png,image/webp" multiple>
-                        <button id="review-clear-photos" class="review-clear-photos" type="button" data-i18n="detail.reviewClearPhotos" hidden>Remove photos</button>
+
+                        <div class="review-textarea-wrapper">
+                            <textarea id="review-comment" class="review-textarea" maxlength="1000" aria-label="Review" placeholder="Write your thoughts about this product..."></textarea>
+                            <div class="char-counter"><span id="review-char-count">0</span>/1000</div>
+                        </div>
+
+                        <div class="review-upload-box">
+                            <label class="review-photo-label" for="review-photos">
+                                <span class="upload-icon">📷</span>
+                                <span data-i18n="detail.reviewPhotos">Add Photos (optional)</span>
+                                <small>JPG, PNG or WebP up to 5MB (Max 5)</small>
+                            </label>
+                            <input id="review-photos" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
+                        </div>
+
+                        <button id="review-clear-photos" class="review-clear-photos" type="button" data-i18n="detail.reviewClearPhotos" hidden>Remove all photos</button>
                         <div class="review-photo-previews" id="review-photo-previews"></div>
                     </fieldset>
+                    
                     <p class="review-feedback" id="review-feedback" role="status" hidden></p>
                     <button class="btn-submit-review" id="btn-submit-review" type="button" disabled>Submit Review</button>
                 </div>
                 
-                <div class="reviews-list" id="product-reviews-list">
+                <!-- Review List Right -->
+                <div class="reviews-list-wrapper">
+                    <div class="reviews-list" id="product-reviews-list"></div>
                 </div>
             </div>
-        </div>
+        </section>
     </main>
+
+    <!-- Modal Xem Ảnh Phóng To -->
+    <div id="review-image-modal" class="review-modal" hidden>
+        <span class="review-modal-close" id="review-modal-close">&times;</span>
+        <img class="review-modal-content" id="review-modal-img" alt="Enlarged review photo">
+    </div>
 
     <sugar-footer></sugar-footer>
     

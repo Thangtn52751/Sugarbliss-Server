@@ -46,7 +46,7 @@ async function handleForgotPassword(event) {
         setResetLoading(form, true);
         const data = await sendOtp(email);
         sessionStorage.setItem(RESET_EMAIL_KEY, email);
-        showResetMessage(data.devOtp ? `Development OTP: ${data.devOtp}` : "OTP sent successfully.", true);
+        showResetMessage(data.devOtp ? `${t("reset.devOtp", "Development OTP:")} ${data.devOtp}` : t("reset.otpSent", "OTP sent successfully."), true);
         setTimeout(() => {
             window.location.href = "/otp-verification";
         }, data.devOtp ? 900 : 450);
@@ -70,7 +70,7 @@ async function handleOtpVerification(event) {
     }
 
     if (otp.length !== 6) {
-        showResetMessage("Please enter the 6-digit code.", false);
+        showResetMessage(t("reset.enter6", "Please enter the 6-digit code."), false);
         return;
     }
 
@@ -90,11 +90,11 @@ async function handleOtpVerification(event) {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.message || "Cannot verify OTP.");
+            throw new Error(data.message || t("reset.otpVerifyError", "Cannot verify OTP."));
         }
 
         sessionStorage.setItem(RESET_TOKEN_KEY, data.resetToken);
-        showResetMessage("Code verified successfully.", true);
+        showResetMessage(t("reset.codeVerified", "Code verified successfully."), true);
         setTimeout(() => {
             window.location.href = "/new-password";
         }, 450);
@@ -115,7 +115,7 @@ async function resendOtp() {
 
     try {
         const data = await sendOtp(email);
-        showResetMessage(data.devOtp ? `Development OTP: ${data.devOtp}` : "A new OTP has been sent.", true);
+        showResetMessage(data.devOtp ? `${t("reset.devOtp", "Development OTP:")} ${data.devOtp}` : t("reset.otpResent", "A new OTP has been sent."), true);
     } catch (error) {
         showResetMessage(error.message, false);
     }
@@ -137,7 +137,7 @@ async function handleNewPassword(event) {
     }
 
     if (password !== confirmPassword) {
-        showResetMessage("Passwords do not match.", false);
+        showResetMessage(t("reset.passwordMismatch", "Passwords do not match."), false);
         return;
     }
 
@@ -157,12 +157,12 @@ async function handleNewPassword(event) {
         const data = await response.json();
 
         if (!response.ok) {
-            throw new Error(data.message || "Cannot reset password.");
+            throw new Error(data.message || t("reset.resetError", "Cannot reset password."));
         }
 
         sessionStorage.removeItem(RESET_EMAIL_KEY);
         sessionStorage.removeItem(RESET_TOKEN_KEY);
-        showResetMessage("Password reset successfully.", true);
+        showResetMessage(t("reset.resetSuccess", "Password reset successfully."), true);
         setTimeout(() => {
             window.location.href = "/login";
         }, 700);
@@ -187,7 +187,7 @@ async function sendOtp(email) {
     const data = await response.json();
 
     if (!response.ok) {
-        throw new Error(data.message || "Cannot send OTP.");
+        throw new Error(data.message || t("reset.sendError", "Cannot send OTP."));
     }
 
     return data;

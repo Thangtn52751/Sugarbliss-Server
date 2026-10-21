@@ -20,14 +20,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!token) {
         submitBtn.disabled = true;
         submitBtn.textContent = t('contact.loginToSubmit', 'Login to Submit');
-        showFormMessage('You must be <a href="/login" style="text-decoration: underline; color: inherit;">logged in</a> to send us a message.', 'error');
+        showFormMessage(t('contact.loginRequired', 'You must be <a href="/login" style="text-decoration: underline; color: inherit;">logged in</a> to send us a message.'), 'error');
     }
 
     contactForm.addEventListener('submit', async (e) => {
         e.preventDefault(); 
 
         if (!localStorage.getItem("sugarBlissToken")) {
-            showFormMessage('You must be logged in to send us a message.', 'error');
+            showFormMessage(t('contact.loginRequiredPlain', 'You must be logged in to send us a message.'), 'error');
             return;
         }
 
@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         if (!payload.name || !payload.email || !payload.message) {
-            showFormMessage('Please fill in all required fields.', 'error');
+            showFormMessage(t('contact.fillRequired', 'Please fill in all required fields.'), 'error');
             return;
         }
 
@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 throw new Error(result.message || 'Failed to send message. Please try again later.');
             }
 
-            showFormMessage('Thank you! Your message has been sent successfully.', 'success');
+            showFormMessage(t('contact.sendSuccess', 'Thank you! Your message has been sent successfully.'), 'success');
             contactForm.reset(); 
 
         } catch (error) {

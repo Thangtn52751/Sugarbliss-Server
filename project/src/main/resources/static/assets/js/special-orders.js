@@ -111,15 +111,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const validatePayload = (payload) => {
         if (!payload.name || !payload.email || !payload.phone || !payload.deliveryOption || !payload.orderDetails) {
-            return 'Please fill in name, email, phone, delivery option, and order details.';
+            return t('special.validateRequired', 'Please fill in name, email, phone, delivery option, and order details.');
         }
 
         if (!/^\S+@\S+\.\S+$/.test(payload.email)) {
-            return 'Please enter a valid email address.';
+            return t('special.validateEmail', 'Please enter a valid email address.');
         }
 
         if (payload.deliveryOption !== 'pickup' && (!payload.address1 || !payload.city || !payload.zipCode)) {
-            return 'Delivery address, city, and zip code are required for delivery orders.';
+            return t('special.validateDelivery', 'Delivery address, city, and zip code are required for delivery orders.');
         }
 
         return '';
@@ -168,8 +168,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const requestNumber = result.specialOrder?.requestNumber;
             showFormMessage(
                 requestNumber
-                    ? `Thank you. Request ${requestNumber} has been sent. We will contact you within 24 hours.`
-                    : (result.message || 'Thank you. Your special order request has been sent.'),
+                    ? t('special.successWithNumber', 'Thank you. Request {requestNumber} has been sent. We will contact you within 24 hours.').replace('{requestNumber}', requestNumber)
+                    : (result.message || t('special.success', 'Thank you. Your special order request has been sent.')),
                 'success'
             );
             form.reset();

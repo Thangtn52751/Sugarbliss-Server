@@ -368,6 +368,7 @@
         "chat.errTimeout": { vi: "Yêu cầu AI đã hết thời gian chờ. Vui lòng thử lại.", en: "The AI request timed out. Please try again." },
         "chat.errForbidden": { vi: "Tài khoản này không thể sử dụng trò chuyện. Vui lòng liên hệ Sugar Bliss.", en: "This account cannot use chat. Please contact Sugar Bliss." },
         "chat.errBadRequest": { vi: "Không thể gửi tin nhắn này. Vui lòng rút ngắn và thử lại.", en: "Unable to send this message. Please shorten it and try again." },
+        "chat.errNetwork": { vi: "Không thể kết nối tới Sugar Bliss. Vui lòng kiểm tra kết nối và thử lại.", en: "Unable to reach Sugar Bliss. Check your connection and try again." },
 
         // ----- Deep i18n: Gio hang (cart.js) -----
         "cart.emptyText": { vi: "Giỏ hàng của bạn đang trống.", en: "Your cart is empty." },
@@ -728,7 +729,32 @@
         "common.sending": { vi: "Đang gửi...", en: "Sending..." },
         "common.pleaseWait": { vi: "Vui lòng đợi...", en: "Please wait..." },
         "common.optional": { vi: "(không bắt buộc)", en: "(optional)" },
-        "contact.loginToSubmit": { vi: "Đăng nhập để gửi", en: "Login to Submit" }
+        "contact.loginToSubmit": { vi: "Đăng nhập để gửi", en: "Login to Submit" },
+
+        // ----- Deep i18n: Phan hoi form Lien he (contact.js) -----
+        "contact.loginRequired": { vi: "Bạn cần <a href=\"/login\" style=\"text-decoration: underline; color: inherit;\">đăng nhập</a> để gửi lời nhắn cho chúng tôi.", en: "You must be <a href=\"/login\" style=\"text-decoration: underline; color: inherit;\">logged in</a> to send us a message." },
+        "contact.loginRequiredPlain": { vi: "Bạn cần đăng nhập để gửi lời nhắn cho chúng tôi.", en: "You must be logged in to send us a message." },
+        "contact.fillRequired": { vi: "Vui lòng điền đầy đủ các trường bắt buộc.", en: "Please fill in all required fields." },
+        "contact.sendSuccess": { vi: "Cảm ơn bạn! Lời nhắn của bạn đã được gửi thành công.", en: "Thank you! Your message has been sent successfully." },
+
+        // ----- Deep i18n: Phan hoi form Dat hang dac biet (special-orders.js) -----
+        "special.validateRequired": { vi: "Vui lòng điền tên, email, số điện thoại, hình thức nhận hàng và chi tiết đơn hàng.", en: "Please fill in name, email, phone, delivery option, and order details." },
+        "special.validateEmail": { vi: "Vui lòng nhập địa chỉ email hợp lệ.", en: "Please enter a valid email address." },
+        "special.validateDelivery": { vi: "Địa chỉ giao hàng, thành phố và mã bưu chính là bắt buộc đối với đơn giao hàng.", en: "Delivery address, city, and zip code are required for delivery orders." },
+        "special.successWithNumber": { vi: "Cảm ơn bạn. Yêu cầu {requestNumber} đã được gửi. Chúng tôi sẽ liên hệ với bạn trong vòng 24 giờ.", en: "Thank you. Request {requestNumber} has been sent. We will contact you within 24 hours." },
+        "special.success": { vi: "Cảm ơn bạn. Yêu cầu đặt hàng đặc biệt của bạn đã được gửi.", en: "Thank you. Your special order request has been sent." },
+
+        // ----- Deep i18n: Phan hoi dat lai mat khau (password-reset.js) -----
+        "reset.otpSent": { vi: "Đã gửi mã OTP thành công.", en: "OTP sent successfully." },
+        "reset.devOtp": { vi: "OTP môi trường phát triển:", en: "Development OTP:" },
+        "reset.otpResent": { vi: "Đã gửi một mã OTP mới.", en: "A new OTP has been sent." },
+        "reset.enter6": { vi: "Vui lòng nhập mã gồm 6 chữ số.", en: "Please enter the 6-digit code." },
+        "reset.otpVerifyError": { vi: "Không thể xác thực mã OTP.", en: "Cannot verify OTP." },
+        "reset.codeVerified": { vi: "Đã xác thực mã thành công.", en: "Code verified successfully." },
+        "reset.passwordMismatch": { vi: "Mật khẩu không khớp.", en: "Passwords do not match." },
+        "reset.resetError": { vi: "Không thể đặt lại mật khẩu.", en: "Cannot reset password." },
+        "reset.resetSuccess": { vi: "Đặt lại mật khẩu thành công.", en: "Password reset successfully." },
+        "reset.sendError": { vi: "Không thể gửi mã OTP.", en: "Cannot send OTP." }
     };
 
     function getLang() {

@@ -613,8 +613,8 @@ class SugarChatbox extends HTMLElement {
                 }
             } catch (error) {
                 const message = ['AbortError', 'TimeoutError'].includes(error.name)
-                    ? 'The AI request timed out. Please try again.'
-                    : 'Unable to reach Sugar Bliss. Check your connection and try again.';
+                    ? t("chat.errTimeout", "The AI request timed out. Please try again.")
+                    : t("chat.errNetwork", "Unable to reach Sugar Bliss. Check your connection and try again.");
                 this.addMessage(message, 'assistant', bodyEl);
                 input.value = text;
             } finally {

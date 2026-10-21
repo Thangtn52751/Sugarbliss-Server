@@ -16,7 +16,7 @@
                 <div class="main-image">
                     <img id="main-product-image" src="/assets/images/cake1.png" alt="Product Image">
                 </div>
-                <div class="thumbnail-list" id="product-thumbnail-list" aria-label="Product images"></div>
+                <div class="thumbnail-list" id="product-thumbnail-list" aria-label="Product images" data-i18n-attr="aria-label:detail.imagesLabel"></div>
             </div>
 
             <div class="detail-info">
@@ -38,9 +38,9 @@
                 <p class="product-availability" id="product-availability" role="status" hidden></p>
                 <div class="detail-actions">
                     <div class="quantity-selector">
-                        <button type="button" onclick="updateQty(-1)" aria-label="Decrease quantity" disabled>&minus;</button>
+                        <button type="button" onclick="updateQty(-1)" aria-label="Decrease quantity" data-i18n-attr="aria-label:cart.decrease" disabled>&minus;</button>
                         <input type="number" id="qty-input" value="1" min="1" readonly disabled>
-                        <button type="button" onclick="updateQty(1)" aria-label="Increase quantity" disabled>+</button>
+                        <button type="button" onclick="updateQty(1)" aria-label="Increase quantity" data-i18n-attr="aria-label:cart.increase" disabled>+</button>
                     </div>
                     <button class="btn-favourite" id="favorite-detail-button" type="button" aria-pressed="false" data-i18n="detail.favourites">&#9825; Favourites</button>
                     <button class="btn-add-cart" type="button" onclick="addProductToCart(this)" data-i18n="detail.addToCart" disabled>Add To Cart</button>
@@ -111,15 +111,15 @@
                         <span class="write-review-sub" data-i18n="detail.rating">Tap a star to rate:</span>
                         
                         <div class="write-stars" id="write-stars">
-                            <button type="button" data-value="1" aria-label="1 star" aria-pressed="false">★</button>
-                            <button type="button" data-value="2" aria-label="2 stars" aria-pressed="false">★</button>
-                            <button type="button" data-value="3" aria-label="3 stars" aria-pressed="false">★</button>
-                            <button type="button" data-value="4" aria-label="4 stars" aria-pressed="false">★</button>
-                            <button type="button" data-value="5" aria-label="5 stars" aria-pressed="false">★</button>
+                            <button type="button" data-value="1" aria-label="1 star" data-i18n-attr="aria-label:detail.star1" aria-pressed="false">★</button>
+                            <button type="button" data-value="2" aria-label="2 stars" data-i18n-attr="aria-label:detail.star2" aria-pressed="false">★</button>
+                            <button type="button" data-value="3" aria-label="3 stars" data-i18n-attr="aria-label:detail.star3" aria-pressed="false">★</button>
+                            <button type="button" data-value="4" aria-label="4 stars" data-i18n-attr="aria-label:detail.star4" aria-pressed="false">★</button>
+                            <button type="button" data-value="5" aria-label="5 stars" data-i18n-attr="aria-label:detail.star5" aria-pressed="false">★</button>
                         </div>
 
                         <div class="review-textarea-wrapper">
-                            <textarea id="review-comment" class="review-textarea" maxlength="1000" aria-label="Review" data-i18n-attr="placeholder:detail.reviewPlaceholder" placeholder="Write your thoughts about this product..."></textarea>
+                            <textarea id="review-comment" class="review-textarea" maxlength="1000" aria-label="Review" data-i18n-attr="placeholder:detail.reviewPlaceholder,aria-label:detail.reviewLabel" placeholder="Write your thoughts about this product..."></textarea>
                             <div class="char-counter"><span id="review-char-count">0</span>/1000</div>
                         </div>
 

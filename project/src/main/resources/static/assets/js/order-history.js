@@ -349,7 +349,7 @@ function renderTrackingLink(value) {
     try {
         const url = new URL(value);
         if (url.protocol !== "https:" || !["share.lalamove.com", "share.sandbox.lalamove.com"].includes(url.hostname)) return "";
-        return `<a class="order-text-button" href="${escapeHtml(url.href)}" target="_blank" rel="noopener noreferrer">Track delivery</a>`;
+        return `<a class="order-text-button" href="${escapeHtml(url.href)}" target="_blank" rel="noopener noreferrer">${escapeHtml(t("orders.trackDelivery", "Track delivery"))}</a>`;
     } catch { return ""; }
 }
 

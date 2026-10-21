@@ -668,6 +668,61 @@
         "settings.saved": { vi: "Đã lưu cài đặt.", en: "Settings saved." },
         "settings.manage": { vi: "Quản lý", en: "Manage" },
 
+        // ----- Deep i18n: Nhan truy cap (aria-label / title tren control tinh) -----
+        // Chi tiet san pham
+        "detail.imagesLabel": { vi: "Ảnh sản phẩm", en: "Product images" },
+        "detail.reviewLabel": { vi: "Đánh giá", en: "Review" },
+        "detail.star1": { vi: "1 sao", en: "1 star" },
+        "detail.star2": { vi: "2 sao", en: "2 stars" },
+        "detail.star3": { vi: "3 sao", en: "3 stars" },
+        "detail.star4": { vi: "4 sao", en: "4 stars" },
+        "detail.star5": { vi: "5 sao", en: "5 stars" },
+        // Lich su don hang - phan trang
+        "orders.prevPage": { vi: "Trang trước", en: "Previous page" },
+        "orders.nextPage": { vi: "Trang sau", en: "Next page" },
+        // Trang chu - carousel phan hoi & anh
+        "home.prevFeedback": { vi: "Phản hồi trước", en: "Previous feedback" },
+        "home.nextFeedback": { vi: "Phản hồi sau", en: "Next feedback" },
+        "home.feedbackPages": { vi: "Các trang phản hồi", en: "Feedback pages" },
+        "home.showFeedback1": { vi: "Hiện phản hồi 1", en: "Show feedback 1" },
+        "home.showFeedback2": { vi: "Hiện phản hồi 2", en: "Show feedback 2" },
+        "home.showFeedback3": { vi: "Hiện phản hồi 3", en: "Show feedback 3" },
+        "home.specialPhotos": { vi: "Ảnh bánh đặt hàng đặc biệt", en: "Special order cake photos" },
+        // Trang ca nhan
+        "profile.uploadAvatar": { vi: "Tải ảnh đại diện", en: "Upload avatar" },
+        // Dang nhap / Dang ky
+        "login.formLabel": { vi: "Biểu mẫu đăng nhập", en: "Login form" },
+        "register.formLabel": { vi: "Biểu mẫu đăng ký", en: "Register form" },
+        "auth.cakePreview": { vi: "Ảnh bánh Sugar Bliss", en: "Sugar Bliss cake preview" },
+        "auth.loginLink": { vi: "Đăng nhập Sugar Bliss", en: "Sugar Bliss login" },
+        // Xac thuc OTP
+        "otp.digit1": { vi: "Chữ số OTP 1", en: "OTP digit 1" },
+        "otp.digit2": { vi: "Chữ số OTP 2", en: "OTP digit 2" },
+        "otp.digit3": { vi: "Chữ số OTP 3", en: "OTP digit 3" },
+        "otp.digit4": { vi: "Chữ số OTP 4", en: "OTP digit 4" },
+        "otp.digit5": { vi: "Chữ số OTP 5", en: "OTP digit 5" },
+        "otp.digit6": { vi: "Chữ số OTP 6", en: "OTP digit 6" },
+
+        // ----- Deep i18n: Alt text anh trang tri / thuong hieu -----
+        // Trang chu
+        "home.altHero": { vi: "Bánh sinh nhật màu hồng với hộp Sugar Bliss", en: "Pink birthday cake with Sugar Bliss box" },
+        "home.altBerry": { vi: "Bánh sừng bò dâu tây", en: "Strawberry croissants" },
+        "home.altBirthday": { vi: "Bánh sinh nhật màu hồng", en: "Pink birthday cake" },
+        "home.altMacaron": { vi: "Bánh kem", en: "Cream day cake" },
+        "home.altParty": { vi: "Bộ tráng miệng Sugar Bliss", en: "Sugar Bliss dessert set" },
+        "home.altCollageMain": { vi: "Bánh kem đặt riêng", en: "Custom cream day cake" },
+        "home.altCollageLeft": { vi: "Bánh sinh nhật đặt riêng màu hồng", en: "Pink custom birthday cake" },
+        "home.altCollageRight": { vi: "Hộp đựng bánh đặt riêng", en: "Custom cake packaging" },
+        // About Us
+        "about.altHero": { vi: "Quầy tiệm bánh Sugar Bliss", en: "Sugar Bliss Bakery Counter" },
+        "about.altStory": { vi: "Câu chuyện Sugar Bliss", en: "Sugar Bliss story" },
+        "about.altMission": { vi: "Sứ mệnh của chúng tôi", en: "Our Mission" },
+        "about.altPromise": { vi: "Cam kết của chúng tôi", en: "Our Promise" },
+        // Products
+        "products.altBanner": { vi: "Ảnh nền banner Sugar Bliss", en: "Sugar Bliss banner background" },
+        // Dang nhap / Dang ky - anh banh
+        "auth.altCake": { vi: "Bánh Sugar Bliss", en: "Sugar Bliss cake" },
+
         // ----- Nhan chung -----
         "common.langLabel": { vi: "VI", en: "EN" },
         "common.sending": { vi: "Đang gửi...", en: "Sending..." },

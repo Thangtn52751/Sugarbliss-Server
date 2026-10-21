@@ -2,6 +2,16 @@ const RESET_API_BASE_URL = window.SugarBlissApi.baseUrl;
 const RESET_EMAIL_KEY = "sugarBlissResetEmail";
 const RESET_TOKEN_KEY = "sugarBlissResetToken";
 
+function t(key, fallback) {
+    if (window.SugarI18n) {
+        const value = window.SugarI18n.translate(key);
+        if (value !== null) {
+            return value;
+        }
+    }
+    return fallback;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     const form = document.querySelector("[data-reset-page]");
     const page = form?.dataset.resetPage;
@@ -240,8 +250,10 @@ function setResetLoading(form, loading) {
         button.dataset.defaultText = button.textContent;
     }
 
+    const defaultKey = button.getAttribute("data-i18n");
+    const defaultText = defaultKey ? t(defaultKey, button.dataset.defaultText) : button.dataset.defaultText;
     button.disabled = loading;
-    button.textContent = loading ? "Please wait..." : button.dataset.defaultText;
+    button.textContent = loading ? t("common.pleaseWait", "Please wait...") : defaultText;
 }
 
 function showResetMessage(message, success) {

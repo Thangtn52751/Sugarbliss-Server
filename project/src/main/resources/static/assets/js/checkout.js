@@ -9,6 +9,13 @@
         contactQuoteTimer: null, quoteError: false, quoteQueued: false,
         voucher: null, voucherBusy: false, voucherVersion: 0, ownedVouchers: [], paymentMethod: 'COD', paymentMethods: [], paymentPollTimer: null };
     const $ = (selector) => document.querySelector(selector);
+    const t = (key, fallback) => {
+        if (window.SugarI18n) {
+            const value = window.SugarI18n.translate(key);
+            if (value !== null) return value;
+        }
+        return fallback;
+    };
     const money = (value) => new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND", maximumFractionDigits: 0 }).format(Number(value) || 0);
     const escape = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" })[char]);
     const iconPaths = {
@@ -245,7 +252,7 @@
             state.ownedVouchers = result.vouchers || [];
             const select = $('[data-voucher-owned]');
             if (!select) return;
-            select.innerHTML = '<option value="">Choose a voucher</option>' + state.ownedVouchers.map((voucher) => {
+            select.innerHTML = `<option value="">${escape(t("checkout.chooseVoucher", "Choose a voucher"))}</option>` + state.ownedVouchers.map((voucher) => {
                 const unavailable = !voucher.active || !voucher.expiresAt || (voucher.startsAt && Date.parse(voucher.startsAt) > Date.now()) ||
                     (voucher.expiresAt && Date.parse(voucher.expiresAt) <= Date.now()) || subtotal() < voucher.minOrder ||
                     (voucher.usageLimit > 0 && voucher.usedCount >= voucher.usageLimit);
@@ -899,7 +906,7 @@
     function showEmptyCart() {
         $("[data-checkout-review]").hidden = true;
         $("[data-checkout-loading]").hidden = false;
-        $("[data-checkout-loading]").innerHTML = 'Your cart is empty. <a href="/products">Choose something sweet</a> to get started.';
+        $("[data-checkout-loading]").innerHTML = `${escape(t("checkout.emptyText", "Your cart is empty."))} <a href="/products">${escape(t("checkout.emptyLink", "Choose something sweet"))}</a>`;
     }
 
     function showLoadError(message) {

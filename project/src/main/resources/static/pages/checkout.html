@@ -31,10 +31,10 @@
                                     <legend><span class="checkout-icon" data-icon="pin"></span>Delivery address</legend>
                                     <div class="checkout-field-grid">
                                         <label>Recipient name<input name="recipientName" autocomplete="name" maxlength="100" required></label>
-                                        <label>Phone number<input name="phone" type="tel" autocomplete="tel" placeholder="0901234567" pattern="(?:0[0-9]{9,10}|\+84[0-9]{9,10})" title="Enter a Vietnamese phone number such as 0901234567 or +84901234567" required><small class="checkout-field-error" data-phone-status hidden>Enter a valid number, for example 0901234567 or +84901234567.</small></label>
+                                        <label>Phone number<input name="phone" type="tel" autocomplete="tel" placeholder="0901234567" pattern="(?:0[0-9]{9,10}|\+84[0-9]{9,10})" title="Enter a Vietnamese phone number such as 0901234567 or +84901234567" data-i18n-attr="title:checkout.phoneTitle" required><small class="checkout-field-error" data-phone-status hidden data-i18n="checkout.phoneError">Enter a valid number, for example 0901234567 or +84901234567.</small></label>
                                         <label class="checkout-field-full">Street address
                                             <span class="checkout-address-search">
-                                                <input name="address" data-address-search autocomplete="off" maxlength="300" placeholder="Search delivery address" role="combobox" aria-autocomplete="list" aria-controls="delivery-address-suggestions" aria-expanded="false" required>
+                                                <input name="address" data-address-search autocomplete="off" maxlength="300" placeholder="Search delivery address" data-i18n-attr="placeholder:checkout.addressPlaceholder" role="combobox" aria-autocomplete="list" aria-controls="delivery-address-suggestions" aria-expanded="false" required>
                                                 <span class="checkout-address-spinner" data-address-spinner hidden aria-hidden="true"></span>
                                                 <span class="checkout-address-suggestions" id="delivery-address-suggestions" data-address-suggestions role="listbox" hidden></span>
                                             </span>
@@ -42,7 +42,7 @@
                                             <small class="checkout-address-attribution">Address data may include <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap contributors</a>.</small>
                                         </label>
                                     </div>
-                                    <label class="checkout-note-field">Delivery note <span>(optional)</span><textarea name="note" rows="2" maxlength="500" placeholder="Anything we should know for a smooth delivery?"></textarea></label>
+                                    <label class="checkout-note-field"><span data-i18n="checkout.noteLabel">Delivery note</span> <span data-i18n="common.optional">(optional)</span><textarea name="note" rows="2" maxlength="500" placeholder="Anything we should know for a smooth delivery?" data-i18n-attr="placeholder:checkout.notePlaceholder"></textarea></label>
                                 </fieldset>
                             </form>
                             <div class="checkout-detail-row">
@@ -68,7 +68,7 @@
                                 <button type="button" class="checkout-voucher-remove" data-voucher-remove title="Remove voucher" aria-label="Remove voucher" data-i18n-attr="title:voucher.remove,aria-label:voucher.remove" hidden>&times;</button>
                             </div>
                             <label class="checkout-voucher-owned" for="checkout-owned-vouchers"><span data-i18n="voucher.owned">My vouchers</span> (<span data-voucher-count>0</span>)</label>
-                            <select id="checkout-owned-vouchers" data-voucher-owned aria-label="My vouchers"><option value="">Choose a voucher</option></select>
+                            <select id="checkout-owned-vouchers" data-voucher-owned aria-label="My vouchers"><option value="" data-i18n="checkout.chooseVoucher">Choose a voucher</option></select>
                             <p class="checkout-voucher-status" data-voucher-status role="status" aria-live="polite" hidden></p>
                         </div>
                         <dl class="checkout-totals">
@@ -90,6 +90,7 @@
     </main>
     <sugar-footer></sugar-footer>
     <script src="/assets/js/api-config.js"></script>
+    <script src="/assets/js/i18n.js"></script>
     <script src="/assets/js/shared-components.js"></script>
     <script src="/assets/js/header-profile.js"></script>
     <script src="/assets/js/checkout.js?v=7"></script>

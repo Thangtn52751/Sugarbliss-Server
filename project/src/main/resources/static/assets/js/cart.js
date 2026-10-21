@@ -4,11 +4,28 @@ let deliveryMethods = [];
 let selectedDeliveryMethod = "standard";
 let checkoutBusy = false;
 
+function t(key, fallback) {
+    if (window.SugarI18n) {
+        const value = window.SugarI18n.translate(key);
+        if (value !== null) {
+            return value;
+        }
+    }
+    return fallback;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     document.querySelector("[data-cart-list]")?.addEventListener("click", handleCartAction);
     document.querySelector("[data-cart-checkout]")?.addEventListener("click", checkoutCart);
     document.querySelector("[data-delivery-method]")?.addEventListener("change", handleDeliveryMethodChange);
     loadCart();
+});
+
+// Ve lai gio hang khi nguoi dung doi ngon ngu
+window.addEventListener("sugarbliss:lang-changed", () => {
+    if (cartItems.length || document.querySelector("[data-cart-list]")) {
+        renderCart();
+    }
 });
 
 async function loadCart() {
@@ -89,7 +106,9 @@ function renderCart() {
         list.replaceChildren();
         state.hidden = false;
         state.classList.remove("is-error");
-        state.innerHTML = 'Your cart is empty. <a href="/products">Browse our products</a>.';
+        const emptyText = escapeCartHtml(t("cart.emptyText", "Your cart is empty."));
+        const emptyLink = escapeCartHtml(t("cart.emptyLink", "Browse our products"));
+        state.innerHTML = `${emptyText} <a href="/products">${emptyLink}</a>`;
         return;
     }
 
@@ -140,10 +159,10 @@ function renderCartItem(item) {
                 <button class="remove-cart-item" type="button" data-cart-remove="${escapeCartHtml(productId)}">Remove item</button>
             </div>
             <strong class="cart-line-total">${formatCartPrice(lineTotal)}</strong>
-            <div class="cart-quantity" aria-label="Quantity for ${escapeCartHtml(product.name || "product")}">
-                <button type="button" data-cart-decrease="${escapeCartHtml(productId)}" aria-label="Decrease quantity" ${quantity <= 1 ? "disabled" : ""}>&minus;</button>
+            <div class="cart-quantity" aria-label="${escapeCartHtml(t("cart.qtyFor", "Quantity for {name}").replace("{name}", product.name || "product"))}">
+                <button type="button" data-cart-decrease="${escapeCartHtml(productId)}" aria-label="${escapeCartHtml(t("cart.decrease", "Decrease quantity"))}" ${quantity <= 1 ? "disabled" : ""}>&minus;</button>
                 <span>${quantity}</span>
-                <button type="button" data-cart-increase="${escapeCartHtml(productId)}" aria-label="Increase quantity">+</button>
+                <button type="button" data-cart-increase="${escapeCartHtml(productId)}" aria-label="${escapeCartHtml(t("cart.increase", "Increase quantity"))}">+</button>
             </div>
         </article>
     `;

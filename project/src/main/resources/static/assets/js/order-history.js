@@ -11,6 +11,16 @@ let orderRequestController;
 let deliverySyncTimer;
 let deliverySyncing = false;
 
+function t(key, fallback) {
+    if (window.SugarI18n) {
+        const value = window.SugarI18n.translate(key);
+        if (value !== null) {
+            return value;
+        }
+    }
+    return fallback;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     document.querySelector("[data-order-search]")?.addEventListener("input", handleOrderSearch);
     document.querySelector("[data-order-list]")?.addEventListener("click", handleOrderAction);
@@ -24,6 +34,18 @@ document.addEventListener("DOMContentLoaded", () => {
     loadOrderHistory();
 });
 
+// Ve lai danh sach don hang khi nguoi dung doi ngon ngu
+window.addEventListener("sugarbliss:lang-changed", () => {
+    if (allOrders.length) {
+        renderOrderHistory();
+    } else {
+        const state = document.querySelector("[data-order-state]");
+        if (state && !state.hidden && !state.classList.contains("is-error")) {
+            state.textContent = currentSearchQuery ? t("orders.noMatch", "No orders match your search.") : t("orders.empty", "You have no orders yet.");
+        }
+    }
+});
+
 async function loadOrderHistory(searchQuery = "") {
     const token = localStorage.getItem("sugarBlissToken");
     const state = document.querySelector("[data-order-state]");
@@ -35,7 +57,7 @@ async function loadOrderHistory(searchQuery = "") {
 
     state.hidden = false;
     state.classList.remove("is-error");
-    state.textContent = "Loading orders...";
+    state.textContent = t("orders.loading", "Loading orders...");
 
     orderRequestController?.abort();
     orderRequestController = new AbortController();
@@ -95,7 +117,7 @@ function renderOrderHistory() {
         list.replaceChildren();
         state.hidden = false;
         state.classList.remove("is-error");
-        state.textContent = currentSearchQuery ? "No orders match your search." : "You have no orders yet.";
+        state.textContent = currentSearchQuery ? t("orders.noMatch", "No orders match your search.") : t("orders.empty", "You have no orders yet.");
         pagination.hidden = true;
         return;
     }
@@ -145,13 +167,13 @@ function renderOrderCard(order) {
             ${order.shippingError ? `<p class="delivery-issue" role="status">${escapeHtml(order.shippingError)}</p>` : ""}
 
             <footer class="order-card-actions">
-                <button class="order-text-button" type="button" data-view-order="${safeId}" aria-expanded="false">View order details</button>
+                <button class="order-text-button" type="button" data-view-order="${safeId}" aria-expanded="false">${escapeHtml(t("orders.viewDetails", "View order details"))}</button>
                 <button class="order-text-button" type="button" data-download-order="${safeId}">Download invoice</button>
                 ${canSyncPayment(order) ? `<a class="order-text-button" href="/checkout?order=${encodeURIComponent(orderId)}">Continue payment</a>
                     <button class="order-text-button" type="button" data-refresh-payment="${safeId}">Refresh payment</button>` : ""}
                 ${canSyncDelivery(order) ? `<button class="order-text-button" type="button" data-refresh-shipping="${safeId}">Refresh delivery</button>` : ""}
                 ${renderTrackingLink(order.shippingTrackingUrl)}
-                ${order.status === "In Progress" ? `<button class="order-cancel-button" type="button" data-cancel-order="${safeId}">Cancel Order</button>` : ""}
+                ${order.status === "In Progress" ? `<button class="order-cancel-button" type="button" data-cancel-order="${safeId}">${escapeHtml(t("orders.cancelOrder", "Cancel Order"))}</button>` : ""}
             </footer>
         </article>
     `;
@@ -210,7 +232,7 @@ function toggleOrderDetails(button) {
     const isOpening = details.hidden;
     details.hidden = !isOpening;
     button.setAttribute("aria-expanded", String(isOpening));
-    button.textContent = isOpening ? "Hide order details" : "View order details";
+    button.textContent = isOpening ? t("orders.hideDetails", "Hide order details") : t("orders.viewDetails", "View order details");
 }
 
 async function cancelOrder(orderId, button) {
@@ -221,7 +243,7 @@ async function cancelOrder(orderId, button) {
     }
 
     button.disabled = true;
-    button.textContent = "Cancelling...";
+    button.textContent = t("orders.cancelling", "Cancelling...");
 
     try {
         const response = await fetch(`${ORDER_API_BASE_URL}/api/orders/${orderId}/cancel`, {
@@ -247,7 +269,7 @@ async function cancelOrder(orderId, button) {
     } catch (error) {
         alert(error.message);
         button.disabled = false;
-        button.textContent = "Cancel Order";
+        button.textContent = t("orders.cancelOrder", "Cancel Order");
     }
 }
 

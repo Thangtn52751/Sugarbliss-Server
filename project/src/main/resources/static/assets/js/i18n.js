@@ -367,6 +367,10 @@
         "orders.loading": { vi: "Đang tải đơn hàng...", en: "Loading orders..." },
         "orders.cancelling": { vi: "Đang hủy...", en: "Cancelling..." },
         "orders.cancelOrder": { vi: "Hủy đơn hàng", en: "Cancel Order" },
+        "orders.empty": { vi: "Bạn chưa có đơn hàng nào.", en: "You have no orders yet." },
+        "orders.noMatch": { vi: "Không có đơn hàng phù hợp với tìm kiếm.", en: "No orders match your search." },
+        "orders.viewDetails": { vi: "Xem chi tiết đơn hàng", en: "View order details" },
+        "orders.hideDetails": { vi: "Ẩn chi tiết đơn hàng", en: "Hide order details" },
 
         // ----- Deep i18n: Trang ca nhan (profile.js) -----
         "profile.loadingOrders": { vi: "Đang tải đơn hàng...", en: "Loading orders..." },
@@ -430,6 +434,7 @@
         // ----- Nhan chung -----
         "common.langLabel": { vi: "VI", en: "EN" },
         "common.sending": { vi: "Đang gửi...", en: "Sending..." },
+        "common.pleaseWait": { vi: "Vui lòng đợi...", en: "Please wait..." },
         "common.optional": { vi: "(không bắt buộc)", en: "(optional)" },
         "contact.loginToSubmit": { vi: "Đăng nhập để gửi", en: "Login to Submit" }
     };

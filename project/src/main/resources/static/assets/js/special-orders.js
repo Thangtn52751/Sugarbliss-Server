@@ -1,3 +1,13 @@
+function t(key, fallback) {
+    if (window.SugarI18n) {
+        const value = window.SugarI18n.translate(key);
+        if (value !== null) {
+            return value;
+        }
+    }
+    return fallback;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.querySelector('[data-bliss-form="special-order"]');
 
@@ -134,8 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const originalBtnText = submitBtn.textContent;
-        submitBtn.textContent = 'Sending...';
+        submitBtn.textContent = t('common.sending', 'Sending...');
         submitBtn.disabled = true;
 
         try {
@@ -169,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Special order submit error:', error);
             showFormMessage(error.message || 'Cannot connect to server.', 'error');
         } finally {
-            submitBtn.textContent = originalBtnText;
+            submitBtn.textContent = t('special.submit', 'Submit');
             submitBtn.disabled = false;
         }
     });

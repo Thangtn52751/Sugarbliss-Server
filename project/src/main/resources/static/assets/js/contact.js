@@ -1,3 +1,13 @@
+function t(key, fallback) {
+    if (window.SugarI18n) {
+        const value = window.SugarI18n.translate(key);
+        if (value !== null) {
+            return value;
+        }
+    }
+    return fallback;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const contactForm = document.querySelector('[data-bliss-form="contact"]');
     
@@ -9,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const token = localStorage.getItem("sugarBlissToken");
     if (!token) {
         submitBtn.disabled = true;
-        submitBtn.textContent = 'Login to Submit';
+        submitBtn.textContent = t('contact.loginToSubmit', 'Login to Submit');
         showFormMessage('You must be <a href="/login" style="text-decoration: underline; color: inherit;">logged in</a> to send us a message.', 'error');
     }
 
@@ -39,8 +49,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const originalBtnText = submitBtn.textContent;
-        submitBtn.textContent = 'Sending...';
+        submitBtn.textContent = t('common.sending', 'Sending...');
         submitBtn.disabled = true;
 
         try {
@@ -66,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Lỗi gửi form liên hệ:", error);
             showFormMessage(error.message, 'error');
         } finally {
-            submitBtn.textContent = originalBtnText;
+            submitBtn.textContent = t('contact.submit', 'Submit');
             submitBtn.disabled = false;
         }
     });

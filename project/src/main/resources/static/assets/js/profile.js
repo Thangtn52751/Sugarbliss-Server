@@ -1,5 +1,17 @@
 const PROFILE_API_BASE_URL = window.SugarBlissApi.baseUrl;
 const TERMINAL_PROFILE_DELIVERY_STATUSES = new Set(["COMPLETED", "CANCELED", "REJECTED", "EXPIRED", "FAILED"]);
+let lastProfileOrders = null;
+let lastProfileFavorites = null;
+
+function t(key, fallback) {
+    if (window.SugarI18n) {
+        const value = window.SugarI18n.translate(key);
+        if (value !== null) {
+            return value;
+        }
+    }
+    return fallback;
+}
 
 document.addEventListener("DOMContentLoaded", () => {
     loadProfile();
@@ -14,6 +26,16 @@ document.addEventListener("DOMContentLoaded", () => {
     cancelButton?.addEventListener("click", loadProfile);
     avatarButton?.addEventListener("click", () => avatarInput?.click());
     avatarInput?.addEventListener("change", uploadAvatar);
+});
+
+// Ve lai don hang gan day va yeu thich khi nguoi dung doi ngon ngu
+window.addEventListener("sugarbliss:lang-changed", () => {
+    if (lastProfileOrders) {
+        renderOrders(lastProfileOrders);
+    }
+    if (lastProfileFavorites) {
+        renderFavorites(lastProfileFavorites);
+    }
 });
 
 async function loadProfile() {
@@ -53,7 +75,7 @@ async function loadRecentOrders() {
         return;
     }
 
-    container.innerHTML = '<p class="profile-empty">Loading orders...</p>';
+    container.innerHTML = `<p class="profile-empty">${escapeHtml(t("profile.loadingOrders", "Loading orders..."))}</p>`;
 
     try {
         const response = await fetch(`${PROFILE_API_BASE_URL}/api/orders/my`, {
@@ -218,9 +240,10 @@ function renderProfile(user) {
 
 function renderOrders(orders) {
     const container = document.querySelector("[data-profile-orders]");
+    lastProfileOrders = orders;
 
     if (orders.length === 0) {
-        container.innerHTML = '<p class="profile-empty">No orders yet.</p>';
+        container.innerHTML = `<p class="profile-empty">${escapeHtml(t("profile.noOrders", "No orders yet."))}</p>`;
         return;
     }
 
@@ -247,17 +270,20 @@ function getOrderStatusClass(order) {
 
 function renderFavorites(products) {
     const container = document.querySelector("[data-profile-favorites]");
+    lastProfileFavorites = products;
 
     if (products.length === 0) {
-        container.innerHTML = '<p class="profile-empty">No favorites yet.</p>';
+        container.innerHTML = `<p class="profile-empty">${escapeHtml(t("profile.noFavorites", "No favorites yet."))}</p>`;
         return;
     }
 
     container.innerHTML = products.slice(0, 4).map((product) => {
         const productId = encodeURIComponent(product._id || product.id || "");
+        const favoriteName = product.name || t("products.defaultName", "Sugar Bliss product");
+        const favoriteAria = t("profile.viewFavorite", "View {name} detail").replace("{name}", favoriteName);
 
         return `
-        <a class="favorite-item" href="/product-detail?id=${productId}" aria-label="View ${escapeHtml(product.name || "Sugar Bliss product")} detail">
+        <a class="favorite-item" href="/product-detail?id=${productId}" aria-label="${escapeHtml(favoriteAria)}">
             <img src="${escapeHtml(resolveImageUrl(product.images?.[0] || product.image))}" alt="${escapeHtml(product.name)}">
             <div class="favorite-info">
                 <h3>${escapeHtml(truncate(product.name, 28))}</h3>

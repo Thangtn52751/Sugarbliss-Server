@@ -1,3 +1,13 @@
+function t(key, fallback) {
+    if (window.SugarI18n) {
+        const value = window.SugarI18n.translate(key);
+        if (value !== null) {
+            return value;
+        }
+    }
+    return fallback;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     const API_BASE_URL = window.SugarBlissApi.baseUrl;
     const form = document.querySelector("[data-bliss-form]");
@@ -44,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const payload = Object.fromEntries(new FormData(form).entries());
 
         submitButton.disabled = true;
-        submitButton.textContent = "Sending...";
+        submitButton.textContent = t("common.sending", "Sending...");
 
         try {
             const response = await fetch(`${API_BASE_URL}${endpoint}`, {

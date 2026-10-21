@@ -287,7 +287,7 @@
         "detail.reviewsTitle": { vi: "Đánh giá của khách hàng", en: "Customer Reviews" },
         "detail.reviewsBasedOn": { vi: "Dựa trên 124 đánh giá", en: "Based on 124 reviews" },
         "detail.writeReview": { vi: "Viết đánh giá", en: "Write a Review" },
-        "detail.rating": { vi: "Xếp hạng", en: "Rating" },
+        "detail.rating": { vi: "Chạm vào sao để đánh giá:", en: "Tap a star to rate:" },
         "detail.submitReview": { vi: "Gửi đánh giá", en: "Submit Review" },
         "detail.reviewCount": { vi: "Dựa trên {count} đánh giá", en: "Based on {count} reviews" },
         "detail.reviewCountOne": { vi: "Dựa trên {count} đánh giá", en: "Based on {count} review" },
@@ -311,6 +311,68 @@
         "detail.reviewDelete": { vi: "Xóa", en: "Delete" },
         "detail.reviewPhoto": { vi: "Ảnh đánh giá của khách hàng", en: "Customer review photo" },
         "detail.reviewEmpty": { vi: "Chưa có đánh giá nào.", en: "No reviews yet." },
+        // Deep i18n - chi tiet san pham (dong / fallback)
+        "detail.saved": { vi: "♥ Đã lưu", en: "♥ Saved" },
+        "detail.favRemoving": { vi: "Đang bỏ...", en: "Removing..." },
+        "detail.favSaving": { vi: "Đang lưu...", en: "Saving..." },
+        "detail.daysUnit": { vi: "ngày", en: "days" },
+        "detail.updating": { vi: "Đang cập nhật", en: "Updating" },
+        "detail.descEmpty": { vi: "Chưa có mô tả cho sản phẩm này.", en: "No description for this product yet." },
+        "detail.relatedEmpty": { vi: "Không có sản phẩm gợi ý nào.", en: "No suggested products." },
+        "detail.adding": { vi: "Đang thêm...", en: "Adding..." },
+        "detail.added": { vi: "Đã thêm vào giỏ", en: "Added to Cart" },
+        "detail.errMissingId": { vi: "Lỗi: URL thiếu ID sản phẩm!", en: "Error: product ID missing from URL!" },
+        "detail.errData": { vi: "Lỗi dữ liệu: ", en: "Data error: " },
+        "detail.reviewsSubtitle": { vi: "Trải nghiệm và cảm nhận thật từ những tín đồ hảo ngọt.", en: "Real experiences and feedback from our sweet lovers" },
+        "detail.reviewCountZero": { vi: "Dựa trên 0 đánh giá", en: "Based on 0 reviews" },
+        "detail.reviewPlaceholder": { vi: "Chia sẻ cảm nhận của bạn về sản phẩm này...", en: "Write your thoughts about this product..." },
+        "detail.reviewPhotoHint": { vi: "JPG, PNG hoặc WebP tối đa 5MB (tối đa 5 ảnh)", en: "JPG, PNG or WebP up to 5MB (Max 5)" },
+        "detail.reviewModalAlt": { vi: "Ảnh đánh giá phóng to", en: "Enlarged review photo" },
+
+        // ----- Deep i18n: Header / Search / Chat (shared-components) -----
+        "header.searchPlaceholder": { vi: "Tìm bánh và món ngọt", en: "Search cakes and treats" },
+        "header.clearSearch": { vi: "Xóa tìm kiếm", en: "Clear search" },
+        "header.home": { vi: "Trang chủ Sugar Bliss", en: "Sugar Bliss home" },
+        "header.mainNav": { vi: "Điều hướng chính", en: "Main navigation" },
+        "header.searchProducts": { vi: "Tìm sản phẩm", en: "Search products" },
+        "header.suggestions": { vi: "Gợi ý sản phẩm", en: "Product suggestions" },
+        "header.langSwitch": { vi: "Ngôn ngữ / Language", en: "Language / Ngôn ngữ" },
+        "search.inStock": { vi: "Còn hàng", en: "In stock" },
+        "search.treatFallback": { vi: "Món ngọt", en: "Treat" },
+        "search.logIn": { vi: "đăng nhập", en: "log in" },
+        "search.viewDetails": { vi: "Xem chi tiết", en: "View details" },
+        "chat.inputPlaceholder": { vi: "Hỏi tôi bất cứ điều gì...", en: "Ask me anything..." },
+        "chat.close": { vi: "Đóng trò chuyện", en: "Close chat" },
+        "chat.open": { vi: "Mở Trợ lý AI", en: "Open AI Assistant" },
+        "chat.inputAria": { vi: "Nhắn cho Trợ lý Sugar Bliss", en: "Message to Sugar Bliss Assistant" },
+
+        // ----- Deep i18n: Gio hang (cart.js) -----
+        "cart.emptyText": { vi: "Giỏ hàng của bạn đang trống.", en: "Your cart is empty." },
+        "cart.emptyLink": { vi: "Xem các sản phẩm", en: "Browse our products" },
+        "cart.qtyFor": { vi: "Số lượng cho {name}", en: "Quantity for {name}" },
+        "cart.decrease": { vi: "Giảm số lượng", en: "Decrease quantity" },
+        "cart.increase": { vi: "Tăng số lượng", en: "Increase quantity" },
+
+        // ----- Deep i18n: Thanh toan (checkout.js/html) -----
+        "checkout.chooseVoucher": { vi: "Chọn mã giảm giá", en: "Choose a voucher" },
+        "checkout.emptyText": { vi: "Giỏ hàng của bạn đang trống.", en: "Your cart is empty." },
+        "checkout.emptyLink": { vi: "Chọn một món ngọt", en: "Choose something sweet" },
+        "checkout.addressPlaceholder": { vi: "Tìm địa chỉ giao hàng", en: "Search delivery address" },
+        "checkout.notePlaceholder": { vi: "Điều gì giúp giao hàng thuận lợi hơn?", en: "Anything we should know for a smooth delivery?" },
+        "checkout.noteLabel": { vi: "Ghi chú giao hàng", en: "Delivery note" },
+        "checkout.phoneTitle": { vi: "Nhập số điện thoại Việt Nam, ví dụ 0901234567 hoặc +84901234567", en: "Enter a Vietnamese phone number such as 0901234567 or +84901234567" },
+        "checkout.phoneError": { vi: "Nhập số hợp lệ, ví dụ 0901234567 hoặc +84901234567.", en: "Enter a valid number, for example 0901234567 or +84901234567." },
+
+        // ----- Deep i18n: Lich su don hang (order-history.js) -----
+        "orders.loading": { vi: "Đang tải đơn hàng...", en: "Loading orders..." },
+        "orders.cancelling": { vi: "Đang hủy...", en: "Cancelling..." },
+        "orders.cancelOrder": { vi: "Hủy đơn hàng", en: "Cancel Order" },
+
+        // ----- Deep i18n: Trang ca nhan (profile.js) -----
+        "profile.loadingOrders": { vi: "Đang tải đơn hàng...", en: "Loading orders..." },
+        "profile.noOrders": { vi: "Chưa có đơn hàng nào.", en: "No orders yet." },
+        "profile.noFavorites": { vi: "Chưa có sản phẩm yêu thích.", en: "No favorites yet." },
+        "profile.viewFavorite": { vi: "Xem chi tiết {name}", en: "View {name} detail" },
 
         // ----- Menu tai khoan (profile dropdown tren header) -----
         "menu.profile": { vi: "Hồ sơ", en: "Profile" },
@@ -366,7 +428,10 @@
         "settings.manage": { vi: "Quản lý", en: "Manage" },
 
         // ----- Nhan chung -----
-        "common.langLabel": { vi: "VI", en: "EN" }
+        "common.langLabel": { vi: "VI", en: "EN" },
+        "common.sending": { vi: "Đang gửi...", en: "Sending..." },
+        "common.optional": { vi: "(không bắt buộc)", en: "(optional)" },
+        "contact.loginToSubmit": { vi: "Đăng nhập để gửi", en: "Login to Submit" }
     };
 
     function getLang() {

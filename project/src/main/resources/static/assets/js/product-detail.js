@@ -6,6 +6,16 @@ let isCurrentProductFavorite = false;
 let currentProduct = null;
 let addingToCart = false;
 
+function t(key, fallback) {
+    if (window.SugarI18n) {
+        const value = window.SugarI18n.translate(key);
+        if (value !== null) {
+            return value;
+        }
+    }
+    return fallback;
+}
+
 function productIsAvailable() {
     const stock = Number(currentProduct?.stock);
     return currentProduct?.status === 'active' && Number.isSafeInteger(stock) && stock > 0;
@@ -35,11 +45,44 @@ function syncProductAvailability() {
     status.textContent = available ? '' : window.SugarI18n?.translate(key) || fallback;
 }
 
-window.addEventListener('sugarbliss:lang-changed', syncProductAvailability);
+// Ve lai cac chuoi dong (nut yeu thich, cac fallback khoi luong/han dung/thanh phan/mo ta,
+// chuoi rong cua san pham goi y) khi doi ngon ngu. Khong fetch lai, chi dan xuat tu currentProduct.
+function reRenderDetail() {
+    syncProductAvailability();
+
+    if (!addingToCart) {
+        updateFavoriteButton(isCurrentProductFavorite);
+    }
+
+    if (!currentProduct) return;
+
+    const descEl = document.getElementById('product-desc');
+    if (descEl) descEl.innerText = currentProduct.description || t('detail.descEmpty', 'No description for this product yet.');
+
+    const weightEl = document.getElementById('product-weight');
+    if (weightEl) weightEl.innerText = currentProduct.weightGram != null ? `${currentProduct.weightGram}g` : t('detail.updating', 'Updating');
+
+    const expEl = document.getElementById('product-exp');
+    if (expEl) expEl.innerText = currentProduct.shelfLifeDays != null ? `${currentProduct.shelfLifeDays} ${t('detail.daysUnit', 'days')}` : t('detail.updating', 'Updating');
+
+    const ingredientsEl = document.getElementById('product-ingredients');
+    if (ingredientsEl) {
+        ingredientsEl.innerText = (Array.isArray(currentProduct.ingredients) && currentProduct.ingredients.length)
+            ? currentProduct.ingredients.join(', ')
+            : t('detail.updating', 'Updating');
+    }
+
+    const relatedContainer = document.getElementById('related-products');
+    if (relatedContainer && relatedContainer.dataset.empty === 'true') {
+        relatedContainer.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: #666; font-size: 16px;">${t('detail.relatedEmpty', 'No suggested products.')}</p>`;
+    }
+}
+
+window.addEventListener('sugarbliss:lang-changed', reRenderDetail);
 
 document.addEventListener('DOMContentLoaded', () => {
     if (!currentProductId) {
-        document.getElementById('product-title-price').innerText = "Lỗi: URL thiếu ID sản phẩm!";
+        document.getElementById('product-title-price').innerText = t('detail.errMissingId', 'Error: product ID missing from URL!');
         return;
     }
     
@@ -60,7 +103,9 @@ function updateFavoriteButton(isFavorite) {
     isCurrentProductFavorite = isFavorite;
     button.classList.toggle('is-saved', isFavorite);
     button.setAttribute('aria-pressed', String(isFavorite));
-    button.textContent = isFavorite ? '\u2665 Saved' : '\u2661 Favourites';
+    button.textContent = isFavorite
+        ? t('detail.saved', '\u2665 Saved')
+        : t('detail.favourites', '\u2665 Favourites');
 }
 
 async function loadFavoriteState() {
@@ -101,7 +146,9 @@ async function toggleFavoriteDetail() {
 
     const previousState = isCurrentProductFavorite;
     button.disabled = true;
-    button.textContent = previousState ? 'Removing...' : 'Saving...';
+    button.textContent = previousState
+        ? t('detail.favRemoving', 'Removing...')
+        : t('detail.favSaving', 'Saving...');
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/users/me/favorites/${currentProductId}`, {
@@ -204,20 +251,20 @@ async function fetchProductDetail() {
         currentProduct = product;
         syncProductAvailability();
 
-        const priceStr = product.price ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price) : "Liên hệ";
+        const priceStr = product.price ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(product.price) : t('products.contactPrice', 'Contact for price');
         
         document.getElementById('product-title-price').innerText = `${product.name} - ${priceStr}`;
         
         renderProductImages(product);
         
-        document.getElementById('product-desc').innerText = product.description || "Chưa có mô tả cho sản phẩm này.";
-        document.getElementById('product-weight').innerText = product.weightGram != null ? `${product.weightGram}g` : "Đang cập nhật";
-        document.getElementById('product-exp').innerText = product.shelfLifeDays != null ? `${product.shelfLifeDays} days` : "Đang cập nhật";
+        document.getElementById('product-desc').innerText = product.description || t('detail.descEmpty', 'No description for this product yet.');
+        document.getElementById('product-weight').innerText = product.weightGram != null ? `${product.weightGram}g` : t('detail.updating', 'Updating');
+        document.getElementById('product-exp').innerText = product.shelfLifeDays != null ? `${product.shelfLifeDays} ${t('detail.daysUnit', 'days')}` : t('detail.updating', 'Updating');
         
         if (Array.isArray(product.ingredients) && product.ingredients.length) {
             document.getElementById('product-ingredients').innerText = product.ingredients.join(', ');
         } else {
-            document.getElementById('product-ingredients').innerText = "Đang cập nhật";
+            document.getElementById('product-ingredients').innerText = t('detail.updating', 'Updating');
         }
 
         window.SugarBlissReviews?.render(product);
@@ -227,7 +274,7 @@ async function fetchProductDetail() {
 
     } catch (error) {
         console.error("Lỗi tải chi tiết:", error);
-        document.getElementById('product-title-price').innerText = "Lỗi dữ liệu: " + error.message;
+        document.getElementById('product-title-price').innerText = t('detail.errData', 'Data error: ') + error.message;
         const container = document.querySelector('.detail-container');
         if (container) container.classList.add('loaded');
     }
@@ -252,15 +299,17 @@ async function fetchRelatedProducts() {
         if (!container) return;
 
         if (related.length === 0) {
-            container.innerHTML = '<p style="grid-column: 1 / -1; text-align: center; color: #666; font-size: 16px;">Không có sản phẩm gợi ý nào.</p>';
+            container.dataset.empty = 'true';
+            container.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: #666; font-size: 16px;">${t('detail.relatedEmpty', 'No suggested products.')}</p>`;
             return;
         }
+        container.dataset.empty = 'false';
 
         container.innerHTML = related.map(item => {
             const itemId = item._id || item.id;
             const itemImg = item.images?.[0] || item.image || "/assets/images/cake2.png";
             const fullImg = itemImg.startsWith('/') ? `${API_BASE_URL}${itemImg}` : itemImg;
-            const itemName = item.name || "Sugar Bliss Product";
+            const itemName = item.name || t('products.defaultName', 'Sugar Bliss Product');
             
             return `
                 <div class="related-card" style="cursor: pointer;" onclick="window.location.href='/pages/product-detail.html?id=${itemId}'">
@@ -290,7 +339,7 @@ async function addProductToCart(button) {
     syncProductAvailability();
 
     button.disabled = true;
-    button.textContent = "Adding...";
+    button.textContent = t('detail.adding', 'Adding...');
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/users/me/cart/${currentProductId}`, {
@@ -322,7 +371,7 @@ async function addProductToCart(button) {
             detail: { count: Array.isArray(data) ? data.length : 0 }
         }));
         
-        button.textContent = "Added to Cart";
+        button.textContent = t('detail.added', 'Added to Cart');
         succeeded = true;
         
         window.setTimeout(() => {

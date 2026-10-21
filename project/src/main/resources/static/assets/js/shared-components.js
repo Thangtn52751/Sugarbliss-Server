@@ -1,3 +1,14 @@
+// Lay ban dich co fallback (giong products.js). Dung cho cac chuoi dong o header/search/chat.
+function t(key, fallback) {
+    if (window.SugarI18n) {
+        const value = window.SugarI18n.translate(key);
+        if (value !== null) {
+            return value;
+        }
+    }
+    return fallback;
+}
+
 class SugarHeader extends HTMLElement {
     connectedCallback() {
         const activePage = this.getAttribute("active") || "";
@@ -23,12 +34,12 @@ class SugarHeader extends HTMLElement {
         this.style.display = "contents";
         this.innerHTML = `
             <header class="site-header">
-                <a class="brand" href="/home" aria-label="Sugar Bliss home">
+                <a class="brand" href="/home" aria-label="Sugar Bliss home" data-i18n-attr="aria-label:header.home">
                     <img src="/assets/icons/logo.png" alt="Sugar Bliss logo">
                     <span>Sugar Bliss</span>
                 </a>
 
-                <nav class="main-nav" aria-label="Main navigation">
+                <nav class="main-nav" aria-label="Main navigation" data-i18n-attr="aria-label:header.mainNav">
                     ${navigationMarkup}
                 </nav>
 
@@ -36,7 +47,8 @@ class SugarHeader extends HTMLElement {
                     <div class="header-search" data-header-search>
                         <button class="header-icon-button" type="button" data-header-search-toggle
                                 aria-label="Search products" aria-expanded="false"
-                                aria-controls="header-product-search-panel">
+                                aria-controls="header-product-search-panel"
+                                data-i18n-attr="aria-label:header.searchProducts">
                             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                                 <circle cx="11" cy="11" r="8"></circle>
@@ -52,23 +64,25 @@ class SugarHeader extends HTMLElement {
                                     <circle cx="11" cy="11" r="8"></circle>
                                     <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                                 </svg>
-                                <label class="sr-only" for="header-product-search-input">Search products</label>
+                                <label class="sr-only" for="header-product-search-input" data-i18n="header.searchProducts">Search products</label>
                                 <input id="header-product-search-input" type="search" data-header-search-input
                                        placeholder="Search cakes and treats"
+                                       data-i18n-attr="placeholder:header.searchPlaceholder"
                                        autocomplete="off" spellcheck="false" role="combobox"
                                        aria-autocomplete="list" aria-expanded="false"
                                        aria-controls="header-product-search-results">
                                 <button class="header-search-clear" type="button" data-header-search-clear
-                                        aria-label="Clear search" hidden>&times;</button>
+                                        aria-label="Clear search" data-i18n-attr="aria-label:header.clearSearch" hidden>&times;</button>
                             </div>
                             <div class="header-search-results" id="header-product-search-results"
-                                 data-header-search-results role="listbox" aria-label="Product suggestions">
+                                 data-header-search-results role="listbox" aria-label="Product suggestions"
+                                 data-i18n-attr="aria-label:header.suggestions">
                                 <p class="header-search-state" role="status">Type at least 2 characters to search.</p>
                             </div>
                         </div>
                     </div>
 
-                    <a class="header-icon-link" href="/cart" aria-label="Cart">
+                    <a class="header-icon-link" href="/cart" aria-label="Cart" data-i18n-attr="aria-label:header.cart">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                              stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                             <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path>
@@ -77,11 +91,11 @@ class SugarHeader extends HTMLElement {
                         </svg>
                     </a>
 
-                    <button type="button" class="lang-switch" aria-label="Language / Ngôn ngữ">
+                    <button type="button" class="lang-switch" aria-label="Language / Ngôn ngữ" data-i18n-attr="aria-label:header.langSwitch">
                         <span class="lang-code" data-lang-code>VI</span>
                     </button>
 
-                    <a class="${profileClass}" href="/profile" aria-label="Account"></a>
+                    <a class="${profileClass}" href="/profile" aria-label="Account" data-i18n-attr="aria-label:header.account"></a>
                 </div>
             </header>
         `;
@@ -226,6 +240,7 @@ class SugarHeader extends HTMLElement {
     }
 
     renderProductSuggestions(products) {
+        this.lastSuggestions = Array.isArray(products) ? products : [];
         this.searchResults.replaceChildren();
         this.searchResults.removeAttribute("aria-busy");
         this.activeSuggestionIndex = -1;
@@ -244,6 +259,7 @@ class SugarHeader extends HTMLElement {
             option.id = `header-search-option-${index}`;
             option.setAttribute("role", "option");
             option.setAttribute("aria-selected", "false");
+            option.setAttribute("aria-label", `${t("search.viewDetails", "View details")}: ${product.name || t("products.defaultName", "Sugar Bliss product")}`);
 
             const media = document.createElement("span");
             media.className = "header-search-option-media";
@@ -261,19 +277,21 @@ class SugarHeader extends HTMLElement {
             const copy = document.createElement("span");
             copy.className = "header-search-option-copy";
             const name = document.createElement("strong");
-            name.textContent = product.name || "Sugar Bliss product";
+            name.textContent = product.name || t("products.defaultName", "Sugar Bliss product");
             const meta = document.createElement("span");
             const price = Number.isFinite(Number(product.price))
                 ? `${new Intl.NumberFormat("vi-VN").format(Number(product.price))} \u20ab`
-                : "Contact for price";
-            meta.textContent = `${product.category || "Treat"} · ${price}`;
+                : t("products.contactPrice", "Contact for price");
+            meta.textContent = `${product.category || t("search.treatFallback", "Treat")} · ${price}`;
             copy.append(name, meta);
 
             const availability = document.createElement("span");
             availability.className = product.inStock
                 ? "header-search-stock"
                 : "header-search-stock is-unavailable";
-            availability.textContent = product.inStock ? "In stock" : "Out of stock";
+            availability.textContent = product.inStock
+                ? t("search.inStock", "In stock")
+                : t("products.outOfStock", "Out of stock");
 
             option.append(media, copy, availability);
             option.addEventListener("pointerenter", () => this.setActiveSuggestion(index));
@@ -300,7 +318,7 @@ class SugarHeader extends HTMLElement {
         state.append("Please ");
         const link = document.createElement("a");
         link.href = "/login";
-        link.textContent = "log in";
+        link.textContent = t("search.logIn", "log in");
         state.append(link, " to search products.");
         this.searchResults.replaceChildren(state);
         this.searchResults.removeAttribute("aria-busy");
@@ -404,6 +422,10 @@ class SugarHeader extends HTMLElement {
         this.languageChangedHandler = () => {
             window.SugarI18n.apply(this);
             refreshCode();
+            // Ve lai goi y tim kiem (chuoi dong) theo ngon ngu moi neu dang hien thi.
+            if (this.searchResults && Array.isArray(this.lastSuggestions) && this.lastSuggestions.length) {
+                this.renderProductSuggestions(this.lastSuggestions);
+            }
         };
         window.addEventListener("sugarbliss:lang-changed", this.languageChangedHandler);
     }
@@ -490,17 +512,17 @@ class SugarChatbox extends HTMLElement {
                 <div class="sb-chat-window">
                     <div class="sb-chat-header">
                         <span>Sugar Bliss Assistant</span>
-                        <button class="sb-chat-close" aria-label="Close chat">&times;</button>
+                        <button class="sb-chat-close" aria-label="Close chat" data-i18n-attr="aria-label:chat.close">&times;</button>
                     </div>
                     <div class="sb-chat-body" id="sb-chat-body" role="log" aria-live="polite" aria-relevant="additions text">
                         <div class="sb-msg assistant">Hi! How can I help you find the perfect cake today?</div>
                     </div>
                     <form class="sb-chat-footer" id="sb-chat-form">
-                        <input type="text" class="sb-chat-input" id="sb-chat-input" placeholder="Ask me anything..." aria-label="Message to Sugar Bliss Assistant" maxlength="1200" required autocomplete="off">
+                        <input type="text" class="sb-chat-input" id="sb-chat-input" placeholder="Ask me anything..." data-i18n-attr="placeholder:chat.inputPlaceholder,aria-label:chat.inputAria" aria-label="Message to Sugar Bliss Assistant" maxlength="1200" required autocomplete="off">
                         <button type="submit" class="sb-chat-send">Send</button>
                     </form>
                 </div>
-                <button class="sb-chat-toggle" aria-label="Open AI Assistant">
+                <button class="sb-chat-toggle" aria-label="Open AI Assistant" data-i18n-attr="aria-label:chat.open">
                     <svg width="28" height="28" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M12 2C6.48 2 2 5.92 2 10.75c0 2.8 1.54 5.3 3.96 6.87-.27 1.63-.97 3.32-1.02 3.45-.06.18-.02.39.1.53.13.14.33.19.51.13 3.12-1.01 5.34-2.5 6.42-3.32.65.11 1.33.17 2.03.17 5.52 0 10-3.92 10-8.75S17.52 2 12 2z"/>
                     </svg>
@@ -509,6 +531,19 @@ class SugarChatbox extends HTMLElement {
         `;
 
         this.bindEvents();
+
+        // Dich cac chuoi tinh cua chatbox (placeholder, aria-label) va theo doi doi ngon ngu.
+        if (window.SugarI18n) {
+            window.SugarI18n.apply(this);
+            this.languageChangedHandler = () => window.SugarI18n.apply(this);
+            window.addEventListener("sugarbliss:lang-changed", this.languageChangedHandler);
+        }
+    }
+
+    disconnectedCallback() {
+        if (this.languageChangedHandler) {
+            window.removeEventListener("sugarbliss:lang-changed", this.languageChangedHandler);
+        }
     }
 
     bindEvents() {

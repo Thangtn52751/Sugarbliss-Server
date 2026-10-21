@@ -60,7 +60,7 @@
         <section class="reviews-section">
             <div class="reviews-header-block">
                 <h2 data-i18n="detail.reviewsTitle">Customer Reviews</h2>
-                <p class="reviews-subtitle">Real experiences and feedback from our sweet lovers</p>
+                <p class="reviews-subtitle" data-i18n="detail.reviewsSubtitle">Real experiences and feedback from our sweet lovers</p>
             </div>
             
             <div class="reviews-container">
@@ -72,7 +72,7 @@
                     </div>
                     
                     <div class="summary-stars-overview" id="summary-stars-overview" aria-hidden="true">★★★★★</div>
-                    <div class="summary-count" id="summary-count">Based on 0 reviews</div>
+                    <div class="summary-count" id="summary-count" data-i18n="detail.reviewCountZero">Based on 0 reviews</div>
 
                     <!-- Breakdown Progress Bars -->
                     <div class="rating-breakdown" id="rating-breakdown">
@@ -119,7 +119,7 @@
                         </div>
 
                         <div class="review-textarea-wrapper">
-                            <textarea id="review-comment" class="review-textarea" maxlength="1000" aria-label="Review" placeholder="Write your thoughts about this product..."></textarea>
+                            <textarea id="review-comment" class="review-textarea" maxlength="1000" aria-label="Review" data-i18n-attr="placeholder:detail.reviewPlaceholder" placeholder="Write your thoughts about this product..."></textarea>
                             <div class="char-counter"><span id="review-char-count">0</span>/1000</div>
                         </div>
 
@@ -127,7 +127,7 @@
                             <label class="review-photo-label" for="review-photos">
                                 <span class="upload-icon">📷</span>
                                 <span data-i18n="detail.reviewPhotos">Add Photos (optional)</span>
-                                <small>JPG, PNG or WebP up to 5MB (Max 5)</small>
+                                <small data-i18n="detail.reviewPhotoHint">JPG, PNG or WebP up to 5MB (Max 5)</small>
                             </label>
                             <input id="review-photos" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden>
                         </div>
@@ -137,7 +137,7 @@
                     </fieldset>
                     
                     <p class="review-feedback" id="review-feedback" role="status" hidden></p>
-                    <button class="btn-submit-review" id="btn-submit-review" type="button" disabled>Submit Review</button>
+                    <button class="btn-submit-review" id="btn-submit-review" type="button" data-i18n="detail.submitReview" disabled>Submit Review</button>
                 </div>
                 
                 <!-- Review List Right -->
@@ -151,7 +151,7 @@
     <!-- Modal Xem Ảnh Phóng To -->
     <div id="review-image-modal" class="review-modal" hidden>
         <span class="review-modal-close" id="review-modal-close">&times;</span>
-        <img class="review-modal-content" id="review-modal-img" alt="Enlarged review photo">
+        <img class="review-modal-content" id="review-modal-img" data-i18n-attr="alt:detail.reviewModalAlt" alt="Enlarged review photo">
     </div>
 
     <sugar-footer></sugar-footer>

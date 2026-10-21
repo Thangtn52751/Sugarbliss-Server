@@ -184,7 +184,7 @@
         const form = $("[data-address-form]");
         for (const field of ["recipientName", "phone", "address", "note"]) form.elements[field].value = address[field] || "";
         state.selectedAddress = state.pending?.quote && address.address ? address.address : "";
-        if (state.selectedAddress) setAddressStatus("Verified delivery address selected.", false, true);
+        if (state.selectedAddress) setAddressStatus(t("checkout.addressSelected", "Verified delivery address selected."), false, true);
     }
 
     function readAddress() {

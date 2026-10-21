@@ -96,10 +96,10 @@ function renderCart() {
 
     document.querySelector("[data-cart-record-count]").textContent = `(${cartItems.length})`;
     document.querySelector("[data-cart-subtotal]").textContent = formatCartPrice(subtotal);
-    document.querySelector("[data-cart-delivery]").textContent = needsQuote ? "Calculated at checkout" : deliveryFee === 0
-        ? "Free"
+    document.querySelector("[data-cart-delivery]").textContent = needsQuote ? t("cart.calculatedAtCheckout", "Calculated at checkout") : deliveryFee === 0
+        ? t("cart.free", "Free")
         : formatCartPrice(deliveryFee);
-    document.querySelector("[data-cart-total]").textContent = needsQuote ? formatCartPrice(subtotal) + " + delivery" : formatCartPrice(subtotal + deliveryFee);
+    document.querySelector("[data-cart-total]").textContent = needsQuote ? formatCartPrice(subtotal) + t("cart.plusDelivery", " + delivery") : formatCartPrice(subtotal + deliveryFee);
     checkoutButton.disabled = checkoutBusy || cartItems.length === 0 || !method || method.available === false;
 
     if (cartItems.length === 0) {
@@ -129,8 +129,8 @@ function renderDeliveryMethods() {
         const option = document.createElement("option");
         option.value = method.code;
         option.textContent = `${method.label} - ${method.requiresQuote
-            ? (method.available === false ? "Unavailable" : "Fee at checkout")
-            : Number(method.fee) === 0 ? "Free" : formatCartPrice(method.fee)}`;
+            ? (method.available === false ? t("cart.unavailable", "Unavailable") : t("cart.feeAtCheckout", "Fee at checkout"))
+            : Number(method.fee) === 0 ? t("cart.free", "Free") : formatCartPrice(method.fee)}`;
         option.disabled = method.available === false;
         option.selected = method.code === selectedDeliveryMethod;
         select.appendChild(option);
@@ -154,9 +154,9 @@ function renderCartItem(item) {
                 <img src="${escapeCartHtml(resolveCartImage(product.images?.[0] || product.image))}" alt="${escapeCartHtml(product.name || "Sugar Bliss product")}">
             </a>
             <div class="cart-item-info">
-                <h2>${escapeCartHtml(product.name || "Sugar Bliss Product")}</h2>
-                <p>${product.weightGram ? `Weight: ${escapeCartHtml(product.weightGram)}g` : escapeCartHtml(product.category || "Freshly baked")}</p>
-                <button class="remove-cart-item" type="button" data-cart-remove="${escapeCartHtml(productId)}">Remove item</button>
+                <h2>${escapeCartHtml(product.name || t("products.defaultName", "Sugar Bliss Product"))}</h2>
+                <p>${product.weightGram ? `${escapeCartHtml(t("cart.weight", "Weight"))}: ${escapeCartHtml(product.weightGram)}g` : escapeCartHtml(product.category || t("cart.freshlyBaked", "Freshly baked"))}</p>
+                <button class="remove-cart-item" type="button" data-cart-remove="${escapeCartHtml(productId)}">${escapeCartHtml(t("cart.removeItem", "Remove item"))}</button>
             </div>
             <strong class="cart-line-total">${formatCartPrice(lineTotal)}</strong>
             <div class="cart-quantity" aria-label="${escapeCartHtml(t("cart.qtyFor", "Quantity for {name}").replace("{name}", product.name || "product"))}">

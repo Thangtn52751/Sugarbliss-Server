@@ -214,7 +214,7 @@ function renderProductImages(product) {
 
         thumbnail.type = 'button';
         thumbnail.className = 'product-thumbnail';
-        thumbnail.setAttribute('aria-label', `View image ${index + 1} of ${images.length}`);
+        thumbnail.setAttribute('aria-label', t('detail.viewImage', 'View image {index} of {total}').replace('{index}', index + 1).replace('{total}', images.length));
         thumbnail.setAttribute('aria-selected', String(index === 0));
         thumbnailImage.src = resolveProductImage(image);
         thumbnailImage.alt = `${product.name || 'Product'} thumbnail ${index + 1}`;

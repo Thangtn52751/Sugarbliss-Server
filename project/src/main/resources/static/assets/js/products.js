@@ -313,7 +313,7 @@ async function addProductToCart(productId, button) {
 
     const originalText = button.textContent.trim();
     button.disabled = true;
-    button.textContent = "Adding...";
+    button.textContent = t("products.adding", "Adding...");
 
     try {
         const response = await fetch(`${API_BASE_URL}/api/users/me/cart/${productId}`, {
@@ -342,7 +342,7 @@ async function addProductToCart(productId, button) {
             detail: { count: Array.isArray(data) ? data.length : 0 }
         }));
 
-        button.textContent = "Added";
+        button.textContent = t("products.added", "Added");
         window.setTimeout(() => {
             button.textContent = originalText;
             button.disabled = false;

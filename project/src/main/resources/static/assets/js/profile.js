@@ -166,7 +166,7 @@ async function saveProfile(event) {
 
         localStorage.setItem("sugarBlissUser", JSON.stringify(data));
         renderProfile(data);
-        showProfileMessage("Profile updated successfully.", true);
+        showProfileMessage(t("profile.updated", "Profile updated successfully."), true);
     } catch (error) {
         showProfileMessage(error.message, false);
     }
@@ -184,7 +184,7 @@ async function uploadAvatar(event) {
     formData.append("avatar", file);
 
     try {
-        showProfileMessage("Uploading avatar...", true);
+        showProfileMessage(t("profile.uploadingAvatar", "Uploading avatar..."), true);
 
         const response = await fetch(`${PROFILE_API_BASE_URL}/api/users/me/avatar`, {
             method: "PATCH",
@@ -202,7 +202,7 @@ async function uploadAvatar(event) {
         localStorage.setItem("sugarBlissUser", JSON.stringify(data));
         renderProfile(data);
         applyHeaderAvatar(data.avatar);
-        showProfileMessage("Avatar updated successfully.", true);
+        showProfileMessage(t("profile.avatarUpdated", "Avatar updated successfully."), true);
     } catch (error) {
         showProfileMessage(error.message, false);
     } finally {
@@ -215,7 +215,7 @@ function renderProfile(user) {
     const lastName = lastNameParts.join(" ");
     const avatar = document.querySelector("[data-profile-avatar]");
 
-    document.querySelector("[data-profile-name]").textContent = user.name || "Sugar Bliss Customer";
+    document.querySelector("[data-profile-name]").textContent = user.name || t("profile.customerName", "Sugar Bliss Customer");
     document.querySelector("[data-profile-email]").textContent = user.email || "";
 
     if (avatar) {
@@ -248,12 +248,13 @@ function renderOrders(orders) {
     }
 
     container.innerHTML = orders.map((order) => {
-        const displayStatus = order.displayStatus || order.status || "In Progress";
+        const displayStatus = order.displayStatus || translateProfileStatus(order.status || "In Progress");
+        const orderedOn = t("profile.orderedOn", "Ordered on {date}").replace("{date}", order.orderedOn || "");
         return `
         <article class="order-row">
             <div>
                 <p class="order-name">${escapeHtml(truncate(order.productName, 24))}</p>
-                <p class="order-date">Ordered on ${escapeHtml(order.orderedOn)}</p>
+                <p class="order-date">${escapeHtml(orderedOn)}</p>
             </div>
             <span class="order-status ${getOrderStatusClass(order)}">${escapeHtml(displayStatus)}</span>
             <strong class="order-total">${formatVnd(order.total)}</strong>
@@ -266,6 +267,18 @@ function getOrderStatusClass(order) {
     const tone = order.displayStatusTone || (order.status === "Delivered" ? "delivered"
         : ['Cancelled', 'Failed'].includes(order.status) ? "cancelled" : "progress");
     return tone === "delivered" ? "is-delivered" : tone === "cancelled" ? "is-cancelled" : "is-progress";
+}
+
+// Dich trang thai don hang de hien thi (logic phan loai mau van dung order.status goc).
+function translateProfileStatus(status) {
+    const map = {
+        "In Progress": "profile.statusInProgress",
+        "Delivered": "profile.statusDelivered",
+        "Cancelled": "profile.statusCancelled",
+        "Canceled": "profile.statusCancelled",
+        "Failed": "profile.statusFailed"
+    };
+    return map[status] ? t(map[status], status) : status;
 }
 
 function renderFavorites(products) {

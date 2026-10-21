@@ -128,7 +128,10 @@ function renderOrderHistory() {
     state.hidden = true;
     list.innerHTML = pageOrders.map(renderOrderCard).join("");
     pagination.hidden = false;
-    document.querySelector("[data-order-summary]").textContent = `Showing ${start + 1}-${Math.min(start + ORDERS_PER_PAGE, filteredOrders.length)} of ${filteredOrders.length} orders`;
+    document.querySelector("[data-order-summary]").textContent = t("orders.summary", "Showing {start}-{end} of {total} orders")
+        .replace("{start}", start + 1)
+        .replace("{end}", Math.min(start + ORDERS_PER_PAGE, filteredOrders.length))
+        .replace("{total}", filteredOrders.length);
     document.querySelector("[data-order-page]").textContent = `${currentOrderPage} / ${pageCount}`;
     document.querySelector("[data-order-previous]").disabled = currentOrderPage === 1;
     document.querySelector("[data-order-next]").disabled = currentOrderPage === pageCount;
@@ -143,9 +146,9 @@ function renderOrderCard(order) {
     return `
         <article class="order-card" data-order-card="${safeId}">
             <header class="order-card-head">
-                <div class="order-meta"><span>Order placed</span><strong>${escapeHtml(order.orderedOn || "Updating")}</strong></div>
-                <div class="order-meta"><span>Total</span><strong>${formatVnd(order.total)}</strong></div>
-                <div class="order-meta"><span>Order no.</span><strong>${escapeHtml(order.orderNumber || orderId)}</strong></div>
+                <div class="order-meta"><span>${escapeHtml(t("orders.placed", "Order placed"))}</span><strong>${escapeHtml(order.orderedOn || t("orders.updating", "Updating"))}</strong></div>
+                <div class="order-meta"><span>${escapeHtml(t("orders.total", "Total"))}</span><strong>${formatVnd(order.total)}</strong></div>
+                <div class="order-meta"><span>${escapeHtml(t("orders.orderNo", "Order no."))}</span><strong>${escapeHtml(order.orderNumber || orderId)}</strong></div>
                 <span class="history-status ${getStatusClass(order)}">${escapeHtml(displayStatus)}</span>
             </header>
 
@@ -154,13 +157,13 @@ function renderOrderCard(order) {
             </div>
 
             <div class="order-details" data-order-details hidden>
-                <div><span>Recipient</span><p>${escapeHtml(order.shippingAddress?.recipientName || "Not provided")}</p></div>
-                <div><span>Delivery address</span><p>${escapeHtml(order.shippingAddress?.address || "Not provided")}</p></div>
-                <div><span>Delivery method</span><p>${escapeHtml(formatDeliveryMethod(order.deliveryMethod))}</p></div>
-                <div><span>Payment</span><p>${escapeHtml(order.paymentMethod || "COD")} / ${escapeHtml(order.paymentStatus || "Pending")}</p></div>
+                <div><span>${escapeHtml(t("orders.recipient", "Recipient"))}</span><p>${escapeHtml(order.shippingAddress?.recipientName || t("orders.notProvided", "Not provided"))}</p></div>
+                <div><span>${escapeHtml(t("orders.deliveryAddress", "Delivery address"))}</span><p>${escapeHtml(order.shippingAddress?.address || t("orders.notProvided", "Not provided"))}</p></div>
+                <div><span>${escapeHtml(t("orders.deliveryMethod", "Delivery method"))}</span><p>${escapeHtml(formatDeliveryMethod(order.deliveryMethod))}</p></div>
+                <div><span>${escapeHtml(t("orders.payment", "Payment"))}</span><p>${escapeHtml(order.paymentMethod || "COD")} / ${escapeHtml(translatePaymentStatus(order.paymentStatus))}</p></div>
                 ${order.shippingProvider === "lalamove" ? `
-                    <div><span>Lalamove delivery</span><p>${escapeHtml(formatShippingStatus(order.shippingStatus))}</p></div>
-                    <div><span>Delivery number</span><p>${escapeHtml(order.shippingOrderId || "Awaiting confirmation")}</p></div>
+                    <div><span>${escapeHtml(t("orders.lalamoveDelivery", "Lalamove delivery"))}</span><p>${escapeHtml(formatShippingStatus(order.shippingStatus))}</p></div>
+                    <div><span>${escapeHtml(t("orders.deliveryNumber", "Delivery number"))}</span><p>${escapeHtml(order.shippingOrderId || t("orders.awaitingConfirmation", "Awaiting confirmation"))}</p></div>
                 ` : ""}
             </div>
             ${order.payment?.error ? `<p class="delivery-issue" role="status">${escapeHtml(order.payment.error)}</p>` : ""}
@@ -168,10 +171,10 @@ function renderOrderCard(order) {
 
             <footer class="order-card-actions">
                 <button class="order-text-button" type="button" data-view-order="${safeId}" aria-expanded="false">${escapeHtml(t("orders.viewDetails", "View order details"))}</button>
-                <button class="order-text-button" type="button" data-download-order="${safeId}">Download invoice</button>
-                ${canSyncPayment(order) ? `<a class="order-text-button" href="/checkout?order=${encodeURIComponent(orderId)}">Continue payment</a>
-                    <button class="order-text-button" type="button" data-refresh-payment="${safeId}">Refresh payment</button>` : ""}
-                ${canSyncDelivery(order) ? `<button class="order-text-button" type="button" data-refresh-shipping="${safeId}">Refresh delivery</button>` : ""}
+                <button class="order-text-button" type="button" data-download-order="${safeId}">${escapeHtml(t("orders.downloadInvoice", "Download invoice"))}</button>
+                ${canSyncPayment(order) ? `<a class="order-text-button" href="/checkout?order=${encodeURIComponent(orderId)}">${escapeHtml(t("orders.continuePayment", "Continue payment"))}</a>
+                    <button class="order-text-button" type="button" data-refresh-payment="${safeId}">${escapeHtml(t("orders.refreshPayment", "Refresh payment"))}</button>` : ""}
+                ${canSyncDelivery(order) ? `<button class="order-text-button" type="button" data-refresh-shipping="${safeId}">${escapeHtml(t("orders.refreshDelivery", "Refresh delivery"))}</button>` : ""}
                 ${renderTrackingLink(order.shippingTrackingUrl)}
                 ${order.status === "In Progress" ? `<button class="order-cancel-button" type="button" data-cancel-order="${safeId}">${escapeHtml(t("orders.cancelOrder", "Cancel Order"))}</button>` : ""}
             </footer>
@@ -182,10 +185,10 @@ function renderOrderCard(order) {
 function renderOrderItem(item) {
     return `
         <div class="order-item-row">
-            <img src="${escapeHtml(resolveOrderImage(item.image))}" alt="${escapeHtml(item.name || "Sugar Bliss product")}">
+            <img src="${escapeHtml(resolveOrderImage(item.image))}" alt="${escapeHtml(item.name || t("products.defaultName", "Sugar Bliss product"))}">
             <div class="order-item-info">
-                <h3>${escapeHtml(item.name || "Sugar Bliss Product")}</h3>
-                <p>Quantity: ${escapeHtml(item.quantity || 1)}</p>
+                <h3>${escapeHtml(item.name || t("products.defaultName", "Sugar Bliss Product"))}</h3>
+                <p>${escapeHtml(t("orders.quantity", "Quantity"))}: ${escapeHtml(item.quantity || 1)}</p>
             </div>
             <strong class="order-item-price">${formatVnd(item.lineTotal ?? Number(item.price || 0) * Number(item.quantity || 1))}</strong>
         </div>
@@ -195,8 +198,8 @@ function renderOrderItem(item) {
 function renderLegacyOrderItem(order) {
     return `
         <div class="order-item-row">
-            <img src="/assets/images/cake2.png" alt="${escapeHtml(order.productName || "Sugar Bliss product")}">
-            <div class="order-item-info"><h3>${escapeHtml(order.productName || "Sugar Bliss Product")}</h3><p>Quantity: 1</p></div>
+            <img src="/assets/images/cake2.png" alt="${escapeHtml(order.productName || t("products.defaultName", "Sugar Bliss product"))}">
+            <div class="order-item-info"><h3>${escapeHtml(order.productName || t("products.defaultName", "Sugar Bliss Product"))}</h3><p>${escapeHtml(t("orders.quantity", "Quantity"))}: 1</p></div>
             <strong class="order-item-price">${formatVnd(order.total)}</strong>
         </div>
     `;
@@ -238,7 +241,7 @@ function toggleOrderDetails(button) {
 async function cancelOrder(orderId, button) {
     const token = localStorage.getItem("sugarBlissToken");
 
-    if (!window.confirm("Cancel this order? Reserved stock will be restored.")) {
+    if (!window.confirm(t("orders.cancelConfirm", "Cancel this order? Reserved stock will be restored."))) {
         return;
     }
 
@@ -306,21 +309,40 @@ function downloadInvoice(orderId) {
 
 function formatDeliveryMethod(method) {
     const labels = {
-        standard: "Standard Delivery",
-        express: "Express Delivery",
-        pickup: "Store Pickup",
-        lalamove: "Lalamove (Sandbox)"
+        standard: t("orders.methodStandard", "Standard Delivery"),
+        express: t("orders.methodExpress", "Express Delivery"),
+        pickup: t("orders.methodPickup", "Store Pickup"),
+        lalamove: t("orders.methodLalamove", "Lalamove (Sandbox)")
     };
 
     return labels[method] || method || labels.standard;
 }
 
 function formatShippingStatus(status) {
-    return ({ CREATING: "Confirming Delivery", UNKNOWN: "Awaiting Confirmation",
-        FAILED: "Booking Failed", ASSIGNING_DRIVER: "Finding a Driver",
-        ON_GOING: "Driver Assigned", PICKED_UP: "On the Way", COMPLETED: "Delivered",
-        CANCELED: "Delivery Canceled", REJECTED: "No Driver Available",
-        EXPIRED: "Delivery Expired" })[status] || status || "Awaiting Confirmation";
+    return ({ CREATING: t("orders.shipCreating", "Confirming Delivery"), UNKNOWN: t("orders.shipUnknown", "Awaiting Confirmation"),
+        FAILED: t("orders.shipFailed", "Booking Failed"), ASSIGNING_DRIVER: t("orders.shipAssigning", "Finding a Driver"),
+        ON_GOING: t("orders.shipOngoing", "Driver Assigned"), PICKED_UP: t("orders.shipPickedUp", "On the Way"), COMPLETED: t("orders.shipCompleted", "Delivered"),
+        CANCELED: t("orders.shipCanceled", "Delivery Canceled"), REJECTED: t("orders.shipRejected", "No Driver Available"),
+        EXPIRED: t("orders.shipExpired", "Delivery Expired") })[status] || status || t("orders.shipUnknown", "Awaiting Confirmation");
+}
+
+// Dich trang thai thanh toan de hien thi (logic van dua tren gia tri goc).
+function translatePaymentStatus(status) {
+    if (!status || status === "Pending") return t("orders.pending", "Pending");
+    return status;
+}
+
+// Dich trang thai don hang de hien thi. Logic phan loai (getStatusClass) van
+// dung gia tri goc tu getOrderRawStatus, khong dung chuoi da dich.
+function translateOrderStatus(status) {
+    const map = {
+        "In Progress": "orders.statusInProgress",
+        "Delivered": "orders.statusDelivered",
+        "Failed": "orders.statusFailed",
+        "Cancelled": "orders.statusCancelled",
+        "Canceled": "orders.statusCancelled"
+    };
+    return map[status] ? t(map[status], status) : status;
 }
 
 function renderTrackingLink(value) {
@@ -452,18 +474,32 @@ function changeOrderPage(change) {
     document.querySelector(".order-history-main")?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-function getOrderDisplayStatus(order) {
+// Trang thai goc (dung cho phan loai mau sac, KHONG dich).
+function getOrderRawStatus(order) {
     if (order.displayStatus) return order.displayStatus;
     if (order.status === 'Failed' || order.paymentStatus === 'Failed') return 'Failed';
-    if (order.shippingProvider === "lalamove") return formatShippingStatus(order.shippingStatus);
+    if (order.shippingProvider === "lalamove") return order.shippingStatus || "In Progress";
     return order.status || "In Progress";
 }
 
+// Trang thai hien thi (da dich). Duong Lalamove dung nhan giao hang da dich.
+function getOrderDisplayStatus(order) {
+    if (order.displayStatus) return order.displayStatus;
+    if (order.status === 'Failed' || order.paymentStatus === 'Failed') return t("orders.statusFailed", "Failed");
+    if (order.shippingProvider === "lalamove") return formatShippingStatus(order.shippingStatus);
+    return translateOrderStatus(order.status || "In Progress");
+}
+
 function getStatusClass(order) {
-    const status = getOrderDisplayStatus(order);
-    const tone = order.displayStatusTone || (status === "Delivered" ? "delivered"
-        : status.includes("Cancel") || status === 'Failed' ? "cancelled" : "progress");
-    return tone === "delivered" ? "is-delivered" : tone === "cancelled" ? "is-cancelled" : "is-progress";
+    if (order.displayStatusTone) {
+        return order.displayStatusTone === "delivered" ? "is-delivered"
+            : order.displayStatusTone === "cancelled" ? "is-cancelled" : "is-progress";
+    }
+    const raw = getOrderRawStatus(order);
+    const delivered = raw === "Delivered" || raw === "COMPLETED";
+    const cancelled = raw === "Failed" || raw.includes("Cancel") || raw === "CANCELED"
+        || raw === "REJECTED" || raw === "EXPIRED" || raw === "FAILED";
+    return delivered ? "is-delivered" : cancelled ? "is-cancelled" : "is-progress";
 }
 
 function resolveOrderImage(image) {

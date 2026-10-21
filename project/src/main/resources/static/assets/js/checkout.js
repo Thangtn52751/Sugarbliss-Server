@@ -911,6 +911,6 @@
 
     function showLoadError(message) {
         $("[data-checkout-loading]").hidden = false;
-        $("[data-checkout-loading]").innerHTML = `${escape(message)}<br><a href="${query.get("order") ? "/orders" : "/cart"}">${query.get("order") ? "View order history" : "Back to your cart"}</a>`;
+        $("[data-checkout-loading]").innerHTML = `${escape(message)}<br><a href="${query.get("order") ? "/orders" : "/cart"}">${escape(query.get("order") ? t("checkout.viewOrderHistory", "View order history") : t("checkout.backToCart", "Back to your cart"))}</a>`;
     }
 })();

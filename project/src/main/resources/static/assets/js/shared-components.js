@@ -77,7 +77,7 @@ class SugarHeader extends HTMLElement {
                             <div class="header-search-results" id="header-product-search-results"
                                  data-header-search-results role="listbox" aria-label="Product suggestions"
                                  data-i18n-attr="aria-label:header.suggestions">
-                                <p class="header-search-state" role="status">Type at least 2 characters to search.</p>
+                                <p class="header-search-state" role="status" data-i18n="search.hint">Type at least 2 characters to search.</p>
                             </div>
                         </div>
                     </div>
@@ -181,11 +181,11 @@ class SugarHeader extends HTMLElement {
         this.searchAbortController?.abort();
 
         if (query.length < 2) {
-            this.renderSearchState("Type at least 2 characters to search.");
+            this.renderSearchState(t("search.hint", "Type at least 2 characters to search."), false, "search.hint");
             return;
         }
 
-        this.renderSearchState("Searching products...", true);
+        this.renderSearchState(t("search.searching", "Searching products..."), true, "search.searching");
         this.searchDebounceTimer = window.setTimeout(() => this.fetchProductSuggestions(query), 280);
     }
 
@@ -235,7 +235,7 @@ class SugarHeader extends HTMLElement {
             }
 
             console.warn("Cannot search products.", error);
-            this.renderSearchState("Search is unavailable. Please try again.");
+            this.renderSearchState(t("search.unavailable", "Search is unavailable. Please try again."), false, "search.unavailable");
         }
     }
 
@@ -246,7 +246,7 @@ class SugarHeader extends HTMLElement {
         this.activeSuggestionIndex = -1;
 
         if (products.length === 0) {
-            this.renderSearchState("No matching products found.");
+            this.renderSearchState(t("search.noMatches", "No matching products found."), false, "search.noMatches");
             return;
         }
 
@@ -302,10 +302,13 @@ class SugarHeader extends HTMLElement {
         this.searchResults.appendChild(fragment);
     }
 
-    renderSearchState(message, isLoading = false) {
+    renderSearchState(message, isLoading = false, i18nKey = "") {
         const state = document.createElement("p");
         state.className = "header-search-state";
         state.setAttribute("role", "status");
+        if (i18nKey) {
+            state.setAttribute("data-i18n", i18nKey);
+        }
         state.textContent = message;
         this.searchResults.replaceChildren(state);
         this.searchResults.toggleAttribute("aria-busy", isLoading);
@@ -315,11 +318,18 @@ class SugarHeader extends HTMLElement {
     renderSearchSignIn() {
         const state = document.createElement("p");
         state.className = "header-search-state";
-        state.append("Please ");
+        state.dataset.searchSignin = "true";
+        const prefix = document.createElement("span");
+        prefix.setAttribute("data-i18n", "search.pleasePrefix");
+        prefix.textContent = t("search.pleasePrefix", "Please ");
         const link = document.createElement("a");
         link.href = "/login";
+        link.setAttribute("data-i18n", "search.logIn");
         link.textContent = t("search.logIn", "log in");
-        state.append(link, " to search products.");
+        const suffix = document.createElement("span");
+        suffix.setAttribute("data-i18n", "search.toSearchSuffix");
+        suffix.textContent = t("search.toSearchSuffix", " to search products.");
+        state.append(prefix, link, suffix);
         this.searchResults.replaceChildren(state);
         this.searchResults.removeAttribute("aria-busy");
         this.setActiveSuggestion(-1);
@@ -380,7 +390,7 @@ class SugarHeader extends HTMLElement {
         this.searchAbortController?.abort();
         this.searchInput.value = "";
         this.searchClear.hidden = true;
-        this.renderSearchState("Type at least 2 characters to search.");
+        this.renderSearchState(t("search.hint", "Type at least 2 characters to search."), false, "search.hint");
         this.searchInput.focus();
     }
 
@@ -515,11 +525,11 @@ class SugarChatbox extends HTMLElement {
                         <button class="sb-chat-close" aria-label="Close chat" data-i18n-attr="aria-label:chat.close">&times;</button>
                     </div>
                     <div class="sb-chat-body" id="sb-chat-body" role="log" aria-live="polite" aria-relevant="additions text">
-                        <div class="sb-msg assistant">Hi! How can I help you find the perfect cake today?</div>
+                        <div class="sb-msg assistant" data-i18n="chat.greeting">Hi! How can I help you find the perfect cake today?</div>
                     </div>
                     <form class="sb-chat-footer" id="sb-chat-form">
                         <input type="text" class="sb-chat-input" id="sb-chat-input" placeholder="Ask me anything..." data-i18n-attr="placeholder:chat.inputPlaceholder,aria-label:chat.inputAria" aria-label="Message to Sugar Bliss Assistant" maxlength="1200" required autocomplete="off">
-                        <button type="submit" class="sb-chat-send">Send</button>
+                        <button type="submit" class="sb-chat-send" data-i18n="chat.send">Send</button>
                     </form>
                 </div>
                 <button class="sb-chat-toggle" aria-label="Open AI Assistant" data-i18n-attr="aria-label:chat.open">
@@ -652,11 +662,11 @@ class SugarChatbox extends HTMLElement {
     }
 
     createProductCard(product) {
-        const name = String(product.name || 'Sugar Bliss product');
+        const name = String(product.name || t("chat.defaultProduct", "Sugar Bliss product"));
         const card = document.createElement('a');
         card.className = 'sb-chat-product-card';
         card.href = `/products/${product.id}`;
-        card.setAttribute('aria-label', `View ${name} details`);
+        card.setAttribute('aria-label', t("chat.viewDetails", "View {name} details").replace("{name}", name));
 
         const media = document.createElement('span');
         media.className = 'sb-chat-product-media';
@@ -687,14 +697,14 @@ class SugarChatbox extends HTMLElement {
         price.className = 'sb-chat-product-price';
         price.textContent = Number.isFinite(Number(product.price))
             ? new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', maximumFractionDigits: 0 }).format(Number(product.price))
-            : 'Contact for price';
+            : t("chat.contactPrice", "Contact for price");
         details.appendChild(title);
         if (category.textContent) details.appendChild(category);
         details.appendChild(price);
         if (product.inStock === false) {
             const stock = document.createElement('span');
             stock.className = 'sb-chat-product-stock';
-            stock.textContent = 'Out of stock';
+            stock.textContent = t("chat.outOfStock", "Out of stock");
             details.appendChild(stock);
         }
         card.appendChild(media);
@@ -716,11 +726,11 @@ class SugarChatbox extends HTMLElement {
     }
 
     showLoginMessage(container) {
-        const msg = this.addMessage('Please log in to chat with Sugar Bliss Assistant.', 'assistant', container);
+        const msg = this.addMessage(t("chat.loginPrompt", "Please log in to chat with Sugar Bliss Assistant."), 'assistant', container);
         const link = document.createElement('a');
         link.className = 'sb-chat-login';
         link.href = '/login';
-        link.textContent = 'Log in';
+        link.textContent = t("chat.logIn", "Log in");
         msg.appendChild(link);
         container.scrollTop = container.scrollHeight;
     }
@@ -731,17 +741,17 @@ class SugarChatbox extends HTMLElement {
             return;
         }
 
-        let message = 'The AI service is temporarily unavailable. Please try again later.';
+        let message = t("chat.errUnavailable", "The AI service is temporarily unavailable. Please try again later.");
         if (code === 'AI_AUTHENTICATION_ERROR') {
-            message = 'The AI service could not authenticate. Please contact Sugar Bliss.';
+            message = t("chat.errAuth", "The AI service could not authenticate. Please contact Sugar Bliss.");
         } else if (status === 429) {
-            message = 'Too many chat requests. Please wait a moment before trying again.';
+            message = t("chat.errTooMany", "Too many chat requests. Please wait a moment before trying again.");
         } else if (status === 504) {
-            message = 'The AI request timed out. Please try again.';
+            message = t("chat.errTimeout", "The AI request timed out. Please try again.");
         } else if (status === 403) {
-            message = 'This account cannot use chat. Please contact Sugar Bliss.';
+            message = t("chat.errForbidden", "This account cannot use chat. Please contact Sugar Bliss.");
         } else if (status === 400) {
-            message = 'Unable to send this message. Please shorten it and try again.';
+            message = t("chat.errBadRequest", "Unable to send this message. Please shorten it and try again.");
         }
         this.addMessage(message, 'assistant', container);
     }

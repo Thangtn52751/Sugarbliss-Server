@@ -24,7 +24,7 @@ The existing authenticated `GET /api/products` accepts:
 | `minPrice` | Optional non-negative integer VND lower bound, inclusive |
 | `maxPrice` | Optional non-negative integer VND upper bound, inclusive |
 | `sort` | `default`, `price_asc`, `price_desc`; default is the existing featured/newest order |
-| `category` | Optional single, exact category name; omit to select all |
+| `category` | Optional single category ID or exact category name; omit to select all |
 | `page` | Positive integer, default 1 |
 | `limit` | Positive integer, default 12, capped at 100 |
 

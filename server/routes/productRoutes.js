@@ -1,6 +1,7 @@
 const express = require('express');
 const asyncHandler = require('express-async-handler');
 const Product = require('../models/Product');
+const Category = require('../models/Category');
 const mongoose = require('mongoose');
 const upload = require('../config/upload');
 const reviewUpload = require('../config/reviewUpload');
@@ -46,15 +47,23 @@ const getUploadedImages = (files = {}) => [
     ...(files.image || []),
 ].map((file) => `/uploads/products/${file.filename}`);
 
-const getProductPayload = (body, files) => {
+const getProductPayload = async (body, files) => {
     const uploadedImages = getUploadedImages(files);
     const submittedImages = normalizeList(body.images !== undefined ? body.images : body.image);
+    let categoryId = body.categoryId || body.category;
+    if (typeof categoryId === 'string' && !mongoose.isValidObjectId(categoryId)) {
+        // Older API clients may still send a category name.
+        const name = categoryId.trim();
+        let category = await Category.findOne({ name: new RegExp(`^${escapeRegex(name)}$`, 'i') });
+        if (!category && name) category = await Category.create({ name });
+        categoryId = category?._id;
+    }
     const payload = {
         name: body.name,
         description: body.description,
         price: body.price,
         images: uploadedImages.length ? uploadedImages : submittedImages,
-        category: body.category,
+        category: categoryId,
         stock: body.stock,
         weightGram: body.weightGram === '' ? null : body.weightGram,
         shelfLifeDays: body.shelfLifeDays === '' ? null : body.shelfLifeDays,
@@ -117,7 +126,11 @@ router.get('/', asyncHandler(async (req, res) => {
     }
 
     if (category) {
-        filter.category = category;
+        if (mongoose.isValidObjectId(category)) filter.category = category;
+        else {
+            const selectedCategory = await Category.findOne({ name: category }).select('_id').lean();
+            filter.category = selectedCategory?._id || null;
+        }
     }
 
     if (status !== 'all') {
@@ -130,10 +143,11 @@ router.get('/', asyncHandler(async (req, res) => {
 
     if (search) {
         const searchPattern = new RegExp(escapeRegex(String(search).trim()), 'i');
+        const matchingCategories = await Category.find({ name: searchPattern }).distinct('_id');
         filter.$or = [
             { name: searchPattern },
             { description: searchPattern },
-            { category: searchPattern },
+            { category: { $in: matchingCategories } },
         ];
     }
 
@@ -151,11 +165,12 @@ router.get('/', asyncHandler(async (req, res) => {
     const [products, total, categories] = await Promise.all([
         Product.find(filter)
             .select('-reviews')
+            .populate('category', 'name slug')
             .sort(sorting[sort])
             .skip((currentPage - 1) * perPage)
             .limit(perPage),
         Product.countDocuments(filter),
-        Product.distinct('category', categoryFilter),
+        Category.find({ _id: { $in: await Product.distinct('category', categoryFilter) } }).distinct('name'),
     ]);
 
     res.json({
@@ -178,6 +193,7 @@ router.get('/search', asyncHandler(async (req, res) => {
 
 router.get('/:id', asyncHandler(async (req, res) => {
     const product = await Product.findById(req.params.id)
+        .populate('category', 'name slug')
         .populate('reviews.user', 'name avatar');
 
     if (!product) {
@@ -194,7 +210,8 @@ const productImageUpload = upload.fields([
 ]);
 
 router.post('/', admin, productImageUpload, asyncHandler(async (req, res) => {
-    const product = await Product.create(getProductPayload(req.body, req.files));
+    const product = await Product.create(await getProductPayload(req.body, req.files));
+    await product.populate('category', 'name slug');
     res.status(201).json(product);
 }));
 
@@ -206,8 +223,9 @@ router.put('/:id', admin, productImageUpload, asyncHandler(async (req, res) => {
         throw new Error('Product not found.');
     }
 
-    Object.assign(product, getProductPayload(req.body, req.files));
+    Object.assign(product, await getProductPayload(req.body, req.files));
     const updatedProduct = await product.save();
+    await updatedProduct.populate('category', 'name slug');
 
     res.json(updatedProduct);
 }));

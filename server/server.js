@@ -5,6 +5,7 @@ const cors = require('cors');
 const path = require('path');
 const connectDB = require('./config/db');
 const productRoutes = require('./routes/productRoutes');
+const categoryRoutes = require('./routes/categoryRoutes');
 const userRoutes = require('./routes/userRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const specialOrderRoutes = require('./routes/specialOrderRoutes');
@@ -32,6 +33,7 @@ app.get('/', (req, res) => {
         message: 'SugarBliss API is running!',
         endpoints: {
             products: '/api/products',
+            categories: '/api/categories',
             users: '/api/users',
             orders: '/api/orders',
             payments: '/api/payments',
@@ -48,6 +50,7 @@ app.get('/', (req, res) => {
 });
 
 app.use('/api/products', productRoutes);
+app.use('/api/categories', categoryRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payments', paymentRoutes);

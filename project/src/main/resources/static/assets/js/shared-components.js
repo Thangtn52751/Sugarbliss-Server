@@ -266,7 +266,7 @@ class SugarHeader extends HTMLElement {
             const price = Number.isFinite(Number(product.price))
                 ? `${new Intl.NumberFormat("vi-VN").format(Number(product.price))} \u20ab`
                 : "Contact for price";
-            meta.textContent = `${product.category || "Treat"} · ${price}`;
+            meta.textContent = `${(typeof product.category === 'string' ? product.category : product.category?.name) || "Treat"} · ${price}`;
             copy.append(name, meta);
 
             const availability = document.createElement("span");
@@ -647,7 +647,7 @@ class SugarChatbox extends HTMLElement {
         title.textContent = name;
         const category = document.createElement('span');
         category.className = 'sb-chat-product-category';
-        category.textContent = String(product.category || '');
+        category.textContent = String((typeof product.category === 'string' ? product.category : product.category?.name) || '');
         const price = document.createElement('span');
         price.className = 'sb-chat-product-price';
         price.textContent = Number.isFinite(Number(product.price))

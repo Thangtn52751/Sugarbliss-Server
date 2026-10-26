@@ -136,7 +136,7 @@ function renderCartItem(item) {
             </a>
             <div class="cart-item-info">
                 <h2>${escapeCartHtml(product.name || "Sugar Bliss Product")}</h2>
-                <p>${product.weightGram ? `Weight: ${escapeCartHtml(product.weightGram)}g` : escapeCartHtml(product.category || "Freshly baked")}</p>
+                <p>${product.weightGram ? `Weight: ${escapeCartHtml(product.weightGram)}g` : escapeCartHtml(typeof product.category === 'string' ? product.category : product.category?.name || "Freshly baked")}</p>
                 <button class="remove-cart-item" type="button" data-cart-remove="${escapeCartHtml(productId)}">Remove item</button>
             </div>
             <strong class="cart-line-total">${formatCartPrice(lineTotal)}</strong>

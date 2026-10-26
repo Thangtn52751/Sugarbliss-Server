@@ -106,6 +106,7 @@ const normalizeHistory = (value, maximumItems) => {
 
 const loadProductCatalog = () => Product.find({ status: 'active' })
     .select('_id name category price images stock weightGram shelfLifeDays ingredients allergens description')
+    .populate('category', 'name')
     .sort({ featured: -1, name: 1 })
     .limit(MAX_CATALOG_PRODUCTS)
     .lean();
@@ -113,7 +114,7 @@ const loadProductCatalog = () => Product.find({ status: 'active' })
 const catalogLine = (product) => JSON.stringify({
     id: String(product._id),
     name: product.name,
-    category: product.category,
+    category: product.category?.name || '',
     priceVnd: Number(product.price),
     stock: Number(product.stock),
     weightGram: product.weightGram ?? null,
@@ -165,7 +166,7 @@ const getReplyProducts = (reply, products) => {
             name: product.name,
             price: Number(product.price),
             image: Array.isArray(product.images) ? product.images[0] || '' : '',
-            category: product.category,
+            category: product.category?.name || '',
             inStock: Number(product.stock) > 0,
             detailPath: `/products/${id}`,
         });

@@ -1,4 +1,5 @@
 const Product = require('../models/Product');
+const Category = require('../models/Category');
 
 const MIN_QUERY_LENGTH = 2;
 const MAX_QUERY_LENGTH = 80;
@@ -47,7 +48,7 @@ const normalizeLimit = (value) => {
 
 const relevanceScore = (product, foldedQuery) => {
     const name = foldText(product.name);
-    const category = foldText(product.category);
+    const category = foldText(product.category?.name || product.category);
 
     if (name === foldedQuery) return 0;
     if (name.startsWith(foldedQuery)) return 1;
@@ -62,7 +63,7 @@ const toSuggestion = (product) => ({
     name: product.name,
     price: Number(product.price),
     image: Array.isArray(product.images) ? product.images[0] || '' : '',
-    category: product.category,
+    category: product.category?.name || product.category || '',
     inStock: Number(product.stock) > 0,
 });
 
@@ -70,15 +71,17 @@ const searchProducts = async (queryValue, limitValue) => {
     const query = normalizeQuery(queryValue);
     const limit = normalizeLimit(limitValue);
     const pattern = new RegExp(escapeRegex(query), 'i');
+    const matchingCategories = await Category.find({ name: pattern }).distinct('_id');
     const products = await Product.find({
         status: 'active',
         $or: [
             { name: pattern },
-            { category: pattern },
+            { category: { $in: matchingCategories } },
             { description: pattern },
         ],
     })
         .select('_id name price images category stock')
+        .populate('category', 'name')
         .limit(CANDIDATE_LIMIT)
         .lean();
     const foldedQuery = foldText(query);

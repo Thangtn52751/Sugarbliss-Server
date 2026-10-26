@@ -19,18 +19,25 @@
         <div class="admin-content" data-admin-content hidden>
             <div class="admin-page-header" style="align-items: center;">
                 <div class="header-titles">
-                    <h1>Products</h1>
-                    <p style="margin: 6px 0 0; color: var(--admin-muted); font-size: 13px;">Manage your blissful dessert menu and stock availability</p>
+                    <h1 data-page-title>Products</h1>
+                    <p data-page-subtitle style="margin: 6px 0 0; color: var(--admin-muted); font-size: 13px;">Manage your blissful dessert menu and stock availability</p>
                 </div>
                 <div class="header-actions">
-                    <div class="search-box">
+                    <div class="search-box" data-product-action>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#93848b" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
                         <input type="text" id="search-input" placeholder="Search product by name...">
                     </div>
-                    <button class="btn-add" id="btn-open-add-modal">+ Add New Product</button>
+                    <button class="btn-add" id="btn-open-add-modal" data-product-action>+ Add New Product</button>
+                    <button class="btn-add" id="btn-open-category-create" data-category-action hidden>+ Add Category</button>
                 </div>
             </div>
 
+            <nav class="admin-content-tabs" role="tablist" aria-label="Admin content">
+                <button type="button" class="admin-content-tab active" role="tab" aria-selected="true" aria-controls="products-tab" data-admin-tab="products">Products</button>
+                <button type="button" class="admin-content-tab" role="tab" aria-selected="false" aria-controls="categories-tab" data-admin-tab="categories">Categories</button>
+            </nav>
+
+            <section id="products-tab" class="admin-tab-panel" role="tabpanel" data-admin-panel="products">
             <div class="admin-panel" style="padding: 0; overflow: hidden;">
                 <div class="admin-table-scroll">
                     <table class="admin-data-table">
@@ -56,6 +63,19 @@
                     <div class="pagination-controls" id="pagination-controls"></div>
                 </div>
             </div>
+            </section>
+
+            <section id="categories-tab" class="admin-tab-panel" role="tabpanel" data-admin-panel="categories" hidden>
+                <div class="admin-panel" style="padding:0; overflow:hidden">
+                    <div class="admin-table-scroll">
+                        <table class="admin-data-table">
+                            <thead><tr><th>Category</th><th>Slug</th><th style="text-align:right">Actions</th></tr></thead>
+                            <tbody id="category-table-body"><tr><td colspan="3" class="admin-tab-empty">Select Categories to load data.</td></tr></tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
         </div>
     </main>
 
@@ -92,8 +112,8 @@
                 </div>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Category</label>
-                        <input type="text" id="prod-category" placeholder="e.g. Cake, Cupcake">
+                        <label for="prod-category">Category</label>
+                        <div style="display:flex; gap:8px"><select id="prod-category" required style="flex:1"><option value="">Select a category</option></select><button type="button" class="btn-add" id="btn-add-category" style="white-space:nowrap">+ Category</button></div>
                     </div>
                     <div class="form-group">
                         <label>Price (VND)</label>

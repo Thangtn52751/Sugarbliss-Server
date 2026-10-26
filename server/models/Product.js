@@ -60,8 +60,8 @@ const productSchema = new mongoose.Schema({
         },
     },
     category: {
-        type: String,
-        trim: true,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Category',
         required: true,
     },
     stock: {

@@ -22,6 +22,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const imagePreviews = document.getElementById('product-image-previews');
     const clearImages = document.getElementById('btn-clear-product-images');
     const saveButton = productForm.querySelector('.btn-save');
+    const categorySelect = document.getElementById('prod-category');
+    const addCategoryButton = document.getElementById('btn-add-category');
+    const categoryTableBody = document.getElementById('category-table-body');
+    const pageTitle = document.querySelector('[data-page-title]');
+    const pageSubtitle = document.querySelector('[data-page-subtitle]');
+    let activeTab = 'products';
 
     // Modal Detail elements
     const detailModal = document.getElementById('product-detail-modal');
@@ -38,6 +44,100 @@ document.addEventListener('DOMContentLoaded', async () => {
         node.textContent = message;
         node.hidden = !message;
     }
+
+    const categoryName = category => typeof category === 'string' ? category : category?.name || '';
+
+    async function loadCategories(selectedId = '') {
+        const categories = await window.SugarBlissAdmin.request('/api/categories');
+        const items = Array.isArray(categories) ? categories : [];
+        categorySelect.innerHTML = '<option value="">Select a category</option>' + items
+            .map(category => `<option value="${escapeHtml(category._id)}">${escapeHtml(category.name)}</option>`).join('');
+        if (selectedId) categorySelect.value = selectedId;
+    }
+
+    addCategoryButton.addEventListener('click', async () => {
+        const name = prompt('New category name:');
+        if (!name?.trim()) return;
+        try {
+            const category = await window.SugarBlissAdmin.request('/api/categories', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name.trim() }),
+            });
+            await loadCategories(category?._id);
+        } catch (error) { formError(error.message); }
+    });
+
+    async function loadCategoryTab() {
+        categoryTableBody.innerHTML = '<tr><td colspan="3" class="admin-tab-empty">Loading categories...</td></tr>';
+        try {
+            const categories = await window.SugarBlissAdmin.request('/api/categories');
+            const items = Array.isArray(categories) ? categories : [];
+            if (!items.length) {
+                categoryTableBody.innerHTML = '<tr><td colspan="3" class="admin-tab-empty">No categories found.</td></tr>';
+                return;
+            }
+            categoryTableBody.innerHTML = items.map(category => `
+                <tr>
+                    <td class="product-name">${escapeHtml(category.name)}</td>
+                    <td>${escapeHtml(category.slug || '')}</td>
+                    <td class="action-btns">
+                        <button type="button" class="category-row-action" data-category-action="rename" data-category-id="${escapeHtml(category._id)}" data-category-name="${escapeHtml(category.name)}">Rename</button>
+                        <button type="button" class="category-row-action danger" data-category-action="delete" data-category-id="${escapeHtml(category._id)}">Delete</button>
+                    </td>
+                </tr>`).join('');
+        } catch (error) {
+            categoryTableBody.innerHTML = `<tr><td colspan="3" class="admin-tab-empty error">${escapeHtml(error.message)}</td></tr>`;
+        }
+    }
+
+    async function createCategory() {
+        const name = prompt('New category name:');
+        if (!name?.trim()) return;
+        try {
+            await window.SugarBlissAdmin.request('/api/categories', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name.trim() }),
+            });
+            await loadCategoryTab();
+            await loadCategories();
+        } catch (error) { alert(`Could not create category: ${error.message}`); }
+    }
+
+    document.getElementById('btn-open-category-create').addEventListener('click', createCategory);
+    categoryTableBody.addEventListener('click', async event => {
+        const button = event.target.closest('[data-category-action]');
+        if (!button) return;
+        const { categoryAction, categoryId, categoryName: oldName } = button.dataset;
+        try {
+            if (categoryAction === 'rename') {
+                const name = prompt('Category name:', oldName);
+                if (!name?.trim() || name.trim() === oldName) return;
+                await window.SugarBlissAdmin.request(`/api/categories/${encodeURIComponent(categoryId)}`, {
+                    method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: name.trim() }),
+                });
+            } else if (categoryAction === 'delete') {
+                if (!confirm('Delete this category? Categories assigned to products cannot be deleted.')) return;
+                await window.SugarBlissAdmin.request(`/api/categories/${encodeURIComponent(categoryId)}`, { method: 'DELETE' });
+            } else return;
+            await loadCategoryTab();
+            await loadCategories();
+        } catch (error) { alert(`Category update failed: ${error.message}`); }
+    });
+
+    document.querySelectorAll('[data-admin-tab]').forEach(tab => tab.addEventListener('click', () => {
+        activeTab = tab.dataset.adminTab;
+        document.querySelectorAll('[data-admin-tab]').forEach(item => {
+            const selected = item === tab;
+            item.classList.toggle('active', selected);
+            item.setAttribute('aria-selected', String(selected));
+        });
+        document.querySelectorAll('[data-admin-panel]').forEach(panel => { panel.hidden = panel.dataset.adminPanel !== activeTab; });
+        document.querySelectorAll('[data-product-action]').forEach(node => { node.hidden = activeTab !== 'products'; });
+        document.querySelectorAll('[data-category-action]').forEach(node => { node.hidden = activeTab !== 'categories'; });
+        pageTitle.textContent = activeTab === 'products' ? 'Products' : 'Categories';
+        pageSubtitle.textContent = activeTab === 'products'
+            ? 'Manage your blissful dessert menu and stock availability'
+            : 'Create and manage product categories';
+        if (activeTab === 'categories') loadCategoryTab();
+    }));
 
     function releasePreviewUrls() {
         previewUrls.forEach((url) => URL.revokeObjectURL(url));
@@ -138,7 +238,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <tr>
                     <td><img src="${imgUrl}" class="product-img" alt="Product" style="cursor: pointer;" onclick="window.openDetailModal('${id}')"></td>
                     <td class="product-name" style="cursor: pointer;" onclick="window.openDetailModal('${id}')">${escapeHtml(p.name)}</td>
-                    <td>${escapeHtml(p.category || 'Uncategorized')}</td>
+                    <td>${escapeHtml(categoryName(p.category) || 'Uncategorized')}</td>
                     <td class="price-text">đ${priceFmt}</td>
                     <td>${p.stock ?? 0} pcs</td>
                     <td><span class="status-badge ${isActive ? 'active' : 'inactive'}">${isActive ? 'Active' : 'Inactive'}</span></td>
@@ -234,7 +334,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <div class="detail-popup-info">
                     <div class="detail-popup-badge-row">
                         <span class="status-badge ${isActive ? 'active' : 'inactive'}">${escapeHtml(p.status || (isActive ? 'Active' : 'Inactive'))}</span>
-                        <span class="detail-category-tag">${escapeHtml(p.category || 'Uncategorized')}</span>
+                        <span class="detail-category-tag">${escapeHtml(categoryName(p.category) || 'Uncategorized')}</span>
                     </div>
                     <h2 class="detail-popup-title">${escapeHtml(p.name || 'Untitled Product')}</h2>
                     <div class="detail-popup-price">đ${priceFmt}</div>
@@ -312,7 +412,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             document.getElementById('prod-weightGram').value = product.weightGram ?? '';
             document.getElementById('prod-shelfLifeDays').value = product.shelfLifeDays ?? '';
             document.getElementById('prod-ingredients').value = Array.isArray(product.ingredients) ? product.ingredients.join(', ') : (product.ingredients || '');
-            document.getElementById('prod-category').value = product.category || '';
+            await loadCategories(product.category?._id || product.category || '');
             document.getElementById('prod-price').value = product.price || 0;
             document.getElementById('prod-stock').value = product.stock || 0;
             document.getElementById('prod-status').value = product.status || 'active';
@@ -332,9 +432,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (saving || !productForm.reportValidity()) return;
         const id = document.getElementById('prod-id').value;
         const payload = new FormData();
-        for (const field of ['name', 'description', 'category', 'price', 'stock', 'status', 'weightGram', 'shelfLifeDays']) {
+        for (const field of ['name', 'description', 'price', 'stock', 'status', 'weightGram', 'shelfLifeDays']) {
             payload.append(field, document.getElementById(`prod-${field}`).value);
         }
+        payload.append('categoryId', categorySelect.value);
         const ingredients = document.getElementById('prod-ingredients').value.split(/[,\r\n]+/).map(value => value.trim()).filter(Boolean);
         payload.append('ingredients', JSON.stringify(ingredients));
         Array.from(imageInput.files || []).forEach((file) => payload.append('images', file));
@@ -382,4 +483,5 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     loadProducts();
+    loadCategories();
 });

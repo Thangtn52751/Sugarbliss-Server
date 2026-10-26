@@ -22,6 +22,10 @@ function tCategory(name) {
     return window.SugarI18n ? window.SugarI18n.translateCategory(name) : name;
 }
 
+function productCategoryName(product) {
+    return typeof product?.category === 'string' ? product.category : product?.category?.name || '';
+}
+
 document.addEventListener("DOMContentLoaded", () => {
     document.querySelector('[data-product-filters]')?.addEventListener('submit', event => { event.preventDefault(); applyProductFilters(); });
     document.getElementById('products-sort')?.addEventListener('change', () => applyProductFilters());
@@ -163,7 +167,7 @@ async function fetchProducts(append = false) {
         if (Array.isArray(productsData.categories)) {
             availableProductCategories = productsData.categories.filter(category => typeof category === 'string' && category.trim());
         } else if (!availableProductCategories.length) {
-            availableProductCategories = [...new Set(incoming.map(product => product.category).filter(Boolean))];
+            availableProductCategories = [...new Set(incoming.map(productCategoryName).filter(Boolean))];
         }
         loadedProducts = append ? [...new Map([...loadedProducts, ...incoming].map(product => [String(product._id || product.id), product])).values()] : incoming;
         productsPagination = { page, pages: Number(productsData.pagination?.pages) || 1,
@@ -220,7 +224,7 @@ function renderProducts(products) {
 
 function groupProductsByCategory(products) {
     return products.reduce((groups, product) => {
-        const category = product.category || "Other";
+        const category = productCategoryName(product) || "Other";
 
         if (!groups[category]) {
             groups[category] = [];

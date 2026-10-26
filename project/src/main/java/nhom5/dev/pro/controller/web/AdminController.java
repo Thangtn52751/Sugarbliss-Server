@@ -16,6 +16,11 @@ public class AdminController {
         return "forward:/pages/admin/products.html";
     }
 
+    @GetMapping("/admin/feedback")
+    public String feedback() {
+        return "forward:/pages/admin/feedback.html";
+    }
+
     @GetMapping("/admin/vouchers")
     public String vouchers() {
         return "forward:/pages/admin/vouchers.html";

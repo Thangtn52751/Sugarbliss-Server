@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sugar Bliss | Admin Feedback</title>
+    <link rel="stylesheet" href="/assets/css/admin.css">
+    <link rel="stylesheet" href="/assets/css/admin-feedback.css">
+    <script src="/assets/js/api-config.js" defer></script>
+    <script src="/assets/js/admin-shell.js" defer></script>
+    <script src="/assets/js/admin-feedback.js" defer></script>
+</head>
+<body class="admin-page">
+    <sugar-admin-sidebar active="feedback"></sugar-admin-sidebar>
+    <main class="admin-main" aria-label="Feedback">
+        <div class="admin-access-state" data-admin-access-state role="status">Loading...</div>
+        <div class="admin-content" data-admin-content hidden>
+            <header class="admin-page-header feedback-header">
+                <div>
+                    <h1>Feedback</h1>
+                    <p>Review and respond to messages submitted through Contact</p>
+                </div>
+                <button type="button" class="feedback-refresh" data-feedback-refresh>Refresh</button>
+            </header>
+            <div class="admin-feedback-list" data-feedback-list aria-live="polite">
+                <div class="admin-panel feedback-empty">Loading feedback...</div>
+            </div>
+            <div class="feedback-pagination" data-feedback-pagination hidden></div>
+        </div>
+    </main>
+</body>
+</html>

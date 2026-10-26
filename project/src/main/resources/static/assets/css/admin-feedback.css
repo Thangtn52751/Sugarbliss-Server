@@ -1,0 +1,29 @@
+.feedback-header { align-items: center; }
+.feedback-header h1 { margin: 0; }
+.feedback-header p { margin: 6px 0 0; color: var(--admin-muted); font-size: 13px; }
+.feedback-refresh, .feedback-save { min-height: 38px; padding: 0 18px; border: 0; border-radius: 6px; background: #8cc69f; color: #fff; font-weight: 600; cursor: pointer; }
+.feedback-refresh:hover, .feedback-save:hover:not(:disabled) { background: #7ab58d; }
+.feedback-save:disabled { opacity: .7; cursor: wait; }
+.admin-feedback-list { display: grid; gap: 14px; }
+.feedback-card { margin: 0; }
+.feedback-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; }
+.feedback-heading h2 { margin: 4px 0 0; font-size: 17px; color: #4a3e43; }
+.feedback-heading time { color: var(--admin-muted); font-size: 12px; }
+.feedback-ticket { color: var(--admin-accent); font-size: 11px; font-weight: 700; }
+.feedback-email { display: inline-block; margin-top: 8px; color: var(--admin-accent); font-size: 13px; }
+.feedback-message { margin: 14px 0; color: #4a3e43; font-size: 14px; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.feedback-controls { display: grid; grid-template-columns: minmax(150px, .7fr) minmax(220px, 2fr) auto; align-items: end; gap: 12px; border-top: 1px solid var(--admin-border); padding-top: 14px; }
+.feedback-controls label { display: grid; gap: 6px; color: var(--admin-muted); font-size: 12px; font-weight: 600; }
+.feedback-controls select, .feedback-controls textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--admin-border); border-radius: 5px; background: #fff; color: #4a3e43; font: inherit; font-size: 13px; }
+.feedback-controls textarea { resize: vertical; }
+.feedback-empty { padding: 26px 20px !important; text-align: center; color: var(--admin-muted) !important; }
+.feedback-empty.error { color: var(--admin-accent) !important; }
+.feedback-pagination { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; color: var(--admin-muted); font-size: 12px; }
+.feedback-page-controls { display: flex; gap: 8px; }
+.feedback-page-controls button { padding: 7px 12px; border: 1px solid var(--admin-border); border-radius: 5px; background: #fff; color: var(--admin-muted); cursor: pointer; }
+.feedback-page-controls button:disabled { opacity: .5; cursor: not-allowed; }
+.feedback-page-controls button:hover:not(:disabled) { border-color: var(--admin-accent); color: var(--admin-accent); }
+@media (max-width: 680px) {
+    .feedback-controls { grid-template-columns: 1fr; }
+    .feedback-heading { flex-direction: column; gap: 6px; }
+}
